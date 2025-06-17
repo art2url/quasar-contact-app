@@ -289,8 +289,7 @@ karma.conf.js
 # Frontend environment files (Angular)
 frontend/.env
 frontend/.env.*
-frontend/src/environments/environment.prod.ts
-frontend/src/environments/environment.ts
+# Note: environment.ts and environment.prod.ts are NOT ignored as they're needed for build
 
 # Backend environment files (Node.js)
 backend/.env
