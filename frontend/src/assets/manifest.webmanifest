@@ -1,11 +1,16 @@
 {
-  "name": "Quasar Secure Chat",
-  "short_name": "Quasar Chat",
-  "theme_color": "#0077cc",
-  "background_color": "#ffffff",
-  "display": "standalone",
-  "scope": "./",
+  "name": "Quasar Contact - Secure End-to-End Encrypted Chat",
+  "short_name": "Quasar Contact",
+  "description": "Experience true privacy with Quasar's end-to-end encrypted chat. Military-grade encryption, real-time messaging, and zero data logging.",
   "start_url": "./",
+  "display": "standalone",
+  "background_color": "#001011",
+  "theme_color": "#68B684",
+  "orientation": "portrait-primary",
+  "scope": "./",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["productivity", "social", "communication"],
   "icons": [
     {
       "src": "icons/icon-72x72.png",
@@ -55,5 +60,34 @@
       "type": "image/png",
       "purpose": "maskable any"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Chat",
+      "short_name": "Chat",
+      "description": "Start a new secure chat",
+      "url": "./chat",
+      "icons": [
+        {
+          "src": "icons/icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "short_name": "Settings",
+      "description": "App settings and preferences",
+      "url": "./settings",
+      "icons": [
+        {
+          "src": "icons/icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false
 }
