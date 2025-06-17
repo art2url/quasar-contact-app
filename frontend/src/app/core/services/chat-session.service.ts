@@ -1,0 +1,916 @@
+import { Injectable, OnDestroy } from '@angular/core';
+import { BehaviorSubject, Observable, Subscription } from 'rxjs';
+
+import { WebSocketService } from '@services/websocket.service';
+import { MessagesService } from '@services/messages.service';
+import { UserService } from '@services/user.service';
+import { CryptoService } from '@services/crypto.service';
+import { VaultService } from '@services/vault.service';
+import { toEpoch } from '@utils/date.util';
+import { VAULT_KEYS } from '@services/vault.service';
+
+/* shared domain types */
+import { ChatMsg, SentCacheEntry } from '@models/chat.model';
+import { ServerMessage } from '@models/api-response.model';
+import {
+  AckPayload,
+  IncomingSocketMessage,
+  MessageEditedEvent,
+  MessageDeletedEvent,
+} from 'app/core/models/socket.model';
+
+/**
+ * Enhanced chat session service with better connection handling and fallback sync
+ */
+@Injectable()
+export class ChatSessionService implements OnDestroy {
+  /* ── public streams for the template ─────────────── */
+  readonly theirUsername$ = new BehaviorSubject<string>('');
+  readonly theirAvatar$ = new BehaviorSubject<string>(
+    'assets/images/avatars/01.svg'
+  );
+  readonly messages$ = new BehaviorSubject<ChatMsg[]>([]);
+  readonly keyLoading$ = new BehaviorSubject<boolean>(true);
+  readonly keyMissing$ = new BehaviorSubject<boolean>(false);
+  readonly connected$: Observable<boolean>;
+  readonly partnerTyping$ = new BehaviorSubject<boolean>(false);
+  readonly messagesLoading$ = new BehaviorSubject<boolean>(true);
+
+  // Enhanced online status tracking
+  public onlineStatus$!: BehaviorSubject<boolean>;
+  private isPartnerOnline = false;
+
+  /* ── misc ─────────────────────────────────────────── */
+  private readonly meId = localStorage.getItem('userId')!;
+  private subs = new Subscription();
+  private theirPubKey: string | null = null;
+  private roomId = '';
+  private typingDebounce!: ReturnType<typeof setTimeout>;
+  public partnerAvatar: string | undefined;
+
+  // Initialization tracking
+  private isInitialized = false;
+  private isInitializing = false;
+
+  // Message state management
+  private pendingMessages = new Set<string>();
+  private tempMessages: ChatMsg[] = [];
+  private loadingOperations = 0;
+
+  // Enhanced connection monitoring
+  private syncTimer: ReturnType<typeof setInterval> | null = null;
+  private lastSyncTime = 0;
+  private connectionLossDetected = false;
+  private reconnectSyncInProgress = false;
+
+  // Fallback sync mechanism
+  private readonly SYNC_INTERVAL = 30000; // 30 seconds
+  private readonly SYNC_ON_RECONNECT_DELAY = 2000; // 2 seconds after reconnect
+
+  constructor(
+    private ws: WebSocketService,
+    private api: MessagesService,
+    private users: UserService,
+    private crypto: CryptoService,
+    private vault: VaultService
+  ) {
+    this.connected$ = this.ws.isConnected$.asObservable();
+    this.setupEventHandlers();
+    this.startSyncMonitoring();
+  }
+
+  /**
+   * Enhanced event handler setup with connection monitoring
+   */
+  private setupEventHandlers(): void {
+    this.setupTypingHandler();
+    this.setupMessageHandlers();
+    this.setupConnectionHandlers();
+  }
+
+  /**
+   * Setup connection monitoring for fallback sync
+   */
+  private setupConnectionHandlers(): void {
+    // Monitor connection state changes
+    this.subs.add(
+      this.ws.isConnected$.subscribe((connected) => {
+        if (connected && this.connectionLossDetected) {
+          console.log('[ChatSession] Connection restored, scheduling sync');
+          this.connectionLossDetected = false;
+          this.scheduleReconnectSync();
+        } else if (!connected) {
+          console.log('[ChatSession] Connection lost, marking for sync');
+          this.connectionLossDetected = true;
+        }
+      })
+    );
+  }
+
+  /**
+   * Setup message event handlers with better error handling
+   */
+  private setupMessageHandlers(): void {
+    this.ws.onMessageEdited(this.messageEditedCb);
+    this.ws.onMessageDeleted(this.messageDeletedCb);
+    this.ws.onMessageSent(this.messageSentCb);
+  }
+
+  /**
+   * Enhanced message sent callback with fallback sync
+   */
+  private readonly messageSentCb = async ({
+    messageId,
+    timestamp,
+  }: AckPayload) => {
+    console.log('[ChatSession] Message sent ack received for:', messageId);
+
+    try {
+      // Handle loading state
+      if (this.loadingOperations > 0) {
+        console.log('[ChatSession] Still loading, updating vault only');
+        await this.updateVaultForSentMessage(messageId, timestamp);
+        return;
+      }
+
+      const success = await this.updatePendingMessage(messageId, timestamp);
+      if (!success) {
+        console.warn(
+          '[ChatSession] Failed to update pending message, scheduling sync'
+        );
+        this.scheduleFallbackSync();
+      }
+
+      this.markPreviousMessagesAsRead();
+    } catch (error) {
+      console.error('[ChatSession] Error processing message sent ack:', error);
+      this.scheduleFallbackSync();
+    }
+  };
+
+  /**
+   * Update pending message with better error handling
+   */
+  private async updatePendingMessage(
+    messageId: string,
+    timestamp: string | number
+  ): Promise<boolean> {
+    const list = this.messages$.value;
+    const idx = list.findIndex((m) => m.status === 'pending' && !m.id);
+
+    if (idx === -1) {
+      console.warn(
+        '[ChatSession] No pending message found for ack:',
+        messageId
+      );
+      return false;
+    }
+
+    const patched: ChatMsg = {
+      ...list[idx],
+      id: messageId,
+      ts: +new Date(timestamp),
+      status: 'sent',
+    };
+
+    // Auto-mark as read if no unread messages from partner
+    const hasUnreadFromPartner = list.some(
+      (m) => m.sender !== 'You' && !m.readAt && m.id
+    );
+
+    if (!hasUnreadFromPartner) {
+      patched.status = 'read';
+    }
+
+    // Update messages list
+    this.messages$.next([
+      ...list.slice(0, idx),
+      patched,
+      ...list.slice(idx + 1),
+    ]);
+
+    // Update vault storage
+    await this.updateVaultForSentMessage(messageId, timestamp, patched.text);
+    return true;
+  }
+
+  /**
+   * Update vault storage for sent message
+   */
+  private async updateVaultForSentMessage(
+    messageId: string,
+    timestamp: string | number,
+    text?: string
+  ): Promise<void> {
+    try {
+      const cacheEntry: SentCacheEntry = {
+        id: messageId,
+        text: text || '', // Will be filled in if needed
+        ts: +new Date(timestamp),
+      };
+
+      await this.vault.set(this.key(messageId), cacheEntry);
+
+      // Also store with server timestamp
+      const serverTimestamp = +new Date(timestamp);
+      await this.vault.set(this.key(`server::${serverTimestamp}`), cacheEntry);
+
+      // Clean up temporary keys
+      const tempKey = this.key(`pending::${cacheEntry.ts}`);
+      await this.vault.set(tempKey, null);
+
+      console.log(
+        '[ChatSession] Updated vault storage for message:',
+        messageId
+      );
+    } catch (err) {
+      console.error('[ChatSession] Error updating vault storage:', err);
+    }
+  }
+
+  /**
+   * Enhanced typing handler with connection awareness
+   */
+  private setupTypingHandler(): void {
+    console.log('[ChatSession] Setting up typing indicator subscription');
+
+    this.subs.add(
+      this.ws.typing$.subscribe(({ fromUserId }) => {
+        if (fromUserId !== this.roomId) return;
+
+        // Only show typing if we have a good connection
+        if (this.ws.isConnected()) {
+          this.partnerTyping$.next(true);
+
+          if (this.typingDebounce) clearTimeout(this.typingDebounce);
+          this.typingDebounce = setTimeout(() => {
+            this.partnerTyping$.next(false);
+          }, 2000);
+        }
+      })
+    );
+  }
+
+  /**
+   * Start periodic sync monitoring
+   */
+  private startSyncMonitoring(): void {
+    this.syncTimer = setInterval(() => {
+      if (this.roomId && this.ws.isConnected()) {
+        const timeSinceLastSync = Date.now() - this.lastSyncTime;
+
+        // Sync if it's been too long since last sync
+        if (timeSinceLastSync > this.SYNC_INTERVAL) {
+          console.log('[ChatSession] Periodic sync check');
+          this.scheduleFallbackSync();
+        }
+      }
+    }, this.SYNC_INTERVAL);
+  }
+
+  /**
+   * Schedule a fallback sync to ensure consistency
+   */
+  private scheduleFallbackSync(): void {
+    if (this.reconnectSyncInProgress) return;
+
+    console.log('[ChatSession] Scheduling fallback message sync');
+
+    setTimeout(() => {
+      this.performFallbackSync();
+    }, 1000);
+  }
+
+  /**
+   * Schedule sync after reconnection
+   */
+  private scheduleReconnectSync(): void {
+    if (this.reconnectSyncInProgress) return;
+
+    console.log('[ChatSession] Scheduling reconnect sync');
+
+    setTimeout(() => {
+      this.performReconnectSync();
+    }, this.SYNC_ON_RECONNECT_DELAY);
+  }
+
+  /**
+   * Perform fallback sync by re-fetching recent messages
+   */
+  private async performFallbackSync(): Promise<void> {
+    if (!this.roomId || this.reconnectSyncInProgress) return;
+
+    try {
+      console.log('[ChatSession] Performing fallback sync');
+      this.reconnectSyncInProgress = true;
+
+      // Get current messages for comparison
+      const currentMessages = this.messages$.value;
+      const lastMessageTime =
+        currentMessages.length > 0
+          ? Math.max(...currentMessages.map((m) => m.ts))
+          : 0;
+
+      // Fetch recent messages from server
+      this.api.getMessageHistory(this.roomId).subscribe({
+        next: async (response) => {
+          const serverMessages = response.messages || [];
+          let hasUpdates = false;
+
+          for (const serverMsg of serverMessages) {
+            const serverTimestamp = toEpoch(serverMsg.createdAt);
+
+            // Only process messages newer than our last known message
+            if (serverTimestamp <= lastMessageTime) continue;
+
+            const existingMsg = currentMessages.find(
+              (m) => m.id === serverMsg._id
+            );
+            if (existingMsg) continue;
+
+            // This is a new message we missed
+            console.log('[ChatSession] Found missed message:', serverMsg._id);
+            hasUpdates = true;
+
+            const fromMe = serverMsg.senderId.toString() === this.meId;
+            const sender = fromMe ? 'You' : this.theirUsername$.value;
+
+            let text: string;
+            if (serverMsg.deleted) {
+              text = '⋯ message deleted ⋯';
+            } else if (fromMe) {
+              text = await this.findCachedMessageText(serverMsg);
+            } else {
+              text = await this.tryDecrypt(serverMsg.ciphertext);
+              // Mark as read since we're catching up
+              if (!serverMsg.read) {
+                this.ws.markMessageRead(serverMsg._id);
+              }
+            }
+
+            const newMessage: ChatMsg = {
+              id: serverMsg._id,
+              sender,
+              text,
+              ts: serverTimestamp,
+              status: fromMe ? (serverMsg.read ? 'read' : 'sent') : undefined,
+              avatarUrl: this.getMessageAvatar(serverMsg, fromMe),
+              editedAt: serverMsg.editedAt
+                ? toEpoch(serverMsg.editedAt)
+                : undefined,
+              deletedAt: serverMsg.deleted
+                ? toEpoch(serverMsg.deletedAt!)
+                : undefined,
+              readAt: serverMsg.read ? toEpoch(serverMsg.createdAt) : undefined,
+            };
+
+            currentMessages.push(newMessage);
+          }
+
+          if (hasUpdates) {
+            // Sort messages and update
+            currentMessages.sort((a, b) => a.ts - b.ts);
+            this.messages$.next([...currentMessages]);
+            console.log('[ChatSession] Applied fallback sync updates');
+          }
+
+          this.lastSyncTime = Date.now();
+        },
+        error: (err) => {
+          console.error('[ChatSession] Fallback sync failed:', err);
+        },
+        complete: () => {
+          this.reconnectSyncInProgress = false;
+        },
+      });
+    } catch (error) {
+      console.error('[ChatSession] Error in fallback sync:', error);
+      this.reconnectSyncInProgress = false;
+    }
+  }
+
+  /**
+   * Perform sync after reconnection
+   */
+  private async performReconnectSync(): Promise<void> {
+    console.log('[ChatSession] Performing reconnect sync');
+    await this.performFallbackSync();
+  }
+
+  /**
+   * Get appropriate avatar for message
+   */
+  private getMessageAvatar(serverMsg: ServerMessage, fromMe: boolean): string {
+    if (fromMe) {
+      return localStorage.getItem('myAvatar') || 'assets/images/avatars/01.svg';
+    } else {
+      return serverMsg.avatarUrl && serverMsg.avatarUrl.trim()
+        ? serverMsg.avatarUrl
+        : this.partnerAvatar || 'assets/images/avatars/01.svg';
+    }
+  }
+
+  /* ═════ existing methods enhanced ═══════════════════ */
+
+  async editMessage(id: string, newText: string) {
+    if (!this.theirPubKey) return;
+
+    // Optimistic update
+    const list = this.messages$.value;
+    const idx = list.findIndex((m) => m.id === id);
+    if (idx !== -1) {
+      const patched: ChatMsg = {
+        ...list[idx],
+        text: newText,
+        editedAt: Date.now(),
+      };
+      this.messages$.next([
+        ...list.slice(0, idx),
+        patched,
+        ...list.slice(idx + 1),
+      ]);
+
+      await this.vault.set(this.key(id), {
+        id,
+        text: newText,
+        ts: patched.ts,
+      });
+    }
+
+    // Send to server
+    try {
+      const ct = await this.crypto.encryptWithPublicKey(
+        newText,
+        this.theirPubKey
+      );
+      this.ws.sendEditMessage(
+        id,
+        ct,
+        localStorage.getItem('myAvatar') ?? undefined
+      );
+    } catch (error) {
+      console.error('[ChatSession] Failed to send edit message:', error);
+      this.scheduleFallbackSync();
+    }
+  }
+
+  async init(roomId: string): Promise<void> {
+    if (this.isInitialized && this.roomId === roomId) {
+      console.log('[ChatSession] Already initialized for room:', roomId);
+      return;
+    }
+
+    if (this.isInitializing) {
+      console.log('[ChatSession] Already initializing, skipping');
+      return;
+    }
+
+    this.isInitializing = true;
+    this.roomId = roomId;
+    console.log('[ChatSession] Initializing session for room:', roomId);
+
+    this.messagesLoading$.next(true);
+    this.loadingOperations = 0;
+    this.tempMessages = [];
+
+    try {
+      // Import private key
+      if (!this.crypto.hasPrivateKey()) {
+        console.log('[ChatSession] Loading private key from vault');
+        await this.vault.waitUntilReady();
+
+        const privateKeyData = await this.vault.get<ArrayBuffer>(
+          VAULT_KEYS.PRIVATE_KEY
+        );
+        if (!privateKeyData) {
+          console.error('[ChatSession] Private key not found in vault');
+          this.keyMissing$.next(true);
+          throw new Error('Private key not found in vault');
+        }
+
+        await this.crypto.importPrivateKey(privateKeyData);
+        console.log('[ChatSession] Successfully imported private key');
+      }
+
+      // Remove existing listeners
+      if (this.isInitialized) {
+        this.ws.offReceiveMessage(this.incomingCb);
+      }
+
+      // Get partner's public key
+      this.users.getPublicKey(roomId).subscribe({
+        next: ({ publicKeyBundle, username, avatarUrl }) => {
+          console.log(
+            '[ChatSession] Received partner public key for:',
+            username
+          );
+          this.theirPubKey = publicKeyBundle;
+          this.theirUsername$.next(username);
+
+          const partnerAvatar =
+            avatarUrl && avatarUrl.trim()
+              ? avatarUrl
+              : 'assets/images/avatars/01.svg';
+
+          this.theirAvatar$.next(partnerAvatar);
+          this.partnerAvatar = partnerAvatar;
+          this.keyLoading$.next(false);
+        },
+        error: (err) => {
+          console.error('[ChatSession] Failed to get partner public key:', err);
+          this.keyMissing$.next(true);
+          this.keyLoading$.next(false);
+        },
+      });
+
+      // Register for real-time messages
+      this.ws.onReceiveMessage(this.incomingCb);
+
+      // Load message history
+      this.startLoadingOperation();
+      this.loadMessageHistory();
+
+      this.isInitialized = true;
+    } finally {
+      this.isInitializing = false;
+    }
+  }
+
+  /**
+   * Load message history with better error handling
+   */
+  private loadMessageHistory(): void {
+    this.api.getMessageHistory(this.roomId).subscribe({
+      next: async (res) => {
+        console.log(
+          '[ChatSession] Loading message history, count:',
+          res.messages.length
+        );
+        const historyMessages: ChatMsg[] = [];
+
+        for (const m of res.messages) {
+          const fromMe = m.senderId.toString() === this.meId;
+          const sender = fromMe ? 'You' : this.theirUsername$.value;
+
+          let status: 'pending' | 'sent' | 'read' | undefined = undefined;
+          if (fromMe) {
+            status = m.read ? 'read' : 'sent';
+          }
+
+          let text: string;
+          if (m.deleted) {
+            text = '⋯ message deleted ⋯';
+          } else if (fromMe) {
+            text = await this.findCachedMessageText(m);
+          } else {
+            text = await this.tryDecrypt(m.ciphertext);
+            if (!m.read) {
+              this.ws.markMessageRead(m._id);
+            }
+          }
+
+          historyMessages.push({
+            id: m._id,
+            sender,
+            text,
+            ts: toEpoch(m.createdAt),
+            status,
+            avatarUrl: this.getMessageAvatar(m, fromMe),
+            editedAt: m.editedAt ? toEpoch(m.editedAt) : undefined,
+            deletedAt: m.deleted ? toEpoch(m.deletedAt!) : undefined,
+            readAt: m.read ? toEpoch(m.createdAt) : undefined,
+          });
+        }
+
+        this.tempMessages.push(...historyMessages);
+        this.finishLoadingOperation();
+        this.lastSyncTime = Date.now();
+      },
+      error: (err) => {
+        console.error('[ChatSession] Error loading history:', err);
+        this.finishLoadingOperation();
+      },
+    });
+  }
+
+  /**
+   * Enhanced send method with better error handling
+   */
+  async send(_: string, plain: string): Promise<void> {
+    if (!plain?.trim() || !this.roomId || !this.theirPubKey) {
+      console.log('[ChatSession] Invalid send parameters');
+      return;
+    }
+
+    if (!this.ws.isConnected()) {
+      console.warn('[ChatSession] Cannot send - socket disconnected');
+      // Could queue message for later sending
+      return;
+    }
+
+    try {
+      const ts = Date.now();
+      const myAvatar =
+        localStorage.getItem('myAvatar') || 'assets/images/avatars/01.svg';
+
+      this.markPreviousMessagesAsRead();
+
+      // Add pending message
+      const pendingMessage: ChatMsg = {
+        sender: 'You',
+        text: plain,
+        ts,
+        status: 'pending',
+        avatarUrl: myAvatar,
+      };
+
+      const pendingKey = `pending::${ts}`;
+      this.pendingMessages.add(pendingKey);
+      this.push(pendingMessage);
+
+      // Encrypt and send
+      const ct = await this.crypto.encryptWithPublicKey(
+        plain,
+        this.theirPubKey
+      );
+
+      await this.vault.set(this.key(pendingKey), {
+        id: pendingKey,
+        text: plain,
+        ts,
+      });
+
+      this.ws.sendMessage(this.roomId, ct, myAvatar);
+
+      // Schedule a fallback check in case the ack doesn't come
+      setTimeout(() => {
+        if (this.pendingMessages.has(pendingKey)) {
+          console.warn('[ChatSession] Message ack timeout, scheduling sync');
+          this.scheduleFallbackSync();
+        }
+      }, 10000); // 10 second timeout
+    } catch (error) {
+      console.error('[ChatSession] Error sending message:', error);
+    }
+  }
+
+  private startLoadingOperation(): void {
+    this.loadingOperations++;
+  }
+
+  private finishLoadingOperation(): void {
+    this.loadingOperations--;
+
+    if (this.loadingOperations <= 0) {
+      this.tempMessages.sort((a, b) => a.ts - b.ts);
+      this.messages$.next([...this.tempMessages]);
+      this.messagesLoading$.next(false);
+      this.tempMessages = [];
+    }
+  }
+
+  // Enhanced message callbacks with better error handling
+  private readonly messageEditedCb = async (m: MessageEditedEvent) => {
+    if (!m?.messageId) return;
+
+    try {
+      const list = this.messages$.value;
+      const idx = list.findIndex((x) => x.id === m.messageId);
+      if (idx === -1) return;
+
+      const plain =
+        list[idx].sender === 'You'
+          ? list[idx].text
+          : await this.tryDecrypt(m.ciphertext);
+
+      const patched: ChatMsg = {
+        ...list[idx],
+        text: plain,
+        editedAt: m.editedAt ? +new Date(m.editedAt) : Date.now(),
+        avatarUrl: m.avatarUrl ?? list[idx].avatarUrl,
+      };
+
+      await this.vault.set(this.key(m.messageId), {
+        id: m.messageId,
+        text: plain,
+        ts: patched.ts,
+      });
+
+      this.messages$.next([
+        ...list.slice(0, idx),
+        patched,
+        ...list.slice(idx + 1),
+      ]);
+    } catch (error) {
+      console.error('[ChatSession] Error handling message edit:', error);
+      this.scheduleFallbackSync();
+    }
+  };
+
+  private readonly messageDeletedCb = (d: MessageDeletedEvent) => {
+    try {
+      const list = this.messages$.value;
+      const idx = list.findIndex((m) => m.id === d.messageId);
+      if (idx === -1) return;
+
+      const patched: ChatMsg = {
+        ...list[idx],
+        text: '⋯ message deleted ⋯',
+        ct: undefined,
+        status: undefined,
+        editedAt: undefined,
+        deletedAt: +new Date(d.deletedAt),
+      };
+
+      this.messages$.next([
+        ...list.slice(0, idx),
+        patched,
+        ...list.slice(idx + 1),
+      ]);
+    } catch (error) {
+      console.error('[ChatSession] Error handling message delete:', error);
+      this.scheduleFallbackSync();
+    }
+  };
+
+  // Enhanced incoming message handler
+  private readonly incomingCb = async (m: IncomingSocketMessage) => {
+    if (m.fromUserId !== this.roomId) return;
+
+    try {
+      const decryptedText = await this.tryDecrypt(m.ciphertext);
+      const messageAvatar = m.avatarUrl?.trim()
+        ? m.avatarUrl
+        : this.partnerAvatar || 'assets/images/avatars/01.svg';
+
+      const newMessage: ChatMsg = {
+        id: m.messageId,
+        sender: m.fromUsername,
+        text: decryptedText,
+        ts: toEpoch(m.timestamp),
+        avatarUrl: messageAvatar,
+        readAt: Date.now(),
+      };
+
+      this.ws.markMessageRead(m.messageId);
+      this.push(newMessage);
+      this.partnerTyping$.next(false);
+
+      if (this.typingDebounce) {
+        clearTimeout(this.typingDebounce);
+      }
+    } catch (error) {
+      console.error('[ChatSession] Failed to process incoming message:', error);
+    }
+  };
+
+  sendTyping(): void {
+    if (!this.roomId || !this.ws.isConnected()) return;
+    this.ws.sendTyping(this.roomId);
+  }
+
+  async deleteMessage(id: string) {
+    const list = this.messages$.value;
+    const idx = list.findIndex((m) => m.id === id);
+    if (idx !== -1) {
+      const tomb: ChatMsg = {
+        ...list[idx],
+        text: '⋯ message deleted ⋯',
+        editedAt: undefined,
+        deletedAt: Date.now(),
+        status: undefined,
+        ct: undefined,
+      };
+      this.messages$.next([
+        ...list.slice(0, idx),
+        tomb,
+        ...list.slice(idx + 1),
+      ]);
+    }
+
+    await this.vault.set(this.key(id), null);
+    this.ws.sendDeleteMessage(id);
+  }
+
+  private async tryDecrypt(ct: string): Promise<string> {
+    try {
+      return await this.crypto.decryptMessage(ct);
+    } catch (error) {
+      console.warn('[ChatSession] Decryption failed:', error);
+      return '🔒 Encrypted message (from partner)';
+    }
+  }
+
+  private push(m: ChatMsg) {
+    const list = [...this.messages$.value];
+    list.push(m);
+    list.sort((a, b) => (a.ts || 0) - (b.ts || 0));
+    this.messages$.next(list);
+  }
+
+  private key(suffix: string) {
+    return `sent_${this.meId}_${this.roomId}/${suffix}`;
+  }
+
+  private markPreviousMessagesAsRead(): void {
+    const messages = this.messages$.value;
+    let hasChanges = false;
+
+    const updatedMessages = messages.map((msg) => {
+      if (msg.sender !== 'You' && !msg.readAt && msg.id) {
+        this.ws.markMessageRead(msg.id);
+        hasChanges = true;
+        return { ...msg, readAt: Date.now() };
+      }
+      return msg;
+    });
+
+    if (hasChanges) {
+      this.messages$.next(updatedMessages);
+    }
+  }
+
+  private async findCachedMessageText(m: ServerMessage): Promise<string> {
+    const messageId = m._id;
+    const serverTimestamp = toEpoch(m.createdAt);
+
+    // Try various lookup strategies
+    const strategies = [
+      this.key(messageId),
+      this.key(`server::${serverTimestamp}`),
+      this.key(`pending::${serverTimestamp}`),
+    ];
+
+    for (const key of strategies) {
+      const cached = await this.vault.get<SentCacheEntry>(key);
+      if (cached) {
+        return cached.text;
+      }
+    }
+
+    // Fuzzy match for pending messages
+    const keys = await this.vault.keysStartingWith(this.key('pending::'));
+    for (const key of keys) {
+      const match = key.match(/pending::(\d+)$/);
+      if (match) {
+        const pendingTs = parseInt(match[1]);
+        if (Math.abs(pendingTs - serverTimestamp) <= 5000) {
+          const cached = await this.vault.get<SentCacheEntry>(key);
+          if (cached) {
+            await this.vault.set(this.key(messageId), cached);
+            await this.vault.set(key, null);
+            return cached.text;
+          }
+        }
+      }
+    }
+
+    return this.getTimeAgoMessage(serverTimestamp);
+  }
+
+  private getTimeAgoMessage(timestamp: number): string {
+    const messageAge = Date.now() - timestamp;
+    const minutes = Math.floor(messageAge / (1000 * 60));
+    const hours = Math.floor(messageAge / (1000 * 60 * 60));
+    const days = Math.floor(messageAge / (1000 * 60 * 60 * 24));
+
+    if (days > 0) {
+      return `💬 Message sent ${days} day${days !== 1 ? 's' : ''} ago`;
+    } else if (hours > 0) {
+      return `💬 Message sent ${hours} hour${hours !== 1 ? 's' : ''} ago`;
+    } else if (minutes > 30) {
+      return `💬 Message sent recently`;
+    } else {
+      return `💬 Message sent moments ago`;
+    }
+  }
+
+  /**
+   * Get current partner online status
+   */
+  getPartnerOnlineStatus(): boolean {
+    return this.isPartnerOnline;
+  }
+
+  ngOnDestroy() {
+    console.log('[ChatSession] Service cleanup');
+
+    // Stop sync monitoring
+    if (this.syncTimer) {
+      clearInterval(this.syncTimer);
+      this.syncTimer = null;
+    }
+
+    this.subs.unsubscribe();
+    this.ws.offMessageEdited(this.messageEditedCb);
+    this.ws.offReceiveMessage(this.incomingCb);
+    this.ws.offMessageDeleted(this.messageDeletedCb);
+    clearTimeout(this.typingDebounce);
+
+    this.isInitialized = false;
+    this.isInitializing = false;
+    this.pendingMessages.clear();
+    this.loadingOperations = 0;
+    this.tempMessages = [];
+  }
+}

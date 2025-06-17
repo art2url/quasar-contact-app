@@ -1,0 +1,149 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h2>Create Account</h2>
+      <p>Join Quasar for secure, encrypted messaging</p>
+    </div>
+
+    <form class="auth-form" (ngSubmit)="onRegister()">
+      <div class="form-group">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Username</mat-label>
+          <input
+            matInput
+            type="text"
+            [(ngModel)]="username"
+            name="username"
+            required
+            [disabled]="isLoading"
+            autocomplete="username"
+            placeholder="Choose a unique username"
+            #usernameInput
+          />
+          <mat-icon matPrefix>person</mat-icon>
+          <mat-hint *ngIf="username.length > 0 && username.length < 3">
+            Username must be at least 3 characters
+          </mat-hint>
+          <mat-error *ngIf="!username && formSubmitted">
+            Username is required
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="form-group">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email</mat-label>
+          <input
+            matInput
+            type="email"
+            [(ngModel)]="email"
+            name="email"
+            required
+            [disabled]="isLoading"
+            autocomplete="email"
+            placeholder="your@email.com"
+            #emailInput
+          />
+          <mat-icon matPrefix>email</mat-icon>
+          <mat-hint>We'll use this for account recovery</mat-hint>
+          <mat-error *ngIf="!email && formSubmitted">
+            Email is required
+          </mat-error>
+          <mat-error *ngIf="email && !isValidEmail(email)">
+            Please enter a valid email address
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="form-group">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Password</mat-label>
+          <input
+            matInput
+            [type]="hidePassword ? 'password' : 'text'"
+            [(ngModel)]="password"
+            name="password"
+            required
+            [disabled]="isLoading"
+            autocomplete="new-password"
+            placeholder="Create a strong password"
+            #passwordInput
+          />
+          <mat-icon matPrefix>lock</mat-icon>
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="hidePassword = !hidePassword"
+            [attr.aria-label]="'Hide password'"
+          >
+            <mat-icon>{{
+              hidePassword ? "visibility_off" : "visibility"
+            }}</mat-icon>
+          </button>
+          <mat-hint>
+            <span [class.hint-valid]="password.length >= 6">
+              At least 6 characters
+            </span>
+          </mat-hint>
+          <mat-error *ngIf="!password && formSubmitted">
+            Password is required
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="password-strength" *ngIf="password">
+        <div class="strength-label">Password strength:</div>
+        <div class="strength-indicator">
+          <div
+            class="strength-bar"
+            [class.weak]="getPasswordStrength() === 'weak'"
+            [class.medium]="getPasswordStrength() === 'medium'"
+            [class.strong]="getPasswordStrength() === 'strong'"
+            [style.width.%]="getPasswordStrengthPercent()"
+          ></div>
+        </div>
+        <div class="strength-text" [class]="getPasswordStrength()">
+          {{ getPasswordStrengthText() }}
+        </div>
+      </div>
+
+      <div class="form-info">
+        <mat-icon>info</mat-icon>
+        <p>
+          Your password encrypts your messages. If you forget it, you won't be
+          able to recover your message history.
+        </p>
+      </div>
+
+      <div *ngIf="error" class="error-alert">
+        <mat-icon>error</mat-icon>
+        <span>{{ error }}</span>
+      </div>
+
+      <button
+        mat-raised-button
+        color="primary"
+        type="submit"
+        class="submit-button full-width"
+        [disabled]="isLoading || !isFormValid()"
+      >
+        <span class="submit-button-content">
+          <mat-spinner
+            *ngIf="isLoading"
+            diameter="20"
+            class="button-spinner"
+          ></mat-spinner>
+          {{ isLoading ? "Creating account..." : "Create Account" }}
+        </span>
+      </button>
+
+      <div class="auth-footer">
+        <p>
+          Already have an account?
+          <a routerLink="/auth/login" class="link">Sign in</a>
+        </p>
+      </div>
+    </form>
+  </div>
+</div>

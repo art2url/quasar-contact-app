@@ -1,0 +1,16 @@
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.main-content {
+  flex: 1;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-top: var(--header-height);
+  margin-bottom: var(--footer-height);
+  transition: padding 0.3s ease;
+}

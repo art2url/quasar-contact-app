@@ -1,0 +1,116 @@
+<div class="chat-container">
+  <div class="chat-header">
+    <button
+      *ngIf="showBackButton"
+      mat-icon-button
+      class="back-button"
+      (click)="goBack()"
+    >
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h2>Your Chats</h2>
+  </div>
+
+  <!-- search  ---------------------------------------------------------- -->
+  <div class="search-bar">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Find user</mat-label>
+      <input
+        matInput
+        [(ngModel)]="searchTerm"
+        (input)="onSearch(searchTerm)"
+        autocomplete="off"
+        placeholder="Type at least 2 characters"
+      />
+      <button
+        *ngIf="searchTerm"
+        matSuffix
+        mat-icon-button
+        aria-label="Clear"
+        (click)="clearSearch()"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+      <mat-icon matPrefix>search</mat-icon>
+    </mat-form-field>
+  </div>
+
+  <!-- search results --------------------------------------------------- -->
+  <ul class="search-results" *ngIf="searchTerm && searchResults.length">
+    <li *ngFor="let u of searchResults">
+      <button type="button" (click)="startChat(u)" class="search-result-btn">
+        <img
+          [src]="u.avatarUrl || 'assets/images/avatars/01.svg'"
+          width="32"
+          height="32"
+          [attr.alt]="u.username + ' avatar'"
+        />
+        <span>{{ u.username }}</span>
+      </button>
+    </li>
+  </ul>
+
+  <!-- No results message -->
+  <p
+    *ngIf="searchTerm && searchTerm.length >= 2 && !searchResults.length"
+    class="empty-hint"
+  >
+    No users found matching "{{ searchTerm }}"
+  </p>
+
+  <!-- Empty state (only shown when loading is finished) -->
+  <div
+    *ngIf="!searchTerm && chatLoadingFinished && !chats.length"
+    class="empty-hint"
+  >
+    <p>No conversations found.</p>
+    <button mat-raised-button color="primary" (click)="findNewContact()">
+      Find someone to chat with
+    </button>
+  </div>
+
+  <!-- Loading state -->
+  <div
+    *ngIf="!searchTerm && !chatLoadingFinished && !chats.length"
+    class="empty-hint"
+  >
+    <mat-spinner diameter="30" style="margin: 0 auto 20px"></mat-spinner>
+    <p>Loading your conversations...</p>
+  </div>
+
+  <!-- chat list - ALWAYS SHOW IF CHATS EXIST -->
+  <ul class="chat-list" *ngIf="!searchTerm && chats && chats.length > 0">
+    <li *ngFor="let chat of chats; trackBy: trackByChatId">
+      <a
+        [routerLink]="['/chat-room', chat.id]"
+        (click)="navigateToChatRoom(chat.id, $event)"
+      >
+        <span
+          class="status-dot"
+          [class.online]="chat.online"
+          [title]="chat.online ? 'Online' : 'Offline'"
+        ></span>
+
+        <img
+          [src]="chat.avatar || 'assets/images/avatars/01.svg'"
+          [alt]="chat.name + ' avatar'"
+          class="avatar"
+        />
+
+        <div class="chat-info">
+          <div class="chat-top">
+            <h4 class="chat-name">{{ chat.name || "Unknown User" }}</h4>
+            <!-- Use enhanced time formatting -->
+            <span *ngIf="chat.lastTs" class="time">
+              {{ formatChatTime(chat.lastTs) }}
+            </span>
+          </div>
+          <p class="last-message">
+            {{ chat.lastMessage || "— no messages yet —" }}
+            <span *ngIf="chat.unread" class="badge">{{ chat.unread }}</span>
+          </p>
+        </div>
+      </a>
+    </li>
+  </ul>
+</div>

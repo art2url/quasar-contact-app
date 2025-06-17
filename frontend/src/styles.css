@@ -1,0 +1,349 @@
+/* You can add global styles to this file, and also import other style files */
+@import "@angular/material/prebuilt-themes/indigo-pink.css";
+
+/* Global Angular Material button hover override */
+.header button:hover,
+.header button.mat-button:hover,
+.header button.mat-raised-button:hover,
+.header button.mat-icon-button:hover,
+.header button.mat-fab:hover,
+.header button.mat-mini-fab:hover,
+.header button.mat-stroked-button:hover,
+.header button.mat-flat-button:hover,
+.header button.mat-mdc-button:hover,
+.header button.mat-mdc-raised-button:hover,
+.header button.mat-mdc-outlined-button:hover,
+.header button.mat-mdc-unelevated-button:hover,
+.header button.mat-mdc-icon-button:hover {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+/* Disable all Material Design overlays and ripples in header */
+.header button .mat-button-focus-overlay,
+.header button .mat-button-ripple,
+.header button .mat-ripple,
+.header button .mdc-button__ripple,
+.header button .mat-mdc-button-ripple,
+.header button .mat-mdc-focus-indicator,
+.header button .mat-ripple-element {
+  display: none !important;
+  opacity: 0 !important;
+  background-color: transparent !important;
+}
+
+/* Disable hover state background for Material buttons globally in header */
+.header .mat-mdc-button:not(:disabled):hover,
+.header .mat-mdc-icon-button:not(:disabled):hover {
+  background-color: transparent !important;
+}
+
+/* Override Material Design CSS custom properties if used */
+.header button {
+  --mdc-text-button-hover-state-layer-color: transparent !important;
+  --mdc-icon-button-hover-state-layer-color: transparent !important;
+  --mat-text-button-hover-state-layer-color: transparent !important;
+  --mat-icon-button-hover-state-layer-color: transparent !important;
+}
+
+/* 1. Headers use Raleway */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Raleway", sans-serif !important;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: normal;
+}
+
+/* 2. Base elements use Afacad Flux */
+html,
+body {
+  font-family: "Afacad Flux", sans-serif;
+  font-optical-sizing: auto;
+}
+
+/* 3. All other elements use Afacad Flux, but exclude icons AND headers */
+*:not(.material-icons):not(.mat-icon):not([class*="icon"]):not(
+    [data-mat-icon-type]
+  ):not(.mdi):not(.fa):not(.fas):not(.far):not(.fab):not(.fal):not(.fad):not(
+    .fass
+  ):not(.fasr):not(.fasl):not(.fasd):not(h1):not(h2):not(h3):not(h4):not(
+    h5
+  ):not(h6) {
+  font-family: "Afacad Flux", sans-serif !important;
+  font-optical-sizing: auto;
+}
+
+/* 4. Specific HTML elements (excluding icons) */
+p,
+span:not(.material-icons):not(.mat-icon),
+div:not([class*="icon"]),
+button:not(.mat-icon-button) span:not(.material-icons),
+input,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="file"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+input[type="number"],
+textarea,
+select,
+label:not([class*="icon"]),
+a:not([class*="icon"]),
+li,
+td,
+th,
+caption {
+  font-family: "Afacad Flux", sans-serif !important;
+  font-optical-sizing: auto;
+}
+
+/* Additional specific override for all inputs */
+input:not(.material-icons):not(.mat-icon) {
+  font-family: "Afacad Flux", sans-serif !important;
+  font-optical-sizing: auto;
+}
+
+/* Override Angular generated input styles */
+input[class*="_ngcontent"],
+input[_ngcontent],
+input[ng-reflect] {
+  font-family: "Afacad Flux", sans-serif !important;
+  font-optical-sizing: auto;
+}
+
+/* 5. Override Angular Material typography classes (excluding icons) */
+.mat-display-4,
+.mat-display-3,
+.mat-display-2,
+.mat-display-1,
+.mat-headline,
+.mat-title,
+.mat-subheading-2,
+.mat-subheading-1,
+.mat-body-2,
+.mat-body-1,
+.mat-caption,
+.mat-button:not(.mat-icon-button),
+.mat-button-toggle,
+.mat-checkbox .mat-checkbox-label,
+.mat-radio-button .mat-radio-label,
+.mat-select:not(.mat-select-arrow),
+.mat-input-element,
+.mat-form-field:not(.mat-form-field-suffix):not(.mat-form-field-prefix),
+.mat-menu-item,
+.mat-option,
+.mat-card,
+.mat-dialog-title,
+.mat-dialog-content,
+.mat-snack-bar-container,
+.mat-tooltip {
+  font-family: "Afacad Flux", sans-serif !important;
+}
+
+/* 6. Override Material Design Components (MDC) typography (excluding icons) */
+.mdc-typography,
+.mdc-typography--headline1,
+.mdc-typography--headline2,
+.mdc-typography--headline3,
+.mdc-typography--headline4,
+.mdc-typography--headline5,
+.mdc-typography--headline6,
+.mdc-typography--subtitle1,
+.mdc-typography--subtitle2,
+.mdc-typography--body1,
+.mdc-typography--body2,
+.mdc-typography--caption,
+.mdc-typography--button,
+.mdc-typography--overline,
+.mat-mdc-button:not(.mat-mdc-icon-button),
+.mat-mdc-raised-button,
+.mat-mdc-outlined-button,
+.mat-mdc-unelevated-button,
+.mat-mdc-fab,
+.mat-mdc-mini-fab,
+.mat-mdc-form-field,
+.mat-mdc-input-element,
+.mat-mdc-select,
+.mat-mdc-option,
+.mat-mdc-checkbox .mdc-label,
+.mat-mdc-radio .mdc-label,
+.mat-mdc-slide-toggle,
+.mat-mdc-card,
+.mat-mdc-dialog-title,
+.mat-mdc-dialog-content,
+.mat-mdc-snack-bar-container,
+.mat-mdc-tooltip {
+  font-family: "Afacad Flux", sans-serif !important;
+}
+
+/* 7. Preserve icon fonts - explicitly keep their original font families */
+.material-icons,
+.mat-icon,
+.mdi,
+.fa,
+.fas,
+.far,
+.fab,
+.fal,
+.fad,
+.fass,
+.fasr,
+.fasl,
+.fasd,
+[class*="icon-"]:before,
+[class*="icon-"]:after,
+.mat-icon-button .mat-icon,
+.mat-form-field-suffix .mat-icon,
+.mat-form-field-prefix .mat-icon,
+.mat-select-arrow,
+.mat-datepicker-toggle-default-icon,
+.mat-calendar-arrow,
+.mat-expansion-indicator::after {
+  font-family: "Material Icons", "Material Icons Outlined",
+    "Font Awesome 5 Free", "Font Awesome 5 Pro", "MDI" !important;
+}
+
+/* 8. Override CSS custom properties for non-header typography */
+:root {
+  --mat-sys-typescale-display-large-font-family-name: "Afacad Flux", sans-serif;
+  --mat-sys-typescale-display-medium-font-family-name: "Afacad Flux", sans-serif;
+  --mat-sys-typescale-display-small-font-family-name: "Afacad Flux", sans-serif;
+  --mat-sys-typescale-headline-large-font-family-name: "Raleway", sans-serif;
+  --mat-sys-typescale-headline-medium-font-family-name: "Raleway", sans-serif;
+  --mat-sys-typescale-headline-small-font-family-name: "Raleway", sans-serif;
+  --mat-sys-typescale-title-large-font-family-name: "Raleway", sans-serif;
+  --mat-sys-typescale-title-medium-font-family-name: "Raleway", sans-serif;
+  --mat-sys-typescale-title-small-font-family-name: "Raleway", sans-serif;
+  --mat-sys-typescale-label-large-font-family-name: "Afacad Flux", sans-serif;
+  --mat-sys-typescale-label-medium-font-family-name: "Afacad Flux", sans-serif;
+  --mat-sys-typescale-label-small-font-family-name: "Afacad Flux", sans-serif;
+  --mat-sys-typescale-body-large-font-family-name: "Afacad Flux", sans-serif;
+  --mat-sys-typescale-body-medium-font-family-name: "Afacad Flux", sans-serif;
+  --mat-sys-typescale-body-small-font-family-name: "Afacad Flux", sans-serif;
+}
+
+/* 9. Ensure Material Icons stay intact */
+.mat-icon {
+  font-family: "Material Icons" !important;
+  font-feature-settings: "liga";
+}
+
+.material-icons {
+  font-family: "Material Icons" !important;
+  font-feature-settings: "liga";
+  -webkit-font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+}
+
+:root {
+  --primary-color: #0077cc;
+  --secondary-color: #005599;
+  --background-color: #f8f9fa;
+  --text-color: #001011;
+  --border-color: #e0e0e0;
+  --danger-color: #f44336;
+  --success-color: #68b684;
+  --warning-color: #ff9800;
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.12);
+  --border-radius: 8px;
+  --header-height: 64px;
+  --footer-height: 60px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --header-height: 64px;
+  --footer-height: 60px;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Utility classes for retina images */
+.retina-image {
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+/* Responsive breakpoints */
+@media (max-width: 599px) {
+  :root {
+    --header-height: 56px;
+    --footer-height: 52px;
+  }
+
+  .mobile-hidden {
+    display: none !important;
+  }
+}
+
+@media (min-width: 600px) {
+  .desktop-hidden {
+    display: none !important;
+  }
+}
+
+/* Touch-friendly adjustments */
+@media (hover: none) {
+  /* Increase touch targets */
+  button,
+  a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Increase form elements for touch */
+  input,
+  select,
+  textarea {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+}
+
+/* High-density (retina) displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Specific adjustments for retina displays */
+}
+
+/* Width container for consistent layouts */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-md);
+  box-sizing: border-box;
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}

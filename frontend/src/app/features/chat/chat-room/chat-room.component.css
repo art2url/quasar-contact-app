@@ -1,0 +1,654 @@
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--header-height) - var(--footer-height) - 32px);
+  max-width: 1200px;
+  margin: 0 auto;
+  border-radius: var(--border-radius);
+  background-color: white;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  /* Add z-index to ensure chat container is above other elements */
+  z-index: 1;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+  background-color: #f8f9fa;
+}
+
+.back-button {
+  margin-right: var(--spacing-sm);
+  /* Always visible on mobile */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  background-color: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.back-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.back-button mat-icon {
+  color: var(--primary-color);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: var(--spacing-md);
+  object-fit: cover;
+}
+
+.username {
+  font-weight: 600;
+  margin: 0;
+  margin-bottom: 4px;
+}
+
+.status {
+  font-size: 0.75rem;
+  color: #666;
+  display: flex;
+  align-items: center;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.status-dot.online {
+  background-color: var(--success-color);
+}
+
+.status-dot.offline {
+  background-color: #ccc;
+}
+
+.chat-window {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  -webkit-overflow-scrolling: touch; /* Add for better scrolling on iOS */
+  position: relative; /* For positioning scroll button */
+  scroll-behavior: smooth; /* Add smooth scrolling */
+  /* Add padding bottom to prevent typing indicator from being hidden */
+  padding-bottom: calc(var(--spacing-md) + 40px);
+}
+
+/* Loading state for messages */
+.messages-loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.messages-loading p {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Date header styling */
+.date-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: var(--spacing-lg) 0 var(--spacing-md) 0;
+  position: relative;
+}
+
+.date-header::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: var(--border-color);
+  z-index: 1;
+}
+
+.date-text {
+  background-color: white;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #666;
+  z-index: 2;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Reduce spacing for first date header */
+.date-header:first-child {
+  margin-top: var(--spacing-md);
+}
+
+.message {
+  font-weight: 400;
+  font-family: "Open Sans", sans-serif;
+  font-size: 1rem;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: 18px;
+  max-width: 70%;
+  margin-bottom: var(--spacing-sm);
+  position: relative;
+  word-wrap: break-word;
+}
+
+.message.you {
+  background-color: var(--primary-color);
+  color: white;
+  align-self: flex-end;
+  margin-left: auto;
+  border-bottom-right-radius: 4px;
+}
+
+.message.other {
+  background-color: #f1f1f1;
+  color: #333;
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+
+.message.deleted {
+  background-color: #eee;
+  color: #888;
+  font-style: italic;
+}
+
+.message-bubble {
+  position: relative;
+}
+
+.message-content {
+  margin: 0;
+}
+
+.message-meta {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  font-size: 0.7rem;
+  margin-top: 2px;
+}
+
+.message-time {
+  opacity: 0.7;
+}
+
+.message-status {
+  margin-left: 4px;
+}
+
+.message.you .message-actions {
+  position: absolute;
+  top: -20px;
+  right: 0;
+  display: none;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  z-index: 2; /* Ensure actions are above other elements */
+}
+
+.message:hover .message-actions {
+  display: flex;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  cursor: pointer;
+  color: #666;
+  min-height: 44px; /* Larger touch target for mobile */
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn:hover {
+  color: var(--primary-color);
+}
+
+/* Enhanced typing indicator positioning and styling */
+.typing-indicator {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin: var(--spacing-sm) calc(-1 * var(--spacing-md)) 0;
+  border-top: 1px solid var(--border-color);
+  border-radius: 12px 12px 0 0;
+  font-style: italic;
+  color: #666;
+  font-size: 0.85rem;
+  text-align: left;
+  z-index: 5;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Add typing animation dots */
+.typing-indicator::after {
+  content: "";
+  display: inline-block;
+  width: 20px;
+  text-align: left;
+  animation: typingDots 1.4s infinite;
+}
+
+@keyframes typingDots {
+  0%,
+  20% {
+    content: "";
+  }
+  40% {
+    content: ".";
+  }
+  60% {
+    content: "..";
+  }
+  80%,
+  100% {
+    content: "...";
+  }
+}
+
+/* @keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+} */
+
+/* Scroll to bottom button repositioned to center-bottom */
+.scroll-to-bottom-btn {
+  position: fixed;
+  bottom: calc(var(--footer-height) + 20px);
+  left: 50%; /* Center horizontally */
+  transform: translateX(-50%); /* Perfect centering */
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 119, 204, 0.3);
+  transition: all 0.3s ease;
+  z-index: 10;
+  animation: fadeInUp 0.3s ease;
+}
+
+.scroll-to-bottom-btn:hover {
+  box-shadow: 0 6px 16px rgba(0, 119, 204, 0.4);
+}
+
+/* .scroll-to-bottom-btn:active {
+  transform: translateY(0);
+} */
+
+.scroll-to-bottom-btn mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+/* Message count badge on scroll button */
+.message-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--danger-color);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 2px 6px;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(244, 67, 54, 0.3);
+  animation: pulse 0.3s ease;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.8);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.chat-form {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+  background-color: white;
+  position: relative;
+  z-index: 3; /* Ensure form is above typing indicator */
+}
+
+.message-input {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  margin-right: var(--spacing-sm);
+  resize: none;
+  max-height: 100px;
+  overflow-y: auto;
+  font-size: 16px; /* Prevents iOS zoom */
+  transition: opacity 0.2s ease;
+}
+
+/* Disabled state styling for message input */
+.message-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #f5f5f5;
+}
+
+.send-button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  cursor: pointer;
+  min-height: 44px; /* Larger touch target for mobile */
+  min-width: 44px;
+  transition: opacity 0.2s ease;
+}
+
+.send-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.cancel-button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f1f1f1;
+  color: #666;
+  border: none;
+  cursor: pointer;
+  margin-left: 8px;
+  min-height: 44px; /* Larger touch target for mobile */
+  min-width: 44px;
+}
+
+.empty-chat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  color: #888;
+  text-align: center;
+}
+
+.empty-chat mat-icon {
+  font-size: 48px;
+  margin-bottom: var(--spacing-md);
+  color: #ccc;
+}
+
+.key-loading,
+.key-missing {
+  text-align: center;
+  padding: var(--spacing-md);
+  background-color: #f8f9fa;
+  color: #666;
+  font-style: italic;
+}
+
+.key-missing {
+  color: var(--warning-color);
+}
+
+/* Add these styles to chat-room.component.css */
+
+/* Styling for unreadable messages */
+.message.unreadable {
+  opacity: 0.85;
+  background-color: #f8f9fa !important; /* Slightly different background */
+}
+
+.message.unreadable .message-content {
+  font-style: italic;
+  color: #6c757d;
+}
+
+.message.you.unreadable {
+  background-color: #e3f2fd !important; /* Light blue for unreadable sent messages */
+}
+
+/* Indicator text styling */
+.unreadable-indicator {
+  color: #6c757d;
+  font-size: 0.7rem;
+  font-weight: normal;
+}
+
+/* Unreadable message actions area */
+.unreadable-actions {
+  position: absolute;
+  top: -20px;
+  right: 0;
+  display: flex;
+  align-items: center;
+  font-size: 0.7rem;
+  color: #6c757d;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 2px 6px;
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.unreadable-actions .info-icon {
+  font-size: 12px;
+  margin-right: 4px;
+  width: 12px;
+  height: 12px;
+}
+
+/* Disabled action buttons */
+.action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.action-btn:disabled mat-icon {
+  color: #ccc;
+}
+
+/* Hide regular message actions for unreadable messages */
+.message.unreadable .message-actions:not(.unreadable-actions) {
+  display: none;
+}
+
+/* Hover effects for unreadable messages */
+.message.unreadable:hover .unreadable-actions {
+  display: flex;
+}
+
+/* Mobile adjustments */
+@media (max-width: 599px) {
+  .chat-container {
+    height: calc(100vh - var(--header-height) - var(--footer-height) - 16px);
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .chat-window {
+    /* Adjust padding for mobile to accommodate typing indicator */
+    padding-bottom: calc(var(--spacing-sm) + 50px);
+  }
+
+  .back-button {
+    display: flex; /* Always show back button on mobile */
+  }
+
+  .message {
+    max-width: 85%;
+  }
+
+  .chat-form {
+    padding: var(--spacing-sm);
+  }
+
+  /* Mobile typing indicator adjustments */
+  .typing-indicator {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    margin: var(--spacing-xs) calc(-1 * var(--spacing-sm)) 0;
+    font-size: 0.8rem;
+  }
+
+  /* Fix iOS overscroll behavior */
+  .chat-window {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Ensure touch targets are large enough */
+  .action-btn,
+  .send-button,
+  .cancel-button,
+  .back-button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Adjust scroll button position for mobile - center bottom */
+  .scroll-to-bottom-btn {
+    bottom: calc(var(--footer-height) + 16px); /* Closer to bottom on mobile */
+    left: 50%; /* Keep centered */
+    transform: translateX(-50%); /* Perfect centering */
+    width: 44px;
+    height: 44px;
+  }
+
+  .scroll-to-bottom-btn mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  .message-badge {
+    font-size: 0.6rem;
+    padding: 1px 4px;
+    min-width: 16px;
+    height: 16px;
+  }
+
+  .unreadable-actions {
+    font-size: 0.6rem;
+    padding: 1px 4px;
+  }
+
+  .unreadable-actions .info-icon {
+    font-size: 10px;
+  }
+
+  /* Mobile adjustments for date headers */
+  .date-header {
+    margin: var(--spacing-md) 0 var(--spacing-sm) 0;
+  }
+
+  .date-text {
+    font-size: 0.75rem;
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  /* Loading state mobile adjustments */
+  .messages-loading {
+    min-height: 150px;
+  }
+
+  .messages-loading p {
+    font-size: 0.8rem;
+  }
+}
+
+/* For iOS safe areas */
+@supports (padding: max(0px)) {
+  .chat-container {
+    height: calc(
+      100vh - var(--header-height) - var(--footer-height) - 32px -
+        env(safe-area-inset-top) - env(safe-area-inset-bottom)
+    );
+  }
+
+  .scroll-to-bottom-btn {
+    bottom: calc(var(--footer-height) + 20px + env(safe-area-inset-bottom));
+    left: 50%; /* Keep centered */
+    transform: translateX(-50%); /* Perfect centering */
+  }
+
+  @media (max-width: 599px) {
+    .chat-container {
+      height: calc(
+        100vh - var(--header-height) - var(--footer-height) - 16px -
+          env(safe-area-inset-top) - env(safe-area-inset-bottom)
+      );
+    }
+  }
+}

@@ -1,0 +1,12 @@
+<div class="app-container">
+  <app-header></app-header>
+  <main class="main-content">
+    <!-- Use ngIf with async and add null check -->
+    <app-loading-spinner
+      *ngIf="(loadingService.loading$ | async) === true"
+      [overlay]="true"
+    ></app-loading-spinner>
+    <router-outlet></router-outlet>
+  </main>
+  <app-footer></app-footer>
+</div>

@@ -1,0 +1,244 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Gradients for cosmic effects -->
+    <radialGradient id="nebula1" cx="50%" cy="50%">
+      <stop offset="0%" stop-color="#00ff88" stop-opacity="0.2"/>
+      <stop offset="50%" stop-color="#00cc66" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#001011" stop-opacity="0"/>
+    </radialGradient>
+    
+    <radialGradient id="nebula2" cx="50%" cy="50%">
+      <stop offset="0%" stop-color="#00ffaa" stop-opacity="0.15"/>
+      <stop offset="50%" stop-color="#00aa88" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#001011" stop-opacity="0"/>
+    </radialGradient>
+    
+    <!-- Filters for glow effects -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Dark space background -->
+  <rect width="100%" height="100%" fill="#001011"/>
+  
+  <!-- Subtle nebula clouds -->
+  <ellipse cx="300" cy="200" rx="600" ry="400" fill="url(#nebula1)" opacity="0.3">
+    <animateTransform attributeName="transform" type="rotate" from="0 300 200" to="360 300 200" dur="180s" repeatCount="indefinite"/>
+  </ellipse>
+  
+  <ellipse cx="1600" cy="800" rx="700" ry="500" fill="url(#nebula2)" opacity="0.25">
+    <animateTransform attributeName="transform" type="rotate" from="0 1600 800" to="-360 1600 800" dur="200s" repeatCount="indefinite"/>
+  </ellipse>
+  
+  <ellipse cx="960" cy="540" rx="800" ry="600" fill="url(#nebula1)" opacity="0.2">
+    <animateTransform attributeName="transform" type="rotate" from="0 960 540" to="360 960 540" dur="240s" repeatCount="indefinite"/>
+  </ellipse>
+  
+  <!-- Distant stars -->
+  <g id="stars">
+    <!-- Original twinkling stars with new colors -->
+    <circle cx="100" cy="100" r="0.8" fill="#6320EE" opacity="0.6">
+      <animate attributeName="opacity" values="0.6;0.2;0.6" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="300" cy="50" r="1" fill="#8075FF" opacity="0.5">
+      <animate attributeName="opacity" values="0.5;0.1;0.5" dur="4s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="500" cy="150" r="0.8" fill="#C3F73A" opacity="0.6">
+      <animate attributeName="opacity" values="0.6;0.3;0.6" dur="2.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="700" cy="80" r="0.9" fill="#f44336" opacity="0.4">
+      <animate attributeName="opacity" values="0.4;0.1;0.4" dur="3.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="900" cy="200" r="0.8" fill="#68b684" opacity="0.7">
+      <animate attributeName="opacity" values="0.7;0.3;0.7" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1100" cy="120" r="1" fill="#ff9800" opacity="0.5">
+      <animate attributeName="opacity" values="0.5;0.2;0.5" dur="4.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1300" cy="180" r="0.8" fill="#6320EE" opacity="0.6">
+      <animate attributeName="opacity" values="0.6;0.3;0.6" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1500" cy="90" r="1.2" fill="#8075FF" opacity="0.5">
+      <animate attributeName="opacity" values="0.5;0.1;0.5" dur="3.8s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1700" cy="140" r="0.8" fill="#C3F73A" opacity="0.4">
+      <animate attributeName="opacity" values="0.4;0.1;0.4" dur="2.7s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1850" cy="60" r="0.9" fill="#f44336" opacity="0.7">
+      <animate attributeName="opacity" values="0.7;0.4;0.7" dur="2.2s" repeatCount="indefinite"/>
+    </circle>
+    
+    <!-- Static stars with new color palette -->
+    <circle cx="200" cy="300" r="0.8" fill="#68b684" opacity="0.4"/>
+    <circle cx="400" cy="400" r="0.6" fill="#ff9800" opacity="0.5"/>
+    <circle cx="600" cy="350" r="0.9" fill="#6320EE" opacity="0.3"/>
+    <circle cx="800" cy="450" r="0.8" fill="#8075FF" opacity="0.6"/>
+    <circle cx="1000" cy="380" r="0.7" fill="#C3F73A" opacity="0.4"/>
+    <circle cx="1200" cy="420" r="0.8" fill="#f44336" opacity="0.5"/>
+    <circle cx="1400" cy="360" r="0.8" fill="#68b684" opacity="0.3"/>
+    <circle cx="1600" cy="440" r="1" fill="#ff9800" opacity="0.6"/>
+    
+    <circle cx="150" cy="600" r="0.8" fill="#6320EE" opacity="0.5"/>
+    <circle cx="350" cy="700" r="0.9" fill="#8075FF" opacity="0.4"/>
+    <circle cx="550" cy="650" r="0.7" fill="#C3F73A" opacity="0.6"/>
+    <circle cx="750" cy="750" r="0.8" fill="#f44336" opacity="0.3"/>
+    <circle cx="950" cy="680" r="0.8" fill="#68b684" opacity="0.5"/>
+    <circle cx="1150" cy="720" r="0.8" fill="#ff9800" opacity="0.4"/>
+    <circle cx="1350" cy="660" r="1" fill="#6320EE" opacity="0.6"/>
+    <circle cx="1550" cy="740" r="0.8" fill="#8075FF" opacity="0.3"/>
+    <circle cx="1750" cy="690" r="0.6" fill="#C3F73A" opacity="0.7"/>
+    
+    <circle cx="250" cy="900" r="0.9" fill="#f44336" opacity="0.4"/>
+    <circle cx="450" cy="950" r="0.8" fill="#68b684" opacity="0.5"/>
+    <circle cx="650" cy="880" r="0.7" fill="#ff9800" opacity="0.3"/>
+    <circle cx="850" cy="980" r="0.8" fill="#6320EE" opacity="0.6"/>
+    <circle cx="1050" cy="920" r="0.8" fill="#8075FF" opacity="0.4"/>
+    <circle cx="1250" cy="960" r="1" fill="#C3F73A" opacity="0.5"/>
+    <circle cx="1450" cy="890" r="0.8" fill="#f44336" opacity="0.3"/>
+    <circle cx="1650" cy="970" r="0.6" fill="#68b684" opacity="0.6"/>
+    
+    <!-- Additional scattered stars -->
+    <circle cx="120" cy="250" r="0.7" fill="#ff9800" opacity="0.4"/>
+    <circle cx="320" cy="520" r="0.8" fill="#6320EE" opacity="0.3"/>
+    <circle cx="480" cy="780" r="0.6" fill="#8075FF" opacity="0.5"/>
+    <circle cx="680" cy="220" r="0.8" fill="#C3F73A" opacity="0.4"/>
+    <circle cx="880" cy="560" r="0.7" fill="#f44336" opacity="0.3"/>
+    <circle cx="1080" cy="840" r="0.8" fill="#68b684" opacity="0.5"/>
+    <circle cx="1280" cy="280" r="0.6" fill="#ff9800" opacity="0.4"/>
+    <circle cx="1480" cy="520" r="0.8" fill="#6320EE" opacity="0.3"/>
+    <circle cx="1680" cy="380" r="0.7" fill="#8075FF" opacity="0.5"/>
+    <circle cx="1820" cy="820" r="0.8" fill="#C3F73A" opacity="0.4"/>
+    
+    <!-- New distant stars - Top section -->
+    <circle cx="80" cy="80" r="0.6" fill="#f44336" opacity="0.3"/>
+    <circle cx="180" cy="40" r="0.5" fill="#68b684" opacity="0.4"/>
+    <circle cx="280" cy="120" r="0.7" fill="#ff9800" opacity="0.3"/>
+    <circle cx="380" cy="70" r="0.8" fill="#6320EE" opacity="0.5"/>
+    <circle cx="580" cy="30" r="0.6" fill="#8075FF" opacity="0.4"/>
+    <circle cx="780" cy="140" r="0.9" fill="#C3F73A" opacity="0.3"/>
+    <circle cx="980" cy="60" r="0.7" fill="#f44336" opacity="0.6"/>
+    <circle cx="1180" cy="180" r="0.5" fill="#68b684" opacity="0.4"/>
+    <circle cx="1380" cy="40" r="0.8" fill="#ff9800" opacity="0.3"/>
+    <circle cx="1580" cy="160" r="0.6" fill="#6320EE" opacity="0.5"/>
+    <circle cx="1780" cy="20" r="0.7" fill="#8075FF" opacity="0.4"/>
+    <circle cx="1880" cy="200" r="0.8" fill="#C3F73A" opacity="0.3"/>
+    
+    <!-- New distant stars - Middle-left section -->
+    <circle cx="40" cy="320" r="0.6" fill="#8075FF" opacity="0.4"/>
+    <circle cx="140" cy="380" r="0.7" fill="#C3F73A" opacity="0.3"/>
+    <circle cx="240" cy="460" r="0.5" fill="#f44336" opacity="0.5"/>
+    <circle cx="340" cy="340" r="0.8" fill="#68b684" opacity="0.4"/>
+    <circle cx="440" cy="480" r="0.6" fill="#ff9800" opacity="0.3"/>
+    <circle cx="540" cy="420" r="0.7" fill="#6320EE" opacity="0.6"/>
+    <circle cx="640" cy="380" r="0.9" fill="#8075FF" opacity="0.4"/>
+    <circle cx="740" cy="520" r="0.5" fill="#C3F73A" opacity="0.3"/>
+    <circle cx="840" cy="340" r="0.8" fill="#f44336" opacity="0.5"/>
+    <circle cx="940" cy="480" r="0.6" fill="#68b684" opacity="0.4"/>
+    
+    <!-- New distant stars - Middle-right section -->  
+    <circle cx="1080" cy="320" r="0.7" fill="#ff9800" opacity="0.3"/>
+    <circle cx="1180" cy="480" r="0.6" fill="#6320EE" opacity="0.5"/>
+    <circle cx="1280" cy="340" r="0.8" fill="#8075FF" opacity="0.4"/>
+    <circle cx="1380" cy="520" r="0.5" fill="#C3F73A" opacity="0.3"/>
+    <circle cx="1480" cy="380" r="0.9" fill="#f44336" opacity="0.6"/>
+    <circle cx="1580" cy="460" r="0.7" fill="#68b684" opacity="0.4"/>
+    <circle cx="1680" cy="320" r="0.6" fill="#ff9800" opacity="0.3"/>
+    <circle cx="1780" cy="480" r="0.8" fill="#6320EE" opacity="0.5"/>
+    <circle cx="1880" cy="420" r="0.5" fill="#8075FF" opacity="0.4"/>
+    
+    <!-- New distant stars - Lower section -->
+    <circle cx="60" cy="780" r="0.8" fill="#C3F73A" opacity="0.3"/>
+    <circle cx="160" cy="820" r="0.6" fill="#f44336" opacity="0.5"/>
+    <circle cx="260" cy="760" r="0.7" fill="#68b684" opacity="0.4"/>
+    <circle cx="360" cy="840" r="0.5" fill="#ff9800" opacity="0.3"/>
+    <circle cx="460" cy="720" r="0.9" fill="#6320EE" opacity="0.6"/>
+    <circle cx="560" cy="860" r="0.8" fill="#8075FF" opacity="0.4"/>
+    <circle cx="660" cy="800" r="0.6" fill="#C3F73A" opacity="0.3"/>
+    <circle cx="760" cy="820" r="0.7" fill="#f44336" opacity="0.5"/>
+    <circle cx="860" cy="780" r="0.5" fill="#68b684" opacity="0.4"/>
+    <circle cx="960" cy="860" r="0.8" fill="#ff9800" opacity="0.3"/>
+    
+    <circle cx="1080" cy="760" r="0.6" fill="#6320EE" opacity="0.5"/>
+    <circle cx="1180" cy="840" r="0.9" fill="#8075FF" opacity="0.4"/>
+    <circle cx="1280" cy="800" r="0.7" fill="#C3F73A" opacity="0.3"/>
+    <circle cx="1380" cy="780" r="0.8" fill="#f44336" opacity="0.6"/>
+    <circle cx="1480" cy="860" r="0.5" fill="#68b684" opacity="0.4"/>
+    <circle cx="1580" cy="820" r="0.6" fill="#ff9800" opacity="0.3"/>
+    <circle cx="1680" cy="760" r="0.7" fill="#6320EE" opacity="0.5"/>
+    <circle cx="1780" cy="840" r="0.8" fill="#8075FF" opacity="0.4"/>
+    <circle cx="1880" cy="800" r="0.9" fill="#C3F73A" opacity="0.3"/>
+    
+    <!-- New distant stars - Bottom section -->
+    <circle cx="120" cy="1000" r="0.7" fill="#f44336" opacity="0.4"/>
+    <circle cx="220" cy="1040" r="0.6" fill="#68b684" opacity="0.3"/>
+    <circle cx="320" cy="980" r="0.8" fill="#ff9800" opacity="0.5"/>
+    <circle cx="420" cy="1020" r="0.5" fill="#6320EE" opacity="0.4"/>
+    <circle cx="520" cy="1000" r="0.9" fill="#8075FF" opacity="0.3"/>
+    <circle cx="620" cy="1060" r="0.7" fill="#C3F73A" opacity="0.6"/>
+    <circle cx="720" cy="1020" r="0.6" fill="#f44336" opacity="0.4"/>
+    <circle cx="820" cy="1000" r="0.8" fill="#68b684" opacity="0.3"/>
+    <circle cx="920" cy="1040" r="0.5" fill="#ff9800" opacity="0.5"/>
+    <circle cx="1020" cy="980" r="0.7" fill="#6320EE" opacity="0.4"/>
+    <circle cx="1120" cy="1060" r="0.6" fill="#8075FF" opacity="0.3"/>
+    <circle cx="1220" cy="1000" r="0.9" fill="#C3F73A" opacity="0.6"/>
+    <circle cx="1320" cy="1020" r="0.8" fill="#f44336" opacity="0.4"/>
+    <circle cx="1420" cy="1040" r="0.5" fill="#68b684" opacity="0.3"/>
+    <circle cx="1520" cy="1000" r="0.7" fill="#ff9800" opacity="0.5"/>
+    <circle cx="1620" cy="980" r="0.6" fill="#6320EE" opacity="0.4"/>
+    <circle cx="1720" cy="1060" r="0.8" fill="#8075FF" opacity="0.3"/>
+    <circle cx="1820" cy="1020" r="0.9" fill="#C3F73A" opacity="0.6"/>
+  </g>
+  
+  <!-- Subtle particle streams -->
+  <g opacity="0.2">
+    <circle r="1.5" fill="#00ff88" filter="url(#glow)">
+      <animateMotion dur="25s" repeatCount="indefinite">
+        <mpath href="#stream1"/>
+      </animateMotion>
+    </circle>
+    <circle r="1.5" fill="#00ffaa" filter="url(#glow)">
+      <animateMotion dur="30s" repeatCount="indefinite">
+        <mpath href="#stream2"/>
+      </animateMotion>
+    </circle>
+    <circle r="1.5" fill="#00cc66" filter="url(#glow)">
+      <animateMotion dur="35s" repeatCount="indefinite">
+        <mpath href="#stream3"/>
+      </animateMotion>
+    </circle>
+  </g>
+  
+  <!-- Define particle paths -->
+  <path id="stream1" d="M 0,540 Q 480,300 960,540 T 1920,540" fill="none"/>
+  <path id="stream2" d="M 1920,300 Q 1400,600 960,540 T 0,300" fill="none"/>
+  <path id="stream3" d="M 960,0 Q 700,540 960,1080 T 960,0" fill="none"/>
+  
+  <!-- Subtle shooting stars -->
+  <g>
+    <line x1="0" y1="0" x2="30" y2="0" stroke="#C3F73A" stroke-width="1.5" opacity="0" filter="url(#glow)">
+      <animateTransform attributeName="transform" type="translate" values="100,200;1200,600" dur="3s" repeatCount="indefinite" begin="0s"/>
+      <animate attributeName="opacity" values="0;0.6;0" dur="3s" repeatCount="indefinite" begin="0s"/>
+    </line>
+    <line x1="0" y1="0" x2="30" y2="0" stroke="#8075FF" stroke-width="1.5" opacity="0" filter="url(#glow)">
+      <animateTransform attributeName="transform" type="translate" values="1800,100;800,400" dur="3.5s" repeatCount="indefinite" begin="8s"/>
+      <animate attributeName="opacity" values="0;0.5;0" dur="3.5s" repeatCount="indefinite" begin="8s"/>
+    </line>
+    <line x1="0" y1="0" x2="30" y2="0" stroke="#f44336" stroke-width="1.5" opacity="0" filter="url(#glow)">
+      <animateTransform attributeName="transform" type="translate" values="500,50;1500,800" dur="4s" repeatCount="indefinite" begin="15s"/>
+      <animate attributeName="opacity" values="0;0.6;0" dur="4s" repeatCount="indefinite" begin="15s"/>
+    </line>
+  </g>
+</svg>
