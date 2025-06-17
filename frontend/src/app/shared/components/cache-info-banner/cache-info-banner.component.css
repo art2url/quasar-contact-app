@@ -1,0 +1,39 @@
+.cache-info-banner {
+  display: flex;
+  align-items: center;
+  background-color: #e3f2fd;
+  border: 1px solid #2196f3;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+  gap: 12px;
+  font-size: 0.9rem;
+}
+
+.banner-content {
+  flex: 1;
+}
+
+.banner-content p {
+  margin: 4px 0;
+}
+
+.banner-content p:first-child {
+  font-weight: 500;
+}
+
+mat-icon {
+  color: #2196f3;
+  flex-shrink: 0;
+}
+
+button {
+  flex-shrink: 0;
+}
+
+@media (max-width: 599px) {
+  .cache-info-banner {
+    font-size: 0.8rem;
+    padding: 10px;
+  }
+}

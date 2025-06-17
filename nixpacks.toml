@@ -1,0 +1,23 @@
+[phases.setup]
+nixPkgs = ['nodejs-18_x', 'npm-9_x']
+
+[phases.install]
+cmds = [
+  'npm install',
+  'npm install -g @angular/cli@19',
+  'cd frontend && npm install',
+  'cd backend && npm install'
+]
+
+[phases.build]
+dependsOn = ['install']
+cmds = [
+  'echo "Build phase - checking env vars:"',
+  'echo "NG_APP_API_URL=$NG_APP_API_URL"',
+  'echo "NG_APP_WS_URL=$NG_APP_WS_URL"', 
+  'echo "NODE_ENV=$NODE_ENV"',
+  'npm run build'
+]
+
+[start]
+cmd = 'npm start'

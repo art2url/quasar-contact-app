@@ -1,0 +1,15 @@
+<div *ngIf="showBanner" class="cache-info-banner">
+  <mat-icon>info</mat-icon>
+  <div class="banner-content">
+    <p>
+      <strong>Some older messages may not display their original text.</strong>
+    </p>
+    <p>
+      This is normal for end-to-end encrypted messaging - your device only keeps
+      recent sent messages in local storage.
+    </p>
+  </div>
+  <button mat-icon-button (click)="dismissBanner()" title="Dismiss">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>

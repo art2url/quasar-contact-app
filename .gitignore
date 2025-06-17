@@ -42,8 +42,26 @@ bower_components
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
 
-# Dependency directories
+# ====================
+# DEPENDENCY DIRECTORIES IGNORES
+# ====================
+
+# Root node_modules
 node_modules/
+
+# Frontend dependencies (Angular)
+frontend/node_modules/
+frontend/jspm_packages/
+
+# Backend dependencies (Node.js/Express)
+backend/node_modules/
+backend/jspm_packages/
+
+# Public folder dependencies (if any)
+public/node_modules/
+public/jspm_packages/
+
+# Package manager directories
 jspm_packages/
 
 # Snowpack dependency directory (https://snowpack.dev/)
@@ -153,15 +171,25 @@ dist/
 # PROJECT BUILD IGNORES
 # ====================
 
-# Compiled output
+# Root build directory (where frontend builds are copied)
 dist/
+
+# TypeScript compiled output
 out-tsc/
 .tmp/
 
-# Frontend specific build output
+# Frontend specific build output (Angular)
 frontend/dist/
+frontend/out-tsc/
+frontend/.angular/
+
+# Backend specific build output (Node.js/Express)
 backend/dist/
 backend/build/
+
+# Public folder build artifacts (if any)
+public/dist/
+public/build/
 
 # ====================
 # IDE AND EDITOR IGNORES
@@ -243,13 +271,34 @@ karma.conf.js
 .mongodb/
 
 # ====================
-# SECURITY & ENVIRONMENT IGNORES
+# ENVIRONMENT & SECURITY IGNORES
 # ====================
 
-# Environment variables (applies to all directories)
+# Environment variables (all folders)
 .env
 .env.*
 !.env.example
+
+# Root level environment files
+/.env
+/.env.local
+/.env.development.local
+/.env.test.local
+/.env.production.local
+
+# Frontend environment files (Angular)
+frontend/.env
+frontend/.env.*
+frontend/src/environments/environment.prod.ts
+frontend/src/environments/environment.ts
+
+# Backend environment files (Node.js)
+backend/.env
+backend/.env.*
+
+# Public folder environment files (if any)
+public/.env
+public/.env.*
 
 # SSL certificates
 *.pem
@@ -262,13 +311,28 @@ karma.conf.js
 # PACKAGE MANAGER IGNORES
 # ====================
 
-# Lock files (uncomment based on your preference)
-# Choose either yarn.lock OR package-lock.json, not both
+# Lock files - choose your preference and uncomment accordingly
+# Root level lock files
 # yarn.lock
 # package-lock.json
 
-# pnpm
+# Frontend lock files (Angular)
+# frontend/yarn.lock
+# frontend/package-lock.json
+
+# Backend lock files (Node.js)
+# backend/yarn.lock
+# backend/package-lock.json
+
+# Public folder lock files (if any)
+# public/yarn.lock
+# public/package-lock.json
+
+# pnpm lock files
 pnpm-lock.yaml
+frontend/pnpm-lock.yaml
+backend/pnpm-lock.yaml
+public/pnpm-lock.yaml
 
 # ====================
 # DEPLOYMENT IGNORES
@@ -344,6 +408,26 @@ firebase-debug.*.log
 # ====================
 # CUSTOM PROJECT IGNORES
 # ====================
+
+# Project specific structure ignores
+# Landing page build artifacts
+public/dist/
+public/build/
+
+# Angular frontend specific
+frontend/.angular/
+frontend/dist/
+frontend/out-tsc/
+frontend/.tmp/
+
+# Backend specific
+backend/dist/
+backend/build/
+backend/logs/
+backend/.tmp/
+
+# Root level build output (where frontend builds are copied)
+dist/
 
 # Add your custom ignores here
 # e.g., specific folders, files, or patterns unique to your project

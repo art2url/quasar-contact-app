@@ -1,0 +1,4 @@
+<div [ngClass]="{ 'spinner-overlay': overlay, 'spinner-container': !overlay }">
+  <mat-spinner [diameter]="diameter" color="primary"></mat-spinner>
+  <ng-content></ng-content>
+</div>

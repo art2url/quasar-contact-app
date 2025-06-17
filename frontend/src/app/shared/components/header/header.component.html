@@ -1,0 +1,73 @@
+<header class="header">
+  <div class="header-container">
+    <a routerLink="/" class="logo">
+      <img
+        src="assets/images/logo.svg"
+        alt="Quasar Chat Logo"
+        class="retina-image"
+      />
+      <!-- Always show app name, even on mobile -->
+      <span>Quasar</span>
+    </a>
+
+    <!-- Mobile controls - status + hamburger button with notification badge -->
+    <div class="mobile-controls" *ngIf="authService.isAuthenticated()">
+      <!-- Connection status near hamburger button on mobile -->
+      <div
+        class="status mobile-status"
+        [class.connected]="online"
+        [class.disconnected]="!online"
+      >
+        <span class="status-dot"></span>
+      </div>
+
+      <button class="mobile-menu-button" (click)="toggleMenu()">
+        <mat-icon>{{ menuOpen ? "close" : "menu" }}</mat-icon>
+        <!-- Notification badge on mobile menu button -->
+        <span *ngIf="unreadTotal && !menuOpen" class="mobile-menu-badge">{{
+          unreadTotal
+        }}</span>
+      </button>
+    </div>
+
+    <div class="nav-links" [class.open]="menuOpen">
+      <!-- Desktop connection status (hidden on mobile) -->
+      <div
+        *ngIf="authService.isAuthenticated()"
+        class="status desktop-status"
+        [class.connected]="online"
+        [class.disconnected]="!online"
+      >
+        <span class="status-dot"></span>
+        <span>{{ online ? "Online" : "Offline" }}</span>
+      </div>
+
+      <!-- settings (only when authenticated) -->
+      <button
+        *ngIf="authService.isAuthenticated()"
+        mat-button
+        title="Settings"
+        (click)="navigateToSettings()"
+      >
+        <mat-icon>settings</mat-icon>
+        <span class="mobile-hidden">Settings</span>
+      </button>
+
+      <button
+        *ngIf="authService.isAuthenticated()"
+        mat-button
+        (click)="navigateToChats()"
+      >
+        <mat-icon>chat</mat-icon>
+        <span class="mobile-hidden">Chats</span>
+        <span *ngIf="unreadTotal" class="badge">{{ unreadTotal }}</span>
+      </button>
+
+      <!-- existing logout -->
+      <button *ngIf="showLogout" mat-button (click)="logout()">
+        <mat-icon>exit_to_app</mat-icon>
+        <span class="mobile-hidden">Logout</span>
+      </button>
+    </div>
+  </div>
+</header>

@@ -1,0 +1,81 @@
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
+
+interface EnvConfig {
+  PORT: number;
+  MONGO_URI: string;
+  APP_NAME: string;
+  JWT_SECRET: string;
+  CLIENT_ORIGIN: string;
+  RL_GLOBAL_MAX: number;
+  RL_AUTH_MAX: number;
+  OFFLINE_DELAY_MS: number;
+
+  // Email configuration (optional)
+  SMTP_HOST?: string;
+  SMTP_PORT?: number;
+  SMTP_SECURE?: boolean;
+  SMTP_USER?: string;
+  SMTP_PASS?: string;
+  SMTP_FROM?: string;
+}
+
+// Define and validate environment variables
+export const env: EnvConfig = {
+  PORT: parseInt(process.env.PORT || '5000', 10),
+  MONGO_URI: process.env.MONGO_URI || '',
+  APP_NAME: process.env.APP_NAME || 'Quasar Contact',
+  JWT_SECRET: process.env.JWT_SECRET || '',
+  CLIENT_ORIGIN: process.env.CLIENT_ORIGIN || 'http://localhost:4200',
+  RL_GLOBAL_MAX: parseInt(process.env.RL_GLOBAL_MAX || '300', 10),
+  RL_AUTH_MAX: parseInt(process.env.RL_AUTH_MAX || '5', 10),
+  OFFLINE_DELAY_MS: parseInt(process.env.OFFLINE_DELAY_MS || '7000', 10),
+
+  // Email settings (optional)
+  SMTP_HOST: process.env.SMTP_HOST,
+  SMTP_PORT: process.env.SMTP_PORT
+    ? parseInt(process.env.SMTP_PORT, 10)
+    : undefined,
+  SMTP_SECURE: process.env.SMTP_SECURE === 'true',
+  SMTP_USER: process.env.SMTP_USER,
+  SMTP_PASS: process.env.SMTP_PASS,
+  SMTP_FROM:
+    process.env.SMTP_FROM ||
+    `noreply@${process.env.APP_NAME?.toLowerCase().replace(/\s+/g, '-')}.com`,
+};
+
+// Validate required environment variables
+const validateEnv = () => {
+  if (!env.MONGO_URI) {
+    throw new Error('MONGO_URI is required');
+  }
+
+  if (!env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is required');
+  }
+
+  if (env.JWT_SECRET.length < 32) {
+    console.warn(
+      'WARNING: JWT_SECRET should be at least 32 characters long for security'
+    );
+  }
+
+  // Warn if email settings are not configured
+  if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) {
+    console.warn(
+      'WARNING: Email settings not configured. Password reset emails will not be sent.'
+    );
+    console.warn(
+      'To enable email functionality, set SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS in your .env file.'
+    );
+  }
+
+  return true;
+};
+
+// Validate env variables on import
+validateEnv();
+
+export default env;

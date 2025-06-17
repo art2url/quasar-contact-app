@@ -1,0 +1,163 @@
+import { Injectable } from '@angular/core';
+import { catchError, Observable, of, tap } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '@environments/environment';
+
+import {
+  KeyBundleResponse,
+  DmRoomResponse,
+  StandardResponse,
+} from '@models/api-response.model';
+import { UserSummary } from '@models/user.model';
+
+import { getApiPath } from '@utils/api-paths.util';
+
+@Injectable({ providedIn: 'root' })
+export class UserService {
+  constructor(private http: HttpClient) {}
+
+  /* ───────── users roster ───────── */
+
+  /** List **all** users (admin / pick-contact screen) */
+  listUsers(): Observable<UserSummary[]> {
+    console.log(
+      '[UserService] Fetching all users from:',
+      `${environment.apiUrl}/users`
+    );
+
+    // Ensure we have the token for authorization
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('[UserService] No token available for authentication');
+      return of([]);
+    }
+
+    // Set explicit headers to make sure the request is authenticated
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    };
+
+    return this.http
+      .get<UserSummary[]>(`${environment.apiUrl}/users`, { headers })
+      .pipe(
+        tap((users) => {
+          console.log(
+            '[UserService] Users response successful, count:',
+            users.length
+          );
+          console.log('[UserService] First few users:', users.slice(0, 3));
+        }),
+        catchError((error) => {
+          console.error('[UserService] Error fetching users:', error);
+
+          // Log more details about the error
+          if (error.status) {
+            console.error(
+              `[UserService] Status: ${error.status}, Message: ${error.message}`
+            );
+          }
+
+          if (error.error) {
+            console.error('[UserService] Error details:', error.error);
+          }
+
+          return of([]);
+        })
+      );
+  }
+
+  uploadPublicKey(publicKey: string): Observable<StandardResponse> {
+    return this.http.post<StandardResponse>(getApiPath('keys/upload'), {
+      publicKeyBundle: publicKey,
+    });
+  }
+
+  /** Retrieve someone's public key bundle for E2E encryption */
+  getPublicKey(userId: string): Observable<KeyBundleResponse> {
+    return this.http.get<KeyBundleResponse>(getApiPath(`keys/${userId}`));
+  }
+
+  /* ───────── profile / avatar ───────── */
+
+  /** Change my avatar URL */
+  updateMyAvatar(url: string): Observable<StandardResponse> {
+    return this.http.put<StandardResponse>(getApiPath('users/me/avatar'), {
+      avatarUrl: url,
+    });
+  }
+
+  /* ───────── search / DMs ───────── */
+
+  /** Search users by name */
+  searchUsers(query: string): Observable<UserSummary[]> {
+    if (!query || query.length < 2) {
+      console.log('[UserService] Search query too short:', query);
+      return of([]);
+    }
+
+    const apiUrl = `${environment.apiUrl}/users`;
+    console.log(
+      '[UserService] Searching users with query:',
+      query,
+      'URL:',
+      apiUrl
+    );
+
+    return this.http
+      .get<UserSummary[]>(apiUrl, {
+        params: { query },
+      })
+      .pipe(
+        tap((users) =>
+          console.log('[UserService] User search results:', users)
+        ),
+        catchError((error) => {
+          console.error('[UserService] Error searching users:', error);
+          return of([]);
+        })
+      );
+  }
+
+  /** Create (or fetch) a direct-message room between me and *userId* */
+  createDm(userId: string): Observable<DmRoomResponse> {
+    return this.http.post<DmRoomResponse>(getApiPath('rooms/dm'), {
+      userId,
+    });
+  }
+
+  /** List only the users I already have DMs with */
+  listMyDms(): Observable<UserSummary[]> {
+    const apiUrl = `${environment.apiUrl}/rooms/my-dms`;
+    const token = localStorage.getItem('token');
+
+    console.log('[UserService] Requesting DMs with:', {
+      apiUrl,
+      hasToken: !!token,
+    });
+
+    // Add authorization header explicitly
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      'x-access-token': token || '',
+    };
+
+    return this.http.get<UserSummary[]>(apiUrl, { headers }).pipe(
+      tap((response) => console.log('[UserService] DM response:', response)),
+      catchError((error) => {
+        console.error('[UserService] DM list error:', error);
+
+        // Try to extract more details about the error
+        let errorMessage = 'Unknown error';
+        if (error.error && error.error.message) {
+          errorMessage = error.error.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        console.error('[UserService] Error message:', errorMessage);
+        return of([]);
+      })
+    );
+  }
+}
