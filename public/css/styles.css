@@ -213,7 +213,7 @@ body::before {
 }
 
 .logo-image:hover {
-  transform: scale(1.1) rotate(5deg);
+  transform: scale(1.1) rotate(0);
 }
 
 .header .logo-text {
@@ -821,7 +821,7 @@ h1 {
   }
 
   .footer-left {
-    align-items: center;
+    align-items: left;
     gap: 0.5rem;
   }
 
