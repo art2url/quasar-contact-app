@@ -1,5 +1,5 @@
 /* You can add global styles to this file, and also import other style files */
-@import "@angular/material/prebuilt-themes/indigo-pink.css";
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
 
 /* Global Angular Material button hover override */
 .header button:hover,
@@ -53,7 +53,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: "Raleway", sans-serif !important;
+  font-family: 'Raleway', sans-serif !important;
   font-optical-sizing: auto;
   font-weight: 700;
   font-style: normal;
@@ -62,59 +62,59 @@ h6 {
 /* 2. Base elements use Afacad Flux */
 html,
 body {
-  font-family: "Afacad Flux", sans-serif;
+  font-family: 'Afacad Flux', sans-serif;
   font-optical-sizing: auto;
 }
 
 /* 3. All other elements use Afacad Flux, but exclude icons AND headers */
-*:not(.material-icons):not(.mat-icon):not([class*="icon"]):not(
+*:not(.material-icons):not(.mat-icon):not([class*='icon']):not(
     [data-mat-icon-type]
   ):not(.mdi):not(.fa):not(.fas):not(.far):not(.fab):not(.fal):not(.fad):not(
     .fass
   ):not(.fasr):not(.fasl):not(.fasd):not(h1):not(h2):not(h3):not(h4):not(
     h5
   ):not(h6) {
-  font-family: "Afacad Flux", sans-serif !important;
+  font-family: 'Afacad Flux', sans-serif !important;
   font-optical-sizing: auto;
 }
 
 /* 4. Specific HTML elements (excluding icons) */
 p,
 span:not(.material-icons):not(.mat-icon),
-div:not([class*="icon"]),
+div:not([class*='icon']),
 button:not(.mat-icon-button) span:not(.material-icons),
 input,
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="file"],
-input[type="search"],
-input[type="tel"],
-input[type="url"],
-input[type="number"],
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='file'],
+input[type='search'],
+input[type='tel'],
+input[type='url'],
+input[type='number'],
 textarea,
 select,
-label:not([class*="icon"]),
-a:not([class*="icon"]),
+label:not([class*='icon']),
+a:not([class*='icon']),
 li,
 td,
 th,
 caption {
-  font-family: "Afacad Flux", sans-serif !important;
+  font-family: 'Afacad Flux', sans-serif !important;
   font-optical-sizing: auto;
 }
 
 /* Additional specific override for all inputs */
 input:not(.material-icons):not(.mat-icon) {
-  font-family: "Afacad Flux", sans-serif !important;
+  font-family: 'Afacad Flux', sans-serif !important;
   font-optical-sizing: auto;
 }
 
 /* Override Angular generated input styles */
-input[class*="_ngcontent"],
+input[class*='_ngcontent'],
 input[_ngcontent],
 input[ng-reflect] {
-  font-family: "Afacad Flux", sans-serif !important;
+  font-family: 'Afacad Flux', sans-serif !important;
   font-optical-sizing: auto;
 }
 
@@ -144,7 +144,7 @@ input[ng-reflect] {
 .mat-dialog-content,
 .mat-snack-bar-container,
 .mat-tooltip {
-  font-family: "Afacad Flux", sans-serif !important;
+  font-family: 'Afacad Flux', sans-serif !important;
 }
 
 /* 6. Override Material Design Components (MDC) typography (excluding icons) */
@@ -180,7 +180,7 @@ input[ng-reflect] {
 .mat-mdc-dialog-content,
 .mat-mdc-snack-bar-container,
 .mat-mdc-tooltip {
-  font-family: "Afacad Flux", sans-serif !important;
+  font-family: 'Afacad Flux', sans-serif !important;
 }
 
 /* 7. Preserve icon fonts - explicitly keep their original font families */
@@ -197,8 +197,8 @@ input[ng-reflect] {
 .fasr,
 .fasl,
 .fasd,
-[class*="icon-"]:before,
-[class*="icon-"]:after,
+[class*='icon-']:before,
+[class*='icon-']:after,
 .mat-icon-button .mat-icon,
 .mat-form-field-suffix .mat-icon,
 .mat-form-field-prefix .mat-icon,
@@ -206,39 +206,39 @@ input[ng-reflect] {
 .mat-datepicker-toggle-default-icon,
 .mat-calendar-arrow,
 .mat-expansion-indicator::after {
-  font-family: "Material Icons", "Material Icons Outlined",
-    "Font Awesome 5 Free", "Font Awesome 5 Pro", "MDI" !important;
+  font-family: 'Material Icons', 'Material Icons Outlined',
+    'Font Awesome 5 Free', 'Font Awesome 5 Pro', 'MDI' !important;
 }
 
 /* 8. Override CSS custom properties for non-header typography */
 :root {
-  --mat-sys-typescale-display-large-font-family-name: "Afacad Flux", sans-serif;
-  --mat-sys-typescale-display-medium-font-family-name: "Afacad Flux", sans-serif;
-  --mat-sys-typescale-display-small-font-family-name: "Afacad Flux", sans-serif;
-  --mat-sys-typescale-headline-large-font-family-name: "Raleway", sans-serif;
-  --mat-sys-typescale-headline-medium-font-family-name: "Raleway", sans-serif;
-  --mat-sys-typescale-headline-small-font-family-name: "Raleway", sans-serif;
-  --mat-sys-typescale-title-large-font-family-name: "Raleway", sans-serif;
-  --mat-sys-typescale-title-medium-font-family-name: "Raleway", sans-serif;
-  --mat-sys-typescale-title-small-font-family-name: "Raleway", sans-serif;
-  --mat-sys-typescale-label-large-font-family-name: "Afacad Flux", sans-serif;
-  --mat-sys-typescale-label-medium-font-family-name: "Afacad Flux", sans-serif;
-  --mat-sys-typescale-label-small-font-family-name: "Afacad Flux", sans-serif;
-  --mat-sys-typescale-body-large-font-family-name: "Afacad Flux", sans-serif;
-  --mat-sys-typescale-body-medium-font-family-name: "Afacad Flux", sans-serif;
-  --mat-sys-typescale-body-small-font-family-name: "Afacad Flux", sans-serif;
+  --mat-sys-typescale-display-large-font-family-name: 'Afacad Flux', sans-serif;
+  --mat-sys-typescale-display-medium-font-family-name: 'Afacad Flux', sans-serif;
+  --mat-sys-typescale-display-small-font-family-name: 'Afacad Flux', sans-serif;
+  --mat-sys-typescale-headline-large-font-family-name: 'Raleway', sans-serif;
+  --mat-sys-typescale-headline-medium-font-family-name: 'Raleway', sans-serif;
+  --mat-sys-typescale-headline-small-font-family-name: 'Raleway', sans-serif;
+  --mat-sys-typescale-title-large-font-family-name: 'Raleway', sans-serif;
+  --mat-sys-typescale-title-medium-font-family-name: 'Raleway', sans-serif;
+  --mat-sys-typescale-title-small-font-family-name: 'Raleway', sans-serif;
+  --mat-sys-typescale-label-large-font-family-name: 'Afacad Flux', sans-serif;
+  --mat-sys-typescale-label-medium-font-family-name: 'Afacad Flux', sans-serif;
+  --mat-sys-typescale-label-small-font-family-name: 'Afacad Flux', sans-serif;
+  --mat-sys-typescale-body-large-font-family-name: 'Afacad Flux', sans-serif;
+  --mat-sys-typescale-body-medium-font-family-name: 'Afacad Flux', sans-serif;
+  --mat-sys-typescale-body-small-font-family-name: 'Afacad Flux', sans-serif;
 }
 
 /* 9. Ensure Material Icons stay intact */
 .mat-icon {
-  font-family: "Material Icons" !important;
-  font-feature-settings: "liga";
+  font-family: 'Material Icons' !important;
+  font-feature-settings: 'liga';
 }
 
 .material-icons {
-  font-family: "Material Icons" !important;
-  font-feature-settings: "liga";
-  -webkit-font-feature-settings: "liga";
+  font-family: 'Material Icons' !important;
+  font-feature-settings: 'liga';
+  -webkit-font-feature-settings: 'liga';
   -webkit-font-smoothing: antialiased;
 }
 
@@ -255,14 +255,12 @@ input[ng-reflect] {
   --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.12);
   --border-radius: 8px;
   --header-height: 64px;
-  --footer-height: 60px;
+  --footer-height: 80px;
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 16px;
   --spacing-lg: 24px;
   --spacing-xl: 32px;
-  --header-height: 64px;
-  --footer-height: 60px;
 }
 
 html,
@@ -289,7 +287,7 @@ body {
 @media (max-width: 599px) {
   :root {
     --header-height: 56px;
-    --footer-height: 52px;
+    --footer-height: 60px;
   }
 
   .mobile-hidden {
@@ -330,7 +328,7 @@ body {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 var(--spacing-md);
+  padding: 0 var(--spacing-xl);
   box-sizing: border-box;
 }
 
