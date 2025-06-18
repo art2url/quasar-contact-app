@@ -14,12 +14,21 @@ import roomsRoutes from './routes/rooms.routes';
 // ─── App Initialization ────────────────────────────────────
 const app = express();
 
-// ─── CRITICAL: Set trust proxy IMMEDIATELY ─────────────────
-app.set('trust proxy', 1);
-console.log('🔧 Trust proxy set to 1 immediately');
+// ─── HTTPS Redirect Middleware (must be first) ─────────────
+app.use((req, res, next) => {
+  // Force HTTPS in production
+  if (process.env.NODE_ENV === 'production') {
+    if (req.header('x-forwarded-proto') !== 'https') {
+      return res.redirect(`https://${req.header('host')}${req.url}`);
+    }
+  }
+  next();
+});
 
-// Import rate limiter AFTER trust proxy is set
-import {globalLimiter} from './config/ratelimits';
+// ─── Trust Proxy (Railway) ─────────────────────────────────
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
 
 // ─── Health-check route ────────────────────────────────────
 app.get('/health', (_req, res) =>
@@ -27,57 +36,24 @@ app.get('/health', (_req, res) =>
     status: 'ok',
     uptime: process.uptime(),
     date: new Date().toISOString(),
-    trustProxy: app.get('trust proxy'),
+    secure: process.env.NODE_ENV === 'production',
+    stage: process.env.NODE_ENV === 'production' ? 'production' : 'alpha',
   })
 );
 
-// ─── Middleware: Security and Parsing ──────────────────────
-app.use(httpCors);
-
+// ─── Security Headers ──────────────────────────────────────
 app.use(
   helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: false, // Disable CSP for Angular app
+    hsts: {
+      maxAge: 31536000, // 1 year
+      includeSubDomains: true,
+      preload: true,
+    },
   })
 );
-app.use(express.json());
 
-// ─────────── rate-limiting ────────────────────────────────
-// Rate limiter comes AFTER trust proxy is set
-app.use(globalLimiter);
-
-// ─── API Routes ────────────────────────────────────────────
-app.use('/api/auth', authRoutes);
-app.use('/api/keys', keyRoutes);
-app.use('/api/messages', messageRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/rooms', roomsRoutes);
-
-// ─── Serve Static Files ───────────────────────────────────
-// 1. Landing Page static assets (from /public folder)
-app.use('/assets', express.static(path.join(__dirname, '../../public/assets')));
-app.use('/css', express.static(path.join(__dirname, '../../public/css')));
-app.use('/js', express.static(path.join(__dirname, '../../public/js')));
-app.use('/images', express.static(path.join(__dirname, '../../public/images')));
-
-// 2. Angular App static assets (from /dist folder)
-app.use(
-  '/app/assets',
-  express.static(path.join(__dirname, '../../dist/assets'))
-);
-app.use('/app', express.static(path.join(__dirname, '../../dist')));
-
-// ─── Route Handlers ────────────────────────────────────────
-// Landing page route (exact match for root)
-app.get('/', (_req, res) => {
-  res.sendFile(path.join(__dirname, '../../public', 'index.html'));
-});
-
-// Angular App routes (SPA fallback for /app/*)
-app.get('/app/*', (_req, res) => {
-  res.sendFile(path.join(__dirname, '../../dist', 'index.html'));
-});
-
-// ─── Error handler ────────────────────────────────────────
+// ─── Error-handler  ────────────────────────────────────────
 app.use(
   (
     err: unknown,
@@ -85,10 +61,60 @@ app.use(
     res: express.Response,
     _next: express.NextFunction
   ) => {
-    console.error('[Unhandled Error]', err);
+    console.error('[Unhandled]', err);
     res.status(500).json({message: 'Server error'});
   }
 );
+
+// ─── CORS ──────────────────────────────────────────────────
+app.use(httpCors);
+
+// ─── Body Parsing ──────────────────────────────────────────
+app.use(express.json());
+
+// ─── Serve Static Files ────────────────────────────────────
+app.use('/', express.static(path.join(__dirname, '../../public')));
+app.use('/app', express.static(path.join(__dirname, '../../dist')));
+app.use(express.static(path.join(__dirname, '../../dist')));
+
+// ─── SMART RATE LIMITING: Only for sensitive endpoints ─────
+// Only apply rate limiting to auth endpoints that need protection
+import rateLimit from 'express-rate-limit';
+
+const authOnlyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50, // Much higher limit - 50 attempts per 15 min
+  message: {
+    error: 'Too many auth attempts. Please wait 15 minutes.',
+    type: 'auth_rate_limit',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Only apply to login/register
+  skip: (req) => {
+    const sensitiveEndpoints = [
+      '/api/auth/login',
+      '/api/auth/register',
+      '/api/auth/forgot-password',
+    ];
+    return !sensitiveEndpoints.some((endpoint) => req.path === endpoint);
+  },
+});
+
+// Apply smart rate limiting only to auth routes
+app.use('/api/auth', authOnlyLimiter);
+
+// ─── API Routes (no global rate limiting) ──────────────────
+app.use('/api/auth', authRoutes);
+app.use('/api/keys', keyRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/rooms', roomsRoutes);
+
+// ─── Angular Router fallback ───────────────────────────────
+app.get('/app/*', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../../dist', 'index.html'));
+});
 
 // ─── 404 fallback  ─────────────────────────────────────────
 app.use((_req, res) => {
