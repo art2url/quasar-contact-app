@@ -52,22 +52,6 @@
       ]
     }
   ],
-  "screenshots": [
-    {
-      "src": "/assets/images/screenshot-wide.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Quasar Contact interface on desktop"
-    },
-    {
-      "src": "/assets/images/screenshot-narrow.png",
-      "sizes": "375x812",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Quasar Contact interface on mobile"
-    }
-  ],
   "prefer_related_applications": false,
   "edge_side_panel": {
     "preferred_width": 400

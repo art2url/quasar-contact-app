@@ -31,21 +31,11 @@ h6 {
   font-style: normal;
 }
 
-/* All other elements use Afacad Flux */
+/* All other elements use Jost */
 * {
-  font-family: 'Afacad Flux';
+  font-family: 'Jost', sans-serif;
   font-optical-sizing: auto;
   font-style: normal;
-}
-
-html,
-body,
-p,
-span,
-a,
-button,
-div {
-  font-weight: 400;
 }
 
 html {
@@ -197,29 +187,34 @@ body::before {
   margin: 0 auto;
 }
 
-.header .logo-section {
+.logo {
   display: flex;
   align-items: center;
   gap: 12px;
-  opacity: 0;
+  color: var(--text-color);
+  text-decoration: none;
+  flex: 1;
   animation: slideInLeft 0.8s ease-out 0.2s forwards;
+  min-width: 0;
 }
 
-.logo-image {
+.logo-icon {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
-  transition: transform 0.3s ease;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
 }
 
-.logo-image:hover {
-  transform: scale(1.1) rotate(0);
+.logo-text {
+  height: 13px;
+  width: auto;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
-.header .logo-text {
-  font-weight: 600;
-  font-size: 1.15rem;
-  color: var(--text-light);
+.logo:hover .logo-icon {
+  transform: scale(1.05);
 }
 
 .header-button {
@@ -231,7 +226,7 @@ body::before {
   text-decoration: none;
   padding: 6px 12px;
   border-radius: 25px;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 500;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(195, 247, 58, 0.3);
@@ -377,7 +372,7 @@ h1 {
 
 .subtitle {
   font-weight: 400;
-  font-size: 1.3rem;
+  font-size: 1.25rem;
   color: var(--text-muted);
   margin-bottom: 4rem;
   line-height: 1.6;
@@ -401,7 +396,7 @@ h1 {
   padding: 1rem 2.5rem;
   border-radius: 50px;
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: 500;
   transition: all 0.3s ease;
   box-shadow: 0 10px 30px rgba(195, 247, 58, 0.3);
   border: none;
@@ -508,7 +503,8 @@ h1 {
 
 .tech-overview p {
   color: var(--text-muted);
-  font-size: 1.1rem;
+  font-weight: 400;
+  font-size: 1.05rem;
   line-height: 1.6;
   max-width: 800px;
   margin: 1rem auto;
@@ -551,7 +547,7 @@ h1 {
 
 .step-content p {
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   line-height: 1.5;
 }
 
@@ -572,12 +568,12 @@ h1 {
 .spec-item strong {
   color: var(--accent-green-light);
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .spec-item span {
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   line-height: 1.4;
 }
 
@@ -660,6 +656,7 @@ h1 {
 .feature p {
   font-weight: 400;
   color: var(--text-muted);
+  font-size: 0.95rem;
   line-height: 1.5;
 }
 
@@ -799,10 +796,6 @@ h1 {
     padding: 0 1rem;
   }
 
-  .header .logo-text {
-    font-size: 1.1rem;
-  }
-
   .header-button {
     padding: 6px 12px;
     font-size: 0.75rem;
@@ -914,7 +907,26 @@ h1 {
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
+  .header-container {
+    height: var(--header-height);
+  }
+}
+
+@media (max-width: 599px) {
+  :root {
+    --header-height: 56px;
+    --footer-height: 60px;
+  }
+
+  .header-container {
+    height: var(--header-height);
+  }
+
+  .footer {
+    height: var(--footer-height);
+  }
+
   .footer-disclaimer {
     max-width: 320px;
     font-size: 0.6rem;
@@ -930,6 +942,32 @@ h1 {
 
   .alpha-text-short {
     display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-disclaimer {
+    display: none;
+  }
+
+  .footer-text {
+    display: none;
+  }
+
+  .footer-container {
+    justify-content: center;
+  }
+
+  .footer-left {
+    display: none;
+  }
+
+  .footer-social {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 36px;
+    width: 100%;
   }
 }
 

@@ -11,25 +11,7 @@
   z-index: 100;
   transition: all 0.3s ease;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  /* Logo adjustments for mobile */
-  .logo {
-    flex: 1;
-    min-width: 0; /* Allow text to truncate if needed */
-  }
-
-  .logo span {
-    font-size: 1.15rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .logo img {
-    flex-shrink: 0;
-  }
 }
-
-/* Fade-in animation for mobile menu */
 
 .header-container {
   display: flex;
@@ -45,22 +27,29 @@
 .logo {
   display: flex;
   align-items: center;
-  font-family: 'Afacad Flux', sans-serif;
-  font-weight: 600;
+  gap: calc(var(--spacing-sm) + 4px);
   color: var(--text-color);
   text-decoration: none;
-  transition: all 0.2s ease;
-  border-radius: 8px;
+  flex: 1;
+  min-width: 0; /* Allow content to truncate if needed */
 }
 
-.logo img {
+.logo-icon {
   width: 36px;
   height: 36px;
-  margin-right: calc(var(--spacing-md) - 4px);
-  transition: transform 0.2s ease;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
 }
 
-.logo:hover img {
+.logo-text {
+  height: 13px;
+  width: auto;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.logo:hover .logo-icon {
   transform: scale(1.05);
 }
 
@@ -80,8 +69,8 @@
   border: none;
   border-radius: 12px;
   color: var(--text-color);
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   min-height: 40px;

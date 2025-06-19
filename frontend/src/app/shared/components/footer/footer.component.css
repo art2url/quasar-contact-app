@@ -8,7 +8,7 @@
   backdrop-filter: blur(10px);
   border-top: 1px solid rgba(0, 0, 0, 0.1);
   z-index: 999;
-  font-family: 'Afacad Flux', sans-serif;
+  font-family: 'Jost', sans-serif;
 }
 
 /* Footer container wrapper */
@@ -37,7 +37,7 @@
   color: rgba(0, 0, 0, 0.9);
   font-size: 0.7rem;
   font-weight: 500;
-  font-family: 'Afacad Flux', sans-serif;
+  font-family: 'Jost', sans-serif;
   margin: 0;
   line-height: 1.2;
 }
@@ -47,7 +47,7 @@
   color: rgba(0, 0, 0, 0.6);
   font-size: 0.7rem;
   font-weight: 400;
-  font-family: 'Afacad Flux', sans-serif;
+  font-family: 'Jost', sans-serif;
   line-height: 1.3;
   margin: 0;
   max-width: 600px;
