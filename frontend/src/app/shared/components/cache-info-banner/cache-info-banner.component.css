@@ -3,11 +3,9 @@
   align-items: center;
   background-color: #e3f2fd;
   border: 1px solid #2196f3;
-  border-radius: 8px;
   padding: 12px;
-  margin: 8px 0;
   gap: 12px;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
 }
 
 .banner-content {
@@ -18,8 +16,13 @@
   margin: 4px 0;
 }
 
-.banner-content p:first-child {
+.banner-content .head {
+  font-size: 0.95;
   font-weight: 500;
+}
+
+.banner-content .text {
+  font-weight: 400;
 }
 
 mat-icon {
@@ -35,5 +38,16 @@ button {
   .cache-info-banner {
     font-size: 0.8rem;
     padding: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cache-info-banner {
+    font-size: 0.75rem;
+    padding: var(--spacing-sm);
+  }
+
+  .banner-content .text {
+    display: none;
   }
 }
