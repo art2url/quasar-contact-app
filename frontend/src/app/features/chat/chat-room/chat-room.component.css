@@ -414,6 +414,21 @@
   background-color: #f5f5f5;
 }
 
+.custom-send-icon {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+  transition: transform 0.2s ease;
+}
+
+.send-button:hover .custom-send-icon {
+  transform: scale(1.1);
+}
+
+.send-button:active .custom-send-icon {
+  transform: scale(0.95);
+}
+
 .send-button {
   width: 44px;
   height: 44px;
