@@ -59,14 +59,14 @@ h6 {
   font-style: normal;
 }
 
-/* 2. Base elements use Afacad Flux */
+/* 2. Base elements use Jost */
 html,
 body {
-  font-family: 'Afacad Flux', sans-serif;
+  font-family: 'Jost', sans-serif;
   font-optical-sizing: auto;
 }
 
-/* 3. All other elements use Afacad Flux, but exclude icons AND headers */
+/* 3. All other elements use Jost, but exclude icons AND headers */
 *:not(.material-icons):not(.mat-icon):not([class*='icon']):not(
     [data-mat-icon-type]
   ):not(.mdi):not(.fa):not(.fas):not(.far):not(.fab):not(.fal):not(.fad):not(
@@ -74,7 +74,7 @@ body {
   ):not(.fasr):not(.fasl):not(.fasd):not(h1):not(h2):not(h3):not(h4):not(
     h5
   ):not(h6) {
-  font-family: 'Afacad Flux', sans-serif !important;
+  font-family: 'Jost', sans-serif !important;
   font-optical-sizing: auto;
 }
 
@@ -100,13 +100,13 @@ li,
 td,
 th,
 caption {
-  font-family: 'Afacad Flux', sans-serif !important;
+  font-family: 'Jost', sans-serif !important;
   font-optical-sizing: auto;
 }
 
 /* Additional specific override for all inputs */
 input:not(.material-icons):not(.mat-icon) {
-  font-family: 'Afacad Flux', sans-serif !important;
+  font-family: 'Jost', sans-serif !important;
   font-optical-sizing: auto;
 }
 
@@ -114,7 +114,7 @@ input:not(.material-icons):not(.mat-icon) {
 input[class*='_ngcontent'],
 input[_ngcontent],
 input[ng-reflect] {
-  font-family: 'Afacad Flux', sans-serif !important;
+  font-family: 'Jost', sans-serif !important;
   font-optical-sizing: auto;
 }
 
@@ -144,7 +144,7 @@ input[ng-reflect] {
 .mat-dialog-content,
 .mat-snack-bar-container,
 .mat-tooltip {
-  font-family: 'Afacad Flux', sans-serif !important;
+  font-family: 'Jost', sans-serif !important;
 }
 
 /* 6. Override Material Design Components (MDC) typography (excluding icons) */
@@ -180,7 +180,7 @@ input[ng-reflect] {
 .mat-mdc-dialog-content,
 .mat-mdc-snack-bar-container,
 .mat-mdc-tooltip {
-  font-family: 'Afacad Flux', sans-serif !important;
+  font-family: 'Jost', sans-serif !important;
 }
 
 /* 7. Preserve icon fonts - explicitly keep their original font families */
@@ -212,21 +212,21 @@ input[ng-reflect] {
 
 /* 8. Override CSS custom properties for non-header typography */
 :root {
-  --mat-sys-typescale-display-large-font-family-name: 'Afacad Flux', sans-serif;
-  --mat-sys-typescale-display-medium-font-family-name: 'Afacad Flux', sans-serif;
-  --mat-sys-typescale-display-small-font-family-name: 'Afacad Flux', sans-serif;
+  --mat-sys-typescale-display-large-font-family-name: 'Jost', sans-serif;
+  --mat-sys-typescale-display-medium-font-family-name: 'Jost', sans-serif;
+  --mat-sys-typescale-display-small-font-family-name: 'Jost', sans-serif;
   --mat-sys-typescale-headline-large-font-family-name: 'Raleway', sans-serif;
   --mat-sys-typescale-headline-medium-font-family-name: 'Raleway', sans-serif;
   --mat-sys-typescale-headline-small-font-family-name: 'Raleway', sans-serif;
   --mat-sys-typescale-title-large-font-family-name: 'Raleway', sans-serif;
   --mat-sys-typescale-title-medium-font-family-name: 'Raleway', sans-serif;
   --mat-sys-typescale-title-small-font-family-name: 'Raleway', sans-serif;
-  --mat-sys-typescale-label-large-font-family-name: 'Afacad Flux', sans-serif;
-  --mat-sys-typescale-label-medium-font-family-name: 'Afacad Flux', sans-serif;
-  --mat-sys-typescale-label-small-font-family-name: 'Afacad Flux', sans-serif;
-  --mat-sys-typescale-body-large-font-family-name: 'Afacad Flux', sans-serif;
-  --mat-sys-typescale-body-medium-font-family-name: 'Afacad Flux', sans-serif;
-  --mat-sys-typescale-body-small-font-family-name: 'Afacad Flux', sans-serif;
+  --mat-sys-typescale-label-large-font-family-name: 'Jost', sans-serif;
+  --mat-sys-typescale-label-medium-font-family-name: 'Jost', sans-serif;
+  --mat-sys-typescale-label-small-font-family-name: 'Jost', sans-serif;
+  --mat-sys-typescale-body-large-font-family-name: 'Jost', sans-serif;
+  --mat-sys-typescale-body-medium-font-family-name: 'Jost', sans-serif;
+  --mat-sys-typescale-body-small-font-family-name: 'Jost', sans-serif;
 }
 
 /* 9. Ensure Material Icons stay intact */

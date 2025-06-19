@@ -3,11 +3,14 @@
     <a routerLink="/" class="logo">
       <img
         src="assets/images/logo.svg"
-        alt="Quasar Chat Logo"
-        class="retina-image"
+        alt="Quasar Contact Logo Icon"
+        class="logo-icon retina-image"
       />
-      <!-- Always show app name, even on mobile -->
-      <span>Quasar</span>
+      <img
+        src="assets/images/text-logo-dark.svg"
+        alt="Quasar Contact Logo Text"
+        class="logo-text retina-image"
+      />
     </a>
 
     <!-- Mobile controls - status + hamburger button with notification badge -->
@@ -22,7 +25,7 @@
       </div>
 
       <button class="mobile-menu-button" (click)="toggleMenu()">
-        <mat-icon>{{ menuOpen ? "close" : "menu" }}</mat-icon>
+        <mat-icon>{{ menuOpen ? 'close' : 'menu' }}</mat-icon>
         <!-- Notification badge on mobile menu button -->
         <span *ngIf="unreadTotal && !menuOpen" class="mobile-menu-badge">{{
           unreadTotal
@@ -39,7 +42,7 @@
         [class.disconnected]="!online"
       >
         <span class="status-dot"></span>
-        <span>{{ online ? "Online" : "Offline" }}</span>
+        <span>{{ online ? 'Online' : 'Offline' }}</span>
       </div>
 
       <!-- settings (only when authenticated) -->

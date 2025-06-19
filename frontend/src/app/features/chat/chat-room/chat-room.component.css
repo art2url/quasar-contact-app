@@ -319,7 +319,7 @@
 /* Scroll to bottom button repositioned to center-bottom */
 .scroll-to-bottom-btn {
   position: fixed;
-  bottom: calc(var(--footer-height) + 20px);
+  bottom: calc(var(--footer-height) + 32px + 90px);
   left: 50%; /* Center horizontally */
   transform: translateX(-50%); /* Perfect centering */
   width: 48px;
@@ -643,7 +643,9 @@
 
   /* Adjust scroll button position for mobile - center bottom */
   .scroll-to-bottom-btn {
-    bottom: calc(var(--footer-height) + 16px); /* Closer to bottom on mobile */
+    bottom: calc(
+      var(--footer-height) + 16px + 70px
+    ); /* Closer to bottom on mobile */
     left: 50%; /* Keep centered */
     transform: translateX(-50%); /* Perfect centering */
     width: 44px;
