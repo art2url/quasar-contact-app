@@ -1,12 +1,15 @@
 .chat-container {
   max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
+  padding: 0 var(--spacing-xl);
+  box-sizing: border-box;
 }
 
 .chat-header {
   display: flex;
   align-items: center;
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
   padding: var(--spacing-md) 0;
   border-bottom: 1px solid var(--border-color);
 }
@@ -208,18 +211,41 @@
   background-color: white !important;
 }
 
-@media (max-width: 599px) {
+@media (max-width: 768px) {
   .chat-container {
-    padding: var(--spacing-sm);
+    padding: 0 var(--spacing-md);
+  }
+}
+
+@media (max-width: 599px) {
+  .chat-header {
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-sm) 0;
+  }
+
+  .chat-top {
+    margin-bottom: 0;
+  }
+
+  .chat-header h2 {
+    font-size: larger;
+    margin: 0;
+    color: var(--text-color);
+  }
+
+  .chat-name {
+    font-size: small;
+    margin-bottom: 0;
   }
 
   .chat-list a {
-    padding: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-md);
   }
 
   .avatar {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
+    margin-right: 12px;
   }
 
   .last-message {
@@ -229,22 +255,5 @@
   .search-result-btn,
   .chat-list a {
     min-height: 60px;
-  }
-}
-
-/* For iOS safe areas */
-@supports (padding: max(0px)) {
-  .chat-container {
-    padding-left: max(var(--spacing-md), env(safe-area-inset-left));
-    padding-right: max(var(--spacing-md), env(safe-area-inset-right));
-    padding-bottom: max(var(--spacing-md), env(safe-area-inset-bottom));
-  }
-
-  @media (max-width: 599px) {
-    .chat-container {
-      padding-left: max(var(--spacing-sm), env(safe-area-inset-left));
-      padding-right: max(var(--spacing-sm), env(safe-area-inset-right));
-      padding-bottom: max(var(--spacing-sm), env(safe-area-inset-bottom));
-    }
   }
 }
