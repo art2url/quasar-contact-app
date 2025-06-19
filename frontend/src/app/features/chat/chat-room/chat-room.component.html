@@ -1,234 +1,245 @@
-<div class="chat-container">
-  <div class="chat-header">
-    <!-- Always show back button for mobile, not just with *ngIf -->
-    <button
-      mat-icon-button
-      class="back-button"
-      (click)="navigateToList($event)"
-    >
-      <mat-icon>arrow_back</mat-icon>
-    </button>
+<div class="chat-wrapper">
+  <div class="chat-container">
+    <div class="chat-header">
+      <div class="left-side">
+        <button
+          mat-icon-button
+          class="back-button"
+          (click)="navigateToList($event)"
+        >
+          <mat-icon>arrow_back</mat-icon>
+        </button>
 
-    <div class="user-info">
-      <img
-        [src]="getPartnerAvatar()"
-        [alt]="(chat.theirUsername$ | async) || 'User'"
-        class="avatar"
-      />
-      <div>
-        <h3 class="username">{{ (chat.theirUsername$ | async) || "User" }}</h3>
+        <div class="user-info">
+          <img
+            [src]="getPartnerAvatar()"
+            [alt]="(chat.theirUsername$ | async) || 'User'"
+            class="avatar"
+          />
+          <div>
+            <h3 class="username">
+              {{ (chat.theirUsername$ | async) || 'User' }}
+            </h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right side: status -->
+      <div class="right-side">
         <div class="status">
           <span
             class="status-dot"
             [class.online]="isPartnerOnline"
             [class.offline]="!isPartnerOnline"
           ></span>
-          <span>{{ isPartnerOnline ? "Online" : "Offline" }}</span>
+          <span>{{ isPartnerOnline ? 'Online' : 'Offline' }}</span>
         </div>
       </div>
     </div>
-  </div>
 
-  <app-cache-info-banner
-    [showBanner]="showCacheInfoBanner"
-  ></app-cache-info-banner>
+    <app-cache-info-banner
+      [showBanner]="showCacheInfoBanner"
+    ></app-cache-info-banner>
 
-  <!-- Public key status -->
-  <ng-container *ngIf="chat.keyLoading$ | async as loading">
-    <div *ngIf="loading" class="key-loading">Loading user's public key...</div>
-    <div
-      *ngIf="!loading && (chat.keyMissing$ | async) === true"
-      class="key-missing"
-    >
-      User hasn't uploaded a public key. Messages will be sent unencrypted.
-    </div>
-  </ng-container>
-
-  <!-- Chat window -->
-  <div #messageContainer class="chat-window">
-    <!-- Loading state for messages -->
-    <div *ngIf="isLoadingMessages" class="messages-loading">
+    <!-- Public key status -->
+    <ng-container *ngIf="chat.keyLoading$ | async as loading">
+      <div *ngIf="loading" class="key-loading">
+        Loading user's public key...
+      </div>
       <div
-        style="
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 40px;
-        "
+        *ngIf="!loading && (chat.keyMissing$ | async) === true"
+        class="key-missing"
       >
-        <mat-spinner diameter="40" color="primary"></mat-spinner>
-        <p style="margin-top: 16px; color: #666">Loading messages...</p>
+        User hasn't uploaded a public key. Messages will be sent unencrypted.
       </div>
-    </div>
-
-    <!-- Only show messages when loading is complete -->
-    <ng-container *ngIf="!isLoadingMessages">
-      <!-- Empty state -->
-      <div *ngIf="!messageGroups.length" class="empty-chat">
-        <mat-icon>chat</mat-icon>
-        <p>No messages yet</p>
-        <p>Start the conversation by sending a message</p>
-      </div>
-
-      <!-- Grouped messages with date headers -->
-      <ng-container *ngFor="let group of messageGroups; trackBy: trackByDate">
-        <!-- Date header -->
-        <div class="date-header">
-          <span class="date-text">{{ group.date }}</span>
-        </div>
-
-        <!-- Messages in this date group -->
-        <div
-          *ngFor="let m of group.messages; trackBy: trackByTs"
-          class="message"
-          [class.you]="m.sender === 'You'"
-          [class.other]="m.sender !== 'You'"
-          [class.deleted]="m.deletedAt"
-          [class.unreadable]="isMessageUnreadable(m)"
-        >
-          <div class="message-bubble">
-            <p class="message-content">{{ m.text }}</p>
-
-            <div class="message-meta">
-              <span class="message-time" [title]="getFullTimestamp(m.ts)">
-                {{ formatMessageTime(m.ts) }}
-              </span>
-
-              <span *ngIf="m.sender === 'You'" class="message-status">
-                <ng-container [ngSwitch]="m.status">
-                  <mat-icon *ngSwitchCase="'pending'" class="status-icon"
-                    >schedule</mat-icon
-                  >
-                  <mat-icon *ngSwitchCase="'sent'" class="status-icon"
-                    >check</mat-icon
-                  >
-                  <mat-icon *ngSwitchCase="'read'" class="status-icon"
-                    >done_all</mat-icon
-                  >
-                </ng-container>
-              </span>
-
-              <small *ngIf="!m.deletedAt && m.editedAt">&nbsp;(edited)</small>
-
-              <!-- Show indicator for unreadable messages -->
-              <small
-                *ngIf="isMessageUnreadable(m)"
-                class="unreadable-indicator"
-              >
-                &nbsp;(text unavailable)
-              </small>
-            </div>
-
-            <!--  Action buttons only for editable messages -->
-            <div *ngIf="canEditMessage(m)" class="message-actions">
-              <button
-                class="action-btn"
-                (click)="beginEdit(m)"
-                title="Edit"
-                [disabled]="!canEditMessage(m)"
-              >
-                <mat-icon>edit</mat-icon>
-              </button>
-              <button
-                class="action-btn"
-                (click)="delete(m)"
-                title="Delete"
-                [disabled]="!canEditMessage(m)"
-              >
-                <mat-icon>delete</mat-icon>
-              </button>
-            </div>
-
-            <!-- Show info for unreadable messages -->
-            <div
-              *ngIf="isMessageUnreadable(m)"
-              class="message-actions unreadable-actions"
-            >
-              <small class="unreadable-info">
-                <mat-icon class="info-icon">lock</mat-icon>
-                Cannot edit/delete
-              </small>
-            </div>
-          </div>
-        </div>
-      </ng-container>
     </ng-container>
 
-    <!-- Scroll to bottom button with new message badge (only show when not loading) -->
-    <button
-      *ngIf="showScrollToBottomButton && !isLoadingMessages"
-      class="scroll-to-bottom-btn"
-      (click)="scrollToBottomClick()"
-      [title]="
-        newMessagesCount > 0
-          ? newMessagesCount + ' new messages'
-          : 'Scroll to bottom'
-      "
-    >
-      <mat-icon>keyboard_arrow_down</mat-icon>
-      <span *ngIf="newMessagesCount > 0" class="message-badge">{{
-        newMessagesCount
-      }}</span>
-    </button>
+    <!-- Chat window -->
+    <div #messageContainer class="chat-window">
+      <!-- Loading state for messages -->
+      <div *ngIf="isLoadingMessages" class="messages-loading">
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+          "
+        >
+          <mat-spinner diameter="40" color="primary"></mat-spinner>
+          <p style="margin-top: 16px; color: #666">Loading messages...</p>
+        </div>
+      </div>
+
+      <!-- Only show messages when loading is complete -->
+      <ng-container *ngIf="!isLoadingMessages">
+        <!-- Empty state -->
+        <div *ngIf="!messageGroups.length" class="empty-chat">
+          <mat-icon>chat</mat-icon>
+          <p>No messages yet</p>
+          <p>Start the conversation by sending a message</p>
+        </div>
+
+        <!-- Grouped messages with date headers -->
+        <ng-container *ngFor="let group of messageGroups; trackBy: trackByDate">
+          <!-- Date header -->
+          <div class="date-header">
+            <span class="date-text">{{ group.date }}</span>
+          </div>
+
+          <!-- Messages in this date group -->
+          <div
+            *ngFor="let m of group.messages; trackBy: trackByTs"
+            class="message"
+            [class.you]="m.sender === 'You'"
+            [class.other]="m.sender !== 'You'"
+            [class.deleted]="m.deletedAt"
+            [class.unreadable]="isMessageUnreadable(m)"
+          >
+            <div class="message-bubble">
+              <p class="message-content">{{ m.text }}</p>
+
+              <div class="message-meta">
+                <span class="message-time" [title]="getFullTimestamp(m.ts)">
+                  {{ formatMessageTime(m.ts) }}
+                </span>
+
+                <span *ngIf="m.sender === 'You'" class="message-status">
+                  <ng-container [ngSwitch]="m.status">
+                    <mat-icon *ngSwitchCase="'pending'" class="status-icon"
+                      >schedule</mat-icon
+                    >
+                    <mat-icon *ngSwitchCase="'sent'" class="status-icon"
+                      >check</mat-icon
+                    >
+                    <mat-icon *ngSwitchCase="'read'" class="status-icon"
+                      >done_all</mat-icon
+                    >
+                  </ng-container>
+                </span>
+
+                <small *ngIf="!m.deletedAt && m.editedAt">&nbsp;(edited)</small>
+
+                <!-- Show indicator for unreadable messages -->
+                <small
+                  *ngIf="isMessageUnreadable(m)"
+                  class="unreadable-indicator"
+                >
+                  &nbsp;(text unavailable)
+                </small>
+              </div>
+
+              <!--  Action buttons only for editable messages -->
+              <div *ngIf="canEditMessage(m)" class="message-actions">
+                <button
+                  class="action-btn"
+                  (click)="beginEdit(m)"
+                  title="Edit"
+                  [disabled]="!canEditMessage(m)"
+                >
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button
+                  class="action-btn"
+                  (click)="delete(m)"
+                  title="Delete"
+                  [disabled]="!canEditMessage(m)"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+
+              <!-- Show info for unreadable messages -->
+              <div
+                *ngIf="isMessageUnreadable(m)"
+                class="message-actions unreadable-actions"
+              >
+                <small class="unreadable-info">
+                  <mat-icon class="info-icon">lock</mat-icon>
+                  Cannot edit/delete
+                </small>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </ng-container>
+
+      <!-- Scroll to bottom button with new message badge (only show when not loading) -->
+      <button
+        *ngIf="showScrollToBottomButton && !isLoadingMessages"
+        class="scroll-to-bottom-btn"
+        (click)="scrollToBottomClick()"
+        [title]="
+          newMessagesCount > 0
+            ? newMessagesCount + ' new messages'
+            : 'Scroll to bottom'
+        "
+      >
+        <mat-icon>keyboard_arrow_down</mat-icon>
+        <span *ngIf="newMessagesCount > 0" class="message-badge">{{
+          newMessagesCount
+        }}</span>
+      </button>
+    </div>
+
+    <!-- Typing indicator positioned above message form -->
+    <div *ngIf="isPartnerTyping && !isLoadingMessages" class="typing-indicator">
+      {{ (chat.theirUsername$ | async) || 'Partner' }} is typing
+    </div>
+
+    <!-- Message form -->
+    <form class="chat-form" (ngSubmit)="editing ? confirmEdit() : send()">
+      <textarea
+        *ngIf="!editing"
+        class="message-input"
+        [(ngModel)]="newMessage"
+        name="message"
+        placeholder="Type a message..."
+        required
+        (input)="onType()"
+        [rows]="1"
+        #messageInput
+        (keydown.enter)="onKeydownEnter($event)"
+        (keydown.enter.control)="onKeydownCtrlEnter($event)"
+        (keydown.enter.meta)="onKeydownMetaEnter($event)"
+        [disabled]="isLoadingMessages"
+      ></textarea>
+
+      <textarea
+        *ngIf="editing"
+        class="message-input"
+        [(ngModel)]="editDraft"
+        name="editDraft"
+        placeholder="Edit message..."
+        required
+        [rows]="1"
+        #editInput
+        (keydown.enter)="onKeydownEnterEdit($event)"
+        (keydown.enter.control)="onKeydownCtrlEnterEdit($event)"
+        (keydown.enter.meta)="onKeydownMetaEnterEdit($event)"
+      ></textarea>
+
+      <button
+        type="submit"
+        class="send-button"
+        [disabled]="
+          !(editing ? editDraft.trim() : newMessage.trim()) ||
+          (chat.connected$ | async) === false ||
+          isLoadingMessages
+        "
+      >
+        <mat-icon>{{ editing ? 'check' : 'send' }}</mat-icon>
+      </button>
+
+      <button
+        *ngIf="editing"
+        type="button"
+        class="cancel-button"
+        (click)="cancelEdit()"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </form>
   </div>
-
-  <!-- Typing indicator positioned above message form -->
-  <div *ngIf="isPartnerTyping && !isLoadingMessages" class="typing-indicator">
-    {{ (chat.theirUsername$ | async) || "Partner" }} is typing
-  </div>
-
-  <!-- Message form -->
-  <form class="chat-form" (ngSubmit)="editing ? confirmEdit() : send()">
-    <textarea
-      *ngIf="!editing"
-      class="message-input"
-      [(ngModel)]="newMessage"
-      name="message"
-      placeholder="Type a message..."
-      required
-      (input)="onType()"
-      [rows]="1"
-      #messageInput
-      (keydown.enter)="onKeydownEnter($event)"
-      (keydown.enter.control)="onKeydownCtrlEnter($event)"
-      (keydown.enter.meta)="onKeydownMetaEnter($event)"
-      [disabled]="isLoadingMessages"
-    ></textarea>
-
-    <textarea
-      *ngIf="editing"
-      class="message-input"
-      [(ngModel)]="editDraft"
-      name="editDraft"
-      placeholder="Edit message..."
-      required
-      [rows]="1"
-      #editInput
-      (keydown.enter)="onKeydownEnterEdit($event)"
-      (keydown.enter.control)="onKeydownCtrlEnterEdit($event)"
-      (keydown.enter.meta)="onKeydownMetaEnterEdit($event)"
-    ></textarea>
-
-    <button
-      type="submit"
-      class="send-button"
-      [disabled]="
-        !(editing ? editDraft.trim() : newMessage.trim()) ||
-        (chat.connected$ | async) === false ||
-        isLoadingMessages
-      "
-    >
-      <mat-icon>{{ editing ? "check" : "send" }}</mat-icon>
-    </button>
-
-    <button
-      *ngIf="editing"
-      type="button"
-      class="cancel-button"
-      (click)="cancelEdit()"
-    >
-      <mat-icon>close</mat-icon>
-    </button>
-  </form>
 </div>
