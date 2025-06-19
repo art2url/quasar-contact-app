@@ -21,6 +21,7 @@
   align-items: center;
   height: 100%;
   gap: 1rem;
+  box-sizing: border-box;
 }
 
 /* Left side container */

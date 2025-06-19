@@ -1,12 +1,15 @@
 .settings-container {
   max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
+  padding: 0 var(--spacing-xl);
+  box-sizing: border-box;
 }
 
 .settings-header {
   display: flex;
   align-items: center;
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
   padding: var(--spacing-md) 0;
   border-bottom: 1px solid var(--border-color);
 }
@@ -67,7 +70,7 @@
   padding: var(--spacing-sm) var(--spacing-md);
   border: none;
   border-radius: var(--border-radius);
-  font-family: "Afacad Flux", sans-serif !important;
+  font-family: 'Afacad Flux', sans-serif !important;
   font-optical-sizing: auto;
   font-size: 0.9rem;
   font-weight: 500;
@@ -122,7 +125,7 @@
 }
 
 .file-name {
-  font-family: "Afacad Flux", sans-serif !important;
+  font-family: 'Afacad Flux', sans-serif !important;
   font-optical-sizing: auto;
   font-size: 0.9rem;
   color: var(--text-color);
@@ -182,20 +185,37 @@
   margin-top: var(--spacing-sm);
   font-size: 0.8rem;
   color: #666;
-  font-family: "Afacad Flux", sans-serif !important;
+  font-family: 'Afacad Flux', sans-serif !important;
 }
 
 .error {
   color: var(--danger-color);
   font-size: 0.9rem;
   margin-top: var(--spacing-sm);
-  font-family: "Afacad Flux", sans-serif !important;
+  font-family: 'Afacad Flux', sans-serif !important;
+}
+
+@media (max-width: 768px) {
+  .settings-container {
+    padding: 0 var(--spacing-md);
+  }
 }
 
 @media (max-width: 599px) {
-  .settings-container {
-    padding: var(--spacing-sm);
+  .settings-header {
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-sm) 0;
   }
+
+  .settings-header h2 {
+    font-size: larger;
+    margin: 0;
+    color: var(--text-color);
+  }
+
+  /* .settings-container {
+    padding: var(--spacing-sm);
+  } */
 
   .avatar-grid {
     grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
@@ -209,22 +229,5 @@
   .custom-action-button {
     width: 100%;
     justify-content: center;
-  }
-}
-
-/* For iOS safe areas */
-@supports (padding: max(0px)) {
-  .settings-container {
-    padding-left: max(var(--spacing-md), env(safe-area-inset-left));
-    padding-right: max(var(--spacing-md), env(safe-area-inset-right));
-    padding-bottom: max(var(--spacing-md), env(safe-area-inset-bottom));
-  }
-
-  @media (max-width: 599px) {
-    .settings-container {
-      padding-left: max(var(--spacing-sm), env(safe-area-inset-left));
-      padding-right: max(var(--spacing-sm), env(safe-area-inset-right));
-      padding-bottom: max(var(--spacing-sm), env(safe-area-inset-bottom));
-    }
   }
 }
