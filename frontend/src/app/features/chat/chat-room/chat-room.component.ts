@@ -445,7 +445,8 @@ export class ChatRoomComponent
       // If user is not at bottom, increment new messages counter
       if (!this.isUserAtBottom && this.lastMessageCount > 0) {
         this.newMessagesCount += newMessageCount;
-        this.showScrollToBottomButton = true;
+        // REMOVED: this.showScrollToBottomButton = true;
+        // Let handleScroll method control button visibility based on scroll position
         console.log(
           '[ChatRoom] New messages while scrolled up:',
           newMessageCount
@@ -621,7 +622,7 @@ export class ChatRoomComponent
   }
 
   /**
-   * Enhanced scroll detection with direction tracking for better button visibility
+   * Enhanced scroll detection with stricter button visibility rules
    */
   private handleScroll(): void {
     if (!this.messageContainer?.nativeElement || this.isLoadingMessages) return;
@@ -639,20 +640,9 @@ export class ChatRoomComponent
     const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
     const isNearBottom = distanceFromBottom <= 50; // Within 50px of bottom
 
-    // Show button when:
-    // 1. User scrolled up and is more than 100px from bottom, OR
-    // 2. There are new messages and user is not at bottom
+    // FIXED: Show button ONLY when user scrolls up significantly
     const shouldShowButton =
-      (scrollDirection === 'up' && distanceFromBottom > 100) ||
-      (this.newMessagesCount > 0 && !isNearBottom) ||
-      (!isNearBottom && this.lastMessageCount > 5); // Show if not at bottom with enough messages
-
-    // console.log('[ChatRoom] Scroll info:', {
-    //   direction: scrollDirection,
-    //   distanceFromBottom,
-    //   shouldShowButton,
-    //   newMessages: this.newMessagesCount,
-    // });
+      scrollDirection === 'up' && distanceFromBottom > 150;
 
     // Update user position
     this.isUserAtBottom = isNearBottom;
