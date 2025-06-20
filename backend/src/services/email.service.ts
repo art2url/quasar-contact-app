@@ -34,10 +34,17 @@ class EmailService {
           user: env.SMTP_USER,
           pass: env.SMTP_PASS,
         },
-        // Additional Mailgun-specific settings
+        // SMTP settings for better compatibility
         tls: {
           rejectUnauthorized: false,
+          ciphers: 'SSLv3',
         },
+        // Additional settings for better email delivery
+        connectionTimeout: 60000,
+        greetingTimeout: 30000,
+        socketTimeout: 60000,
+        debug: env.NODE_ENV === 'development',
+        logger: env.NODE_ENV === 'development',
       });
 
       this.isConfigured = true;
@@ -93,10 +100,15 @@ class EmailService {
       );
     }
   }
-
   // Send password reset email with reset link
-  async sendPasswordResetEmail(email: string, resetUrl: string): Promise<void> {
-    const subject = 'Reset Your Quasar Chat Password';
+  async sendPasswordResetEmail(
+    email: string,
+    resetToken: string
+  ): Promise<void> {
+    // Ensure we use the correct app path
+    const baseUrl = env.CLIENT_ORIGIN || 'http://localhost:3000';
+    const resetUrl = `${baseUrl}/app/auth/reset-password?token=${resetToken}`;
+    const subject = `Password Reset Request - ${env.APP_NAME}`;
 
     const html = `
       <!DOCTYPE html>
@@ -106,51 +118,254 @@ class EmailService {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Password Reset - ${env.APP_NAME}</title>
         <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #0077cc, #005599); color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
-          .content { background: #ffffff; padding: 30px 20px; border: 1px solid #e0e0e0; }
-          .button { display: inline-block; background: #0077cc; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; }
-          .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #666; border-radius: 0 0 8px 8px; }
-          .warning { background: #fff3e0; border: 1px solid #ffcc80; border-radius: 4px; padding: 15px; margin: 20px 0; color: #e65100; }
-          .logo { font-size: 32px; font-weight: bold; margin-bottom: 10px; }
+          /* Reset styles */
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          
+          /* Email-safe fonts */
+          body, table, td, p, h1, h2, h3, h4, h5, h6 {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+          }
+          
+          body {
+            width: 100% !important;
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background-color: #000000 !important;
+            color: #ffffff;
+            line-height: 1.6;
+          }
+          
+          table {
+            border-collapse: collapse !important;
+            width: 100%;
+          }
+          
+          .email-wrapper {
+            width: 100%;
+            background-color: #ffffff;
+            padding: 20px 0;
+          }
+          
+          .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #000000;
+            border: 2px solid #95E06C;
+            border-radius: 16px;
+            overflow: hidden;
+          }
+          
+          .header {
+            background-color: #001011;
+            padding: 40px 30px;
+            text-align: center;
+            border-bottom: 3px solid #95E06C;
+          }
+          
+          .app-name {
+            font-size: 28px;
+            font-weight: 700;
+            color: #95E06C;
+            margin-bottom: 15px;
+            text-decoration: none;
+          }
+          
+          .header-title {
+            font-size: 22px;
+            color: #ffffff;
+            font-weight: 600;
+            margin: 0;
+          }
+          
+          .content {
+            padding: 40px 30px;
+            background-color: #001011;
+            color: #ffffff;
+          }
+          
+          .content p {
+            margin-bottom: 20px;
+            color: #ffffff;
+            font-size: 16px;
+            line-height: 1.6;
+          }
+          
+          .reset-button {
+            display: inline-block;
+            background-color: #95E06C;
+            color: #0c2524 !important;
+            text-decoration: none;
+            padding: 16px 32px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 18px;
+            margin: 20px 0;
+            border: 2px solid #95e06c;
+          }
+          
+          .reset-button:hover {
+            background-color: #c3f73a;
+            border-color: #c3f73a;
+          }
+          
+          .button-center {
+            text-align: center;
+            margin: 30px 0;
+          }
+          
+          .url-display {
+            word-break: break-all;
+            background-color: #001011;
+            border: 1px solid #95E06C;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: Courier, monospace;
+            font-size: 14px;
+            color: #95E06C;
+            margin: 20px 0;
+          }
+          
+          .warning-box {
+            background-color: #2d1810;
+            border: 2px solid #ff6b35;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+          }
+          
+          .warning-title {
+            font-weight: 600;
+            color: #ff6b35;
+            margin-bottom: 8px;
+            font-size: 16px;
+          }
+          
+          .warning-box p {
+            color: #ffffff;
+            margin: 0;
+          }
+          
+          .security-notice {
+            background-color: #001011;
+            border: 2px solid #1a2d20;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+          }
+          
+          .security-notice strong {
+            color: #95e06c;
+            font-size: 16px;
+          }
+          
+          .security-notice p {
+            color: #ffffff;
+            margin: 8px 0 0 0;
+          }
+          
+          .footer {
+            background-color: #000000;
+            padding: 25px 30px;
+            text-align: center;
+            border-top: 2px solid #95E06C;
+          }
+          
+          .footer p {
+            color: #999999;
+            font-size: 14px;
+            margin: 5px 0;
+          }
+          
+          .signature {
+            margin-top: 30px;
+            color: #ffffff;
+            font-weight: 500;
+            font-size: 16px;
+          }
+          
+          /* Mobile responsive */
+          @media only screen and (max-width: 600px) {
+            .email-container {
+              margin: 0 10px;
+              border-radius: 12px;
+            }
+            
+            .header, .content, .footer {
+              padding: 25px 20px;
+            }
+            
+            .app-name {
+              font-size: 24px;
+            }
+            
+            .header-title {
+              font-size: 18px;
+            }
+            
+            .reset-button {
+              padding: 14px 28px;
+              font-size: 16px;
+            }
+          }
         </style>
       </head>
       <body>
-        <div class="container">
-          <div class="header">
-            <div class="logo">${env.APP_NAME}</div>
-            <h2>Password Reset Request</h2>
-          </div>
-          
-          <div class="content">
-            <p>Hello,</p>
-            
-            <p>We received a request to reset the password for your ${env.APP_NAME} account. If you made this request, click the button below to reset your password:</p>
-            
-            <center>
-              <a href="${resetUrl}" class="button">Reset My Password</a>
-            </center>
-            
-            <p>Or copy and paste this link into your browser:</p>
-            <p style="word-break: break-all; background: #f5f5f5; padding: 10px; border-radius: 4px; font-family: monospace;">${resetUrl}</p>
-            
-            <div class="warning">
-              <strong>⚠️ Important:</strong> Resetting your password will permanently delete all your encrypted messages. This cannot be undone as messages are encrypted with your current password.
-            </div>
-            
-            <p><strong>This link will expire in 1 hour</strong> for security reasons.</p>
-            
-            <p>If you did not request a password reset, please ignore this email. Your account remains secure.</p>
-            
-            <p>Best regards,<br>The ${env.APP_NAME} Team</p>
-          </div>
-          
-          <div class="footer">
-            <p>This is an automated message from ${env.APP_NAME}. Please do not reply to this email.</p>
-            <p>If you're having trouble with the button above, copy and paste the URL into your web browser.</p>
-          </div>
-        </div>
+        <table role="presentation" class="email-wrapper" cellpadding="0" cellspacing="0">
+          <tr>
+            <td>
+              <table role="presentation" class="email-container" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td class="header">
+                    <div class="app-name">${env.APP_NAME}</div>
+                    <h1 class="header-title">🔐 Password Reset Request</h1>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="content">
+                    <p>Hello,</p>
+                    
+                    <p>We received a request to reset your password for your ${env.APP_NAME} account. If you made this request, click the button below to reset your password:</p>
+                    
+                    <div class="button-center">
+                      <a href="${resetUrl}" class="reset-button">Reset My Password</a>
+                    </div>
+                    
+                    <p>Or copy and paste this link into your browser:</p>
+                    <div class="url-display">${resetUrl}</div>
+                    
+                    <div class="warning-box">
+                      <div class="warning-title">⚠️ Important Security Notice</div>
+                      <p>This link will expire in 1 hour for your security. If you did not request this password reset, please ignore this email and your password will remain unchanged.</p>
+                    </div>
+                    
+                    <div class="security-notice">
+                      <strong>🔒 Encryption Notice:</strong>
+                      <p>After resetting your password, all your encrypted messages will be permanently deleted. This is a security feature because messages are encrypted with your current password and cannot be decrypted with a new one.</p>
+                    </div>
+                    
+                    <div class="signature">
+                      Best regards,<br>
+                      The ${env.APP_NAME} Team
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="footer">
+                    <p>This is an automated message from ${env.APP_NAME}.</p>
+                    <p>Please do not reply to this email. If you need help, contact our support team.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
       </body>
       </html>
     `;
@@ -160,16 +375,16 @@ class EmailService {
 
       Hello,
 
-      We received a request to reset the password for your ${env.APP_NAME} account.
+      We received a request to reset your password for your ${env.APP_NAME} account.
 
-      To reset your password, please click the following link:
+      To reset your password, please visit the following link:
       ${resetUrl}
 
-      IMPORTANT: Resetting your password will permanently delete all your encrypted messages. This cannot be undone as messages are encrypted with your current password.
+      This link will expire in 1 hour for your security.
 
-      This link will expire in 1 hour for security reasons.
+      If you did not request this password reset, please ignore this email and your password will remain unchanged.
 
-      If you did not request a password reset, please ignore this email. Your account remains secure.
+      Important: After resetting your password, all your encrypted messages will be permanently deleted for security reasons.
 
       Best regards,
       The ${env.APP_NAME} Team
@@ -195,54 +410,242 @@ class EmailService {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Password Reset Confirmation - ${env.APP_NAME}</title>
         <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #4caf50, #388e3c); color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
-          .content { background: #ffffff; padding: 30px 20px; border: 1px solid #e0e0e0; }
-          .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #666; border-radius: 0 0 8px 8px; }
-          .success { background: #e8f5e8; border: 1px solid #4caf50; border-radius: 4px; padding: 15px; margin: 20px 0; color: #2e7d32; }
-          .info { background: #e3f2fd; border: 1px solid #2196f3; border-radius: 4px; padding: 15px; margin: 20px 0; color: #1565c0; }
-          .logo { font-size: 32px; font-weight: bold; margin-bottom: 10px; }
+          /* Reset styles */
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          
+          /* Email-safe fonts */
+          body, table, td, p, h1, h2, h3, h4, h5, h6 {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+          }
+          
+          body {
+            width: 100% !important;
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background-color: #000000 !important;
+            color: #ffffff;
+            line-height: 1.6;
+          }
+          
+          table {
+            border-collapse: collapse !important;
+            width: 100%;
+          }
+          
+          .email-wrapper {
+            width: 100%;
+            background-color: #ffffff;
+            padding: 20px 0;
+          }
+          
+          .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #000000;
+            border: 2px solid #68b684;
+            border-radius: 16px;
+            overflow: hidden;
+          }
+          
+          .header {
+            background-color: #001011;
+            padding: 40px 30px;
+            text-align: center;
+            border-bottom: 3px solid #95E06C;
+          }
+          
+          .app-name {
+            font-size: 28px;
+            font-weight: 700;
+            color: #95E06C;
+            margin-bottom: 15px;
+            text-decoration: none;
+          }
+          
+          .header-title {
+            font-size: 22px;
+            color: #ffffff;
+            font-weight: 600;
+            margin: 0;
+          }
+          
+          .content {
+            padding: 40px 30px;
+            background-color: #001011;
+            color: #ffffff;
+          }
+          
+          .content p {
+            margin-bottom: 20px;
+            color: #ffffff;
+            font-size: 16px;
+            line-height: 1.6;
+          }
+          
+          .success-box {
+            background-color: #001011;
+            border: 2px solid #68b684;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+          }
+          
+          .success-title {
+            font-weight: 600;
+            color: #95e06c;
+            margin-bottom: 8px;
+            font-size: 18px;
+          }
+          
+          .success-box p {
+            color: #ffffff;
+            margin: 0;
+          }
+          
+          .info-box {
+            background-color: #001011;
+            border: 2px solid #1a2d20;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+          }
+          
+          .info-title {
+            font-weight: 600;
+            color: #95E06C;
+            margin-bottom: 8px;
+            font-size: 16px;
+          }
+          
+          .info-box p {
+            color: #ffffff;
+            margin: 0;
+          }
+
+          .recommendations {
+            background-color: #001011;
+            border: 2px solid #1a2d20;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+          }
+          
+          .recommendations strong {
+            color: #95e06c;
+            font-size: 16px;
+          }
+          
+          .recommendations ul {
+            margin: 15px 0 0 20px;
+            padding: 0;
+          }
+          
+          .recommendations li {
+            margin-bottom: 8px;
+            color: #ffffff;
+          }
+          
+          .footer {
+            background-color: #000000;
+            padding: 25px 30px;
+            text-align: center;
+            border-top: 2px solid #95E06C;
+          }
+          
+          .footer p {
+            color: #999999;
+            font-size: 14px;
+            margin: 5px 0;
+          }
+          
+          .signature {
+            margin-top: 30px;
+            color: #ffffff;
+            font-weight: 500;
+            font-size: 16px;
+          }
+          
+          /* Mobile responsive */
+          @media only screen and (max-width: 600px) {
+            .email-container {
+              margin: 0 10px;
+              border-radius: 12px;
+            }
+            
+            .header, .content, .footer {
+              padding: 25px 20px;
+            }
+            
+            .app-name {
+              font-size: 24px;
+            }
+            
+            .header-title {
+              font-size: 18px;
+            }
+          }
         </style>
       </head>
       <body>
-        <div class="container">
-          <div class="header">
-            <div class="logo">${env.APP_NAME}</div>
-            <h2>Password Reset Successful</h2>
-          </div>
-          
-          <div class="content">
-            <p>Hello,</p>
-            
-            <div class="success">
-              <strong>✅ Success!</strong> Your ${env.APP_NAME} password has been reset successfully.
-            </div>
-            
-            <p>Your account is now secured with your new password. You can log in to ${env.APP_NAME} using your new credentials.</p>
-            
-            <div class="info">
-              <strong>📝 Note:</strong> As part of the password reset process, all your previous encrypted messages have been permanently deleted. This is necessary because messages were encrypted with your old password and cannot be decrypted with the new one.
-            </div>
-            
-            <p>If you did not perform this password reset, please contact our support team immediately as your account may have been compromised.</p>
-            
-            <p>For your security, we recommend:</p>
-            <ul>
-              <li>Using a strong, unique password</li>
-              <li>Regularly backing up your private key from Settings</li>
-            </ul>
-            
-            <p>Welcome back to secure messaging!</p>
-            
-            <p>Best regards,<br>The ${env.APP_NAME} Team</p>
-          </div>
-          
-          <div class="footer">
-            <p>This is an automated confirmation from ${env.APP_NAME}. Please do not reply to this email.</p>
-            <p>If you have any questions, please contact our support team.</p>
-          </div>
-        </div>
+        <table role="presentation" class="email-wrapper" cellpadding="0" cellspacing="0">
+          <tr>
+            <td>
+              <table role="presentation" class="email-container" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td class="header">
+                    <div class="app-name">${env.APP_NAME}</div>
+                    <h1 class="header-title">✅ Password Reset Successful</h1>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="content">
+                    <p>Hello,</p>
+                    
+                    <div class="success-box">
+                      <div class="success-title">✅ Success!</div>
+                      <p>Your ${env.APP_NAME} password has been reset successfully.</p>
+                    </div>
+                    
+                    <p>Your account is now secured with your new password. You can log in to ${env.APP_NAME} using your new credentials.</p>
+                    
+                    <div class="info-box">
+                      <div class="info-title">📝 Note:</div>
+                      <p>As part of the password reset process, all your previous encrypted messages have been permanently deleted. This is necessary because messages were encrypted with your old password and cannot be decrypted with the new one.</p>
+                    </div>
+                    
+                    <p>If you did not perform this password reset, please contact our support team immediately as your account may have been compromised.</p>
+                    
+                    <div class="recommendations">
+                      <strong>For your security, we recommend:</strong>
+                      <ul>
+                        <li>Using a strong, unique password</li>
+                        <li>Regularly backing up your private key from Settings</li>
+                      </ul>
+                    </div>
+                    
+                    <div class="signature">
+                      Best regards,<br>
+                      The ${env.APP_NAME} Team
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="footer">
+                    <p>This is an automated message from ${env.APP_NAME}.</p>
+                    <p>Please do not reply to this email. If you need help, contact our support team.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
       </body>
       </html>
     `;
@@ -263,8 +666,6 @@ class EmailService {
       For your security, we recommend:
       - Using a strong, unique password
       - Regularly backing up your private key from Settings
-
-      Welcome back to secure messaging!
 
       Best regards,
       The ${env.APP_NAME} Team
