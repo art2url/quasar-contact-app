@@ -165,30 +165,33 @@
         </ng-container>
       </ng-container>
 
-      <!-- Scroll to bottom button with new message badge (only show when not loading) -->
-      <button
-        *ngIf="showScrollToBottomButton && !isLoadingMessages"
-        class="scroll-to-bottom-btn"
-        (click)="scrollToBottomClick()"
-        [title]="
-          newMessagesCount > 0
-            ? newMessagesCount + ' new messages'
-            : 'Scroll to bottom'
-        "
+      <!-- Typing indicator positioned above message form -->
+      <div
+        *ngIf="isPartnerTyping && !isLoadingMessages"
+        class="typing-indicator"
       >
-        <mat-icon>keyboard_arrow_down</mat-icon>
-        <span *ngIf="newMessagesCount > 0" class="message-badge">{{
-          newMessagesCount
-        }}</span>
-      </button>
+        {{ (chat.theirUsername$ | async) || 'Partner' }} is typing
+      </div>
     </div>
 
-    <!-- Typing indicator positioned above message form -->
-    <div *ngIf="isPartnerTyping && !isLoadingMessages" class="typing-indicator">
-      {{ (chat.theirUsername$ | async) || 'Partner' }} is typing
-    </div>
+    <!-- Scroll to bottom button with new message badge (only show when not loading) -->
+    <button
+      *ngIf="showScrollToBottomButton && !isLoadingMessages"
+      class="scroll-to-bottom-btn"
+      (click)="scrollToBottomClick()"
+      [title]="
+        newMessagesCount > 0
+          ? newMessagesCount + ' new messages'
+          : 'Scroll to bottom'
+      "
+    >
+      <mat-icon>keyboard_arrow_down</mat-icon>
+      <span *ngIf="newMessagesCount > 0" class="message-badge">{{
+        newMessagesCount
+      }}</span>
+    </button>
 
-    <!-- Message form -->
+    <!-- Message form - keep inside container for desktop, fixed for mobile -->
     <form class="chat-form" (ngSubmit)="editing ? confirmEdit() : send()">
       <textarea
         *ngIf="!editing"
