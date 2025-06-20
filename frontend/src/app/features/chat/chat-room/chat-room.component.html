@@ -175,21 +175,16 @@
       {{ (chat.theirUsername$ | async) || 'Partner' }} is typing
     </div>
 
-    <!-- Scroll to bottom button with new message badge (only show when not loading) -->
+    <!-- SIMPLE SCROLL TO BOTTOM BUTTON -->
     <button
       *ngIf="showScrollToBottomButton && !isLoadingMessages"
       class="scroll-to-bottom-btn"
       (click)="scrollToBottomClick()"
-      [title]="
-        newMessagesCount > 0
-          ? newMessagesCount + ' new messages'
-          : 'Scroll to bottom'
-      "
     >
       <mat-icon>keyboard_arrow_down</mat-icon>
-      <span *ngIf="newMessagesCount > 0" class="message-badge">{{
-        newMessagesCount
-      }}</span>
+      <span *ngIf="newMessagesCount > 0" class="message-badge">
+        {{ newMessagesCount > 99 ? '99+' : newMessagesCount }}
+      </span>
     </button>
 
     <!-- Message form - keep inside container for desktop, fixed for mobile -->
@@ -232,6 +227,7 @@
           (chat.connected$ | async) === false ||
           isLoadingMessages
         "
+        [attr.aria-label]="editing ? 'Save edited message' : 'Send message'"
       >
         <svg
           *ngIf="!editing"
@@ -240,6 +236,7 @@
           viewBox="0 0 512 512"
           fill="currentColor"
           class="custom-send-icon"
+          aria-hidden="true"
         >
           <g clip-path="url(#clip0_232_1230)">
             <path
@@ -265,7 +262,7 @@
           </defs>
         </svg>
 
-        <mat-icon *ngIf="editing">check</mat-icon>
+        <mat-icon *ngIf="editing" aria-hidden="true">check</mat-icon>
       </button>
 
       <button
@@ -273,8 +270,9 @@
         type="button"
         class="cancel-button"
         (click)="cancelEdit()"
+        aria-label="Cancel editing"
       >
-        <mat-icon>close</mat-icon>
+        <mat-icon aria-hidden="true">close</mat-icon>
       </button>
     </form>
   </div>
