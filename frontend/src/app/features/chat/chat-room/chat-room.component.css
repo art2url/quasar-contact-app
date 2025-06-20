@@ -339,7 +339,6 @@
   box-shadow: 0 4px 12px rgba(0, 119, 204, 0.3);
   transition: all 0.3s ease;
   z-index: 10;
-  animation: fadeInUp 0.3s ease;
 }
 
 .scroll-to-bottom-btn:hover {
@@ -603,6 +602,17 @@
     height: 60px; /* Fixed height for chat header */
     display: flex;
     align-items: center;
+  }
+
+  /* Ensure cache info banner appears directly under sticky header on mobile */
+  .chat-container app-cache-info-banner {
+    position: fixed !important;
+    top: calc(
+      var(--header-height) + 60px
+    ); /* Position under main header + chat header */
+    left: 0;
+    right: 0;
+    z-index: 85; /* Below chat header but above chat content */
   }
 
   .chat-window {
