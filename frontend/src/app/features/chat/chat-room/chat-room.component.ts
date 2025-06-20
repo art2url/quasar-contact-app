@@ -156,6 +156,8 @@ export class ChatRoomComponent
   }
 
   async ngOnInit(): Promise<void> {
+    document.body.classList.add('chat-room-page');
+
     console.log('[ChatRoom] Component initializing');
     this.receiverId = this.route.snapshot.paramMap.get('id')!;
     console.log('[ChatRoom] Chat room ID:', this.receiverId);
@@ -1069,6 +1071,8 @@ export class ChatRoomComponent
   }
 
   ngOnDestroy() {
+    document.body.classList.remove('chat-room-page');
+
     console.log('[ChatRoom] Component destroying, cleaning up resources');
 
     // Remove event listeners from input element
