@@ -32,7 +32,11 @@
             [class.online]="isPartnerOnline"
             [class.offline]="!isPartnerOnline"
           ></span>
-          <span>{{ isPartnerOnline ? 'Online' : 'Offline' }}</span>
+          <span>{{
+            isPartnerOnline
+              ? ((chat.theirUsername$ | async) || 'User') + ' is online'
+              : ((chat.theirUsername$ | async) || 'User') + ' is offline'
+          }}</span>
         </div>
       </div>
     </div>
@@ -164,14 +168,11 @@
           </div>
         </ng-container>
       </ng-container>
+    </div>
 
-      <!-- Typing indicator positioned above message form -->
-      <div
-        *ngIf="isPartnerTyping && !isLoadingMessages"
-        class="typing-indicator"
-      >
-        {{ (chat.theirUsername$ | async) || 'Partner' }} is typing
-      </div>
+    <!-- Typing indicator positioned between chat window and message form -->
+    <div *ngIf="isPartnerTyping && !isLoadingMessages" class="typing-indicator">
+      {{ (chat.theirUsername$ | async) || 'Partner' }} is typing
     </div>
 
     <!-- Scroll to bottom button with new message badge (only show when not loading) -->
