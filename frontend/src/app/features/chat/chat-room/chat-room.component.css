@@ -95,7 +95,7 @@
   color: #666;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 8px;
   padding-right: 1rem;
 }
 
@@ -179,8 +179,6 @@
 
 .message {
   font-weight: 400;
-  /* TODO */
-  font-family: 'Open Sans', sans-serif;
   font-size: 1rem;
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: 18px;
@@ -576,25 +574,39 @@
   }
 
   .chat-container {
-    height: calc(
-      100vh - var(--header-height)
-    ); /* Use full height minus header since footer is hidden */
+    height: 100vh; /* Use full viewport height */
     border-radius: 0;
     box-shadow: none;
     margin: 0;
     position: relative;
+    display: flex;
+    flex-direction: column;
   }
 
   .chat-header {
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: 2px var(--spacing-md);
     /* Add horizontal padding back to header content */
+    position: fixed !important;
+    top: var(--header-height); /* Position directly below main app header */
+    left: 0;
+    right: 0;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid var(--border-color);
+    z-index: 90; /* Below main header (100) but above chat content */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    height: 60px; /* Fixed height for chat header */
+    display: flex;
+    align-items: center;
   }
 
   .chat-window {
     padding: var(--spacing-sm) var(--spacing-md);
     /* Add horizontal padding back to chat content */
+    padding-top: 70px; /* Reserve space for fixed chat header (60px + 10px margin) */
     padding-bottom: 90px; /* Reserve space for fixed input form */
-    height: calc(100% - 60px); /* Subtract header height */
+    height: 100vh;
+    overflow-y: auto;
+    margin-top: var(--header-height); /* Push down by main header height */
   }
 
   .chat-form {
