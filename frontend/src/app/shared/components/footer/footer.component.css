@@ -128,6 +128,11 @@
 }
 
 @media (max-width: 599px) {
+  /* Hide footer only when chat-room-page class is on body */
+  :host-context(.chat-room-page) .footer {
+    display: none;
+  }
+
   .footer-disclaimer {
     font-size: 0.6rem;
     max-width: 320px;
@@ -135,6 +140,11 @@
 }
 
 @media (max-width: 480px) {
+  /* Hide footer only when chat-room-page class is on body */
+  :host-context(.chat-room-page) .footer {
+    display: none;
+  }
+
   .footer-disclaimer {
     display: none;
   }
