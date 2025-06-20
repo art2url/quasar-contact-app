@@ -320,12 +320,11 @@
   }
 }
 
-/* Scroll to bottom button repositioned to center-bottom */
 .scroll-to-bottom-btn {
   position: fixed;
   bottom: calc(var(--footer-height) + 32px + 90px);
-  left: 50%; /* Center horizontally */
-  transform: translateX(-50%); /* Perfect centering */
+  left: 50%;
+  transform: translateX(-50%);
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -337,7 +336,6 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 12px rgba(0, 119, 204, 0.3);
-  transition: all 0.3s ease;
   z-index: 10;
 }
 
@@ -345,17 +343,6 @@
   box-shadow: 0 6px 16px rgba(0, 119, 204, 0.4);
 }
 
-/* .scroll-to-bottom-btn:active {
-  transform: translateY(0);
-} */
-
-.scroll-to-bottom-btn mat-icon {
-  font-size: 24px;
-  width: 24px;
-  height: 24px;
-}
-
-/* Message count badge on scroll button */
 .message-badge {
   position: absolute;
   top: -6px;
@@ -364,26 +351,23 @@
   color: white;
   font-size: 0.7rem;
   font-weight: 600;
-  border-radius: 10px;
-  padding: 2px 6px;
-  min-width: 18px;
-  height: 18px;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(244, 67, 54, 0.3);
-  animation: pulse 0.3s ease;
+  border: 2px solid white;
 }
 
-@keyframes pulse {
+@keyframes fadeInUp {
   0% {
-    transform: scale(0.8);
-  }
-  50% {
-    transform: scale(1.1);
+    opacity: 0;
+    transform: translateY(20px);
   }
   100% {
-    transform: scale(1);
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -443,7 +427,7 @@
   color: white;
   border: none;
   cursor: pointer;
-  min-height: 44px; /* Larger touch target for mobile */
+  min-height: 44px;
   min-width: 44px;
   transition: opacity 0.2s ease;
 }
@@ -502,7 +486,7 @@
 /* Styling for unreadable messages */
 .message.unreadable {
   opacity: 0.85;
-  background-color: #f8f9fa !important; /* Slightly different background */
+  background-color: #f8f9fa !important;
 }
 
 .message.unreadable .message-content {
@@ -511,7 +495,7 @@
 }
 
 .message.you.unreadable {
-  background-color: #e3f2fd !important; /* Light blue for unreadable sent messages */
+  background-color: #e3f2fd !important;
 }
 
 /* Indicator text styling */
@@ -579,7 +563,7 @@
   }
 
   .chat-container {
-    height: 100vh; /* Use full viewport height */
+    height: 100vh;
     border-radius: 0;
     box-shadow: none;
     margin: 0;
@@ -590,45 +574,39 @@
 
   .chat-header {
     padding: 2px var(--spacing-md);
-    /* Add horizontal padding back to header content */
     position: fixed !important;
-    top: var(--header-height); /* Position directly below main app header */
+    top: var(--header-height);
     left: 0;
     right: 0;
     background-color: #f8f9fa;
     border-bottom: 1px solid var(--border-color);
-    z-index: 90; /* Below main header (100) but above chat content */
+    z-index: 90;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    height: 60px; /* Fixed height for chat header */
+    height: 60px;
     display: flex;
     align-items: center;
   }
 
-  /* Ensure cache info banner appears directly under sticky header on mobile */
   .chat-container app-cache-info-banner {
     position: fixed !important;
-    top: calc(
-      var(--header-height) + 60px
-    ); /* Position under main header + chat header */
+    top: calc(var(--header-height) + 60px);
     left: 0;
     right: 0;
-    z-index: 85; /* Below chat header but above chat content */
+    z-index: 85;
   }
 
   .chat-window {
     padding: var(--spacing-sm) var(--spacing-md);
-    /* Add horizontal padding back to chat content */
-    padding-top: 70px; /* Reserve space for fixed chat header (60px + 10px margin) */
-    padding-bottom: 90px; /* Reserve space for fixed input form */
+    padding-top: 70px;
+    padding-bottom: 90px;
     height: 100vh;
     overflow-y: auto;
-    margin-top: var(--header-height); /* Push down by main header height */
-    position: relative; /* Ensure proper positioning context for typing indicator */
+    margin-top: var(--header-height);
+    position: relative;
   }
 
   .chat-form {
     padding: var(--spacing-sm) var(--spacing-md);
-    /* Add horizontal padding back to form */
     position: fixed !important;
     bottom: 0;
     left: 0;
@@ -636,13 +614,10 @@
     background-color: white;
     border-top: 1px solid var(--border-color);
     z-index: 1000;
-    /* Add safe area for mobile browsers */
     padding-bottom: calc(var(--spacing-sm) + env(safe-area-inset-bottom));
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
-    /* Ensure form adapts to content */
     min-height: 70px;
-    max-height: 200px; /* Prevent form from taking too much space */
-    /* Ensure typing indicator appears above when form expands */
+    max-height: 200px;
     box-sizing: border-box;
   }
 
@@ -655,7 +630,7 @@
   }
 
   .back-button {
-    display: flex; /* Always show back button on mobile */
+    display: flex;
   }
 
   .settings-header h3 {
@@ -673,28 +648,26 @@
     max-width: 85%;
   }
 
-  /* Mobile typing indicator adjustments - Stack above form */
   .typing-indicator {
     position: fixed !important;
     left: 0;
     right: 0;
+    bottom: calc(70px + env(safe-area-inset-bottom, 0px));
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     padding: var(--spacing-xs) var(--spacing-md);
     margin: 0;
     border-top: 1px solid var(--border-color);
-    border-bottom: 1px solid var(--border-color); /* Add bottom border for separation */
+    border-bottom: 1px solid var(--border-color);
     border-radius: 0;
     font-style: italic;
     color: #666;
     font-size: 0.8rem;
     text-align: left;
-    z-index: 1001; /* Above chat form (1000) and its shadow */
+    z-index: 1001;
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
     animation: fadeInUp 0.3s ease-out;
-    /* Use viewport units to position above keyboard area */
-    bottom: calc(70px + env(safe-area-inset-bottom, 0px));
   }
 
   /* Fix iOS overscroll behavior */
@@ -711,34 +684,20 @@
     min-width: 44px;
   }
 
-  /* Adjust scroll button position for mobile - remove flickering with transform3d */
   .scroll-to-bottom-btn {
     position: fixed;
-    bottom: 100px; /* Fixed position above input */
+    bottom: 100px;
     left: 50%;
-    transform: translate3d(
-      -50%,
-      0,
-      0
-    ); /* Use transform3d for hardware acceleration */
     width: 44px;
     height: 44px;
-    /* Remove transitions that cause flickering */
-    transition: opacity 0.2s ease;
-    will-change: opacity; /* Optimize for opacity changes only */
-  }
-
-  .scroll-to-bottom-btn mat-icon {
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
   }
 
   .message-badge {
+    width: 18px;
+    height: 18px;
     font-size: 0.6rem;
-    padding: 1px 4px;
-    min-width: 16px;
-    height: 16px;
+    top: -4px;
+    right: -4px;
   }
 
   .unreadable-actions {
@@ -771,6 +730,6 @@
 
   /* Prevent zoom on input focus for iOS */
   .message-input {
-    font-size: 16px; /* Prevents zoom on iOS */
+    font-size: 16px;
   }
 }
