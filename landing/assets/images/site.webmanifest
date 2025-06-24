@@ -1,0 +1,59 @@
+{
+  "name": "Quasar Contact - Secure End-to-End Encrypted Chat",
+  "short_name": "Quasar Contact",
+  "description": "Experience true privacy with Quasar's end-to-end encrypted chat. Military-grade encryption, real-time messaging, and zero data logging.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#001011",
+  "theme_color": "#68B684",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["productivity", "social", "communication"],
+  "icons": [
+    {
+      "src": "/assets/images/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/images/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Chat",
+      "short_name": "Chat",
+      "description": "Start a new secure chat",
+      "url": "/app",
+      "icons": [
+        {
+          "src": "/assets/images/favicon-32x32.png",
+          "sizes": "32x32",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
+}
