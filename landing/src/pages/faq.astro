@@ -1,0 +1,147 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="FAQ - Quasar Contact"
+  description="Frequently asked questions about Quasar Contact secure messaging platform, encryption, privacy, and features."
+>
+<div class="main-content page-content">
+  <div class="container inner">
+    <div class="page-header">
+      <h2>Frequently Asked Questions</h2>
+      <p class="page-subtitle">
+        Everything you need to know about Quasar Contact
+      </p>
+    </div>
+
+    <div class="faq-container">
+      <div class="faq-item">
+        <h3 class="faq-question">What is Quasar Contact?</h3>
+        <div class="faq-answer">
+          <p>
+            Quasar Contact is a secure, end-to-end encrypted messaging
+            platform that prioritizes your privacy. I use military-grade
+            encryption to ensure your conversations remain completely
+            private and secure.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <h3 class="faq-question">How does the encryption work?</h3>
+        <div class="faq-answer">
+          <p>
+            I use client-side encryption with the Web Crypto API,
+            implementing AES-GCM encryption. Your messages are encrypted on
+            your device before being sent, and only the intended recipient
+            can decrypt them. The server never has access to your encryption
+            keys or plaintext messages.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <h3 class="faq-question">What data do you collect?</h3>
+        <div class="faq-answer">
+          <p>
+            I collect minimal data - only your email address for user
+            identification and authentication. I do not collect, store, or
+            analyze your message content, contacts, or any other personal
+            information. All messages are stored encrypted and cannot be
+            read by me.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <h3 class="faq-question">Is Quasar Contact free to use?</h3>
+        <div class="faq-answer">
+          <p>
+            Yes, Quasar Contact is currently free to use during the alpha
+            stage. I'm focused on building the best secure messaging
+            platform and gathering user feedback.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <h3 class="faq-question">Can you read my messages?</h3>
+        <div class="faq-answer">
+          <p>
+            No, I cannot read your messages. My zero-knowledge architecture
+            ensures that all encryption and decryption happens on your
+            device. Even if I wanted to, I don't have the keys to decrypt
+            your messages.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <h3 class="faq-question">Is the source code available?</h3>
+        <div class="faq-answer">
+          <p>
+            I believe in transparency and plan to open-source parts of my
+            codebase in the future. This will allow security researchers and
+            the community to audit my encryption implementation.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <h3 class="faq-question">How do I delete my account?</h3>
+        <div class="faq-answer">
+          <p>
+            You can delete your account at any time through the settings
+            page. When you delete your account, all your personal data is
+            permanently removed from my servers, including your encrypted
+            messages.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <h3 class="faq-question">What happens if I lose my device?</h3>
+        <div class="faq-answer">
+          <p>
+            Your encryption keys are stored locally on your device. If you
+            lose your device, you'll need to log in again on a new device,
+            which will generate new keys. Messages sent before the key
+            change cannot be decrypted on the new device for security
+            reasons.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <h3 class="faq-question">Do you comply with GDPR?</h3>
+        <div class="faq-answer">
+          <p>
+            Yes, I am fully GDPR compliant. I collect minimal data,
+            implement privacy by design, and give you full control over your
+            data. You can access, modify, or delete your data at any time.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <h3 class="faq-question">How can I report a security issue?</h3>
+        <div class="faq-answer">
+          <p>
+            If you discover a security vulnerability, please contact me
+            immediately at artem.turlenko@quasar.contact. I take security issues
+            very seriously and will respond promptly to any reports.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <h3 class="faq-question">Will there be mobile apps?</h3>
+        <div class="faq-answer">
+          <p>While Quasar Contact already works great on mobile browsers and can be installed as a PWA, I'm considering native mobile apps in the future based on user demand and feedback.</p>
+        </div>
+      </div>
+
+  </div>
+</div>
+</BaseLayout>
