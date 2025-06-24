@@ -8,7 +8,7 @@ const navItems = [
   { href: '/about/', label: 'About', path: '/about' },
   { href: '/faq/', label: 'FAQ', path: '/faq' },
   { href: '/legal/', label: 'Legal', path: '/legal' },
-  { href: '/author/', label: 'Author', path: '/author' }
+  { href: '/author/', label: 'Author', path: '/author' },
 ];
 
 // Function to check if nav item is active
@@ -20,108 +20,117 @@ function isActive(itemPath: string, currentPath: string): boolean {
 }
 ---
 
-<header class="header" role="banner">
-  <div class="header-container">
-    <a href="/" class="logo" aria-label="Quasar - Go to homepage">
+<header class='header' role='banner'>
+  <div class='header-container'>
+    <a href='/' class='logo' aria-label='Quasar - Go to homepage'>
       <img
-        src="/assets/images/logo.svg"
-        alt="Quasar Contact - Secure Chat Application"
-        class="logo-icon"
+        src='/assets/images/logo.svg'
+        alt='Quasar Contact - Secure Chat Application'
+        class='logo-icon'
       />
       <img
-        src="/assets/images/text-logo-white.svg"
-        alt="Quasar"
-        class="logo-text"
+        src='/assets/images/text-logo-white.svg'
+        alt='Quasar'
+        class='logo-text'
       />
     </a>
-    
-    <nav class="nav-menu" role="navigation" aria-label="Main navigation">
-      {navItems.map(item => (
-        <a 
-          href={item.href} 
-          class={`nav-link ${isActive(item.path, currentPath) ? 'active' : ''}`}
-          aria-current={isActive(item.path, currentPath) ? 'page' : undefined}
-        >
-          {item.label}
-        </a>
-      ))}
+
+    <nav class='nav-menu' role='navigation' aria-label='Main navigation'>
+      {
+        navItems.map((item) => (
+          <a
+            href={item.href}
+            class={`nav-link ${isActive(item.path, currentPath) ? 'active' : ''}`}
+            aria-current={isActive(item.path, currentPath) ? 'page' : undefined}
+          >
+            {item.label}
+          </a>
+        ))
+      }
     </nav>
 
     <!-- Mobile Menu Toggle -->
     <button
-      class="mobile-menu-toggle"
-      aria-label="Toggle mobile menu"
-      onclick="toggleMobileMenu()"
+      class='mobile-menu-toggle'
+      aria-label='Toggle mobile menu'
+      onclick='toggleMobileMenu()'
     >
       <svg
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
+        width='24'
+        height='24'
+        viewBox='0 0 24 24'
+        fill='none'
+        stroke='currentColor'
+        stroke-width='2'
       >
-        <line x1="3" y1="6" x2="21" y2="6"></line>
-        <line x1="3" y1="12" x2="21" y2="12"></line>
-        <line x1="3" y1="18" x2="21" y2="18"></line>
+        <line x1='3' y1='6' x2='21' y2='6'></line>
+        <line x1='3' y1='12' x2='21' y2='12'></line>
+        <line x1='3' y1='18' x2='21' y2='18'></line>
       </svg>
     </button>
-    
+
     <a
-      href="/app"
-      class="header-button"
-      aria-label="Start secure chat with Quasar"
+      href='/app'
+      class='header-button'
+      aria-label='Start secure chat with Quasar'
     >
       Start Chat
       <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        aria-hidden="true"
+        width='16'
+        height='16'
+        viewBox='0 0 24 24'
+        fill='none'
+        stroke='currentColor'
+        stroke-width='2'
+        aria-hidden='true'
       >
-        <path d="M5 12h14M12 5l7 7-7 7" />
+        <path d='M5 12h14M12 5l7 7-7 7'></path>
       </svg>
     </a>
   </div>
 </header>
 
 <!-- Mobile Navigation -->
-<nav class="mobile-nav" id="mobileNav" role="navigation" aria-label="Mobile navigation">
-  <div class="mobile-nav-links">
-    {navItems.map(item => (
-      <a 
-        href={item.href} 
-        class={`mobile-nav-link ${isActive(item.path, currentPath) ? 'active' : ''}`}
-        aria-current={isActive(item.path, currentPath) ? 'page' : undefined}
-        onclick="closeMobileMenu()"
-      >
-        {item.label}
-      </a>
-    ))}
+<nav
+  class='mobile-nav'
+  id='mobileNav'
+  role='navigation'
+  aria-label='Mobile navigation'
+>
+  <div class='mobile-nav-links'>
+    {
+      navItems.map((item) => (
+        <a
+          href={item.href}
+          class={`mobile-nav-link ${isActive(item.path, currentPath) ? 'active' : ''}`}
+          aria-current={isActive(item.path, currentPath) ? 'page' : undefined}
+          onclick='closeMobileMenu()'
+        >
+          {item.label}
+        </a>
+      ))
+    }
   </div>
-  
-  <div class="mobile-nav-cta">
+
+  <div class='mobile-nav-cta'>
     <a
-      href="/app"
-      class="header-button"
-      style="width: 100%; justify-content: center;"
-      aria-label="Start secure chat with Quasar"
-      onclick="closeMobileMenu()"
+      href='/app'
+      class='header-button'
+      style='width: 100%; justify-content: center;'
+      aria-label='Start secure chat with Quasar'
+      onclick='closeMobileMenu()'
     >
       Start Chat
       <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        aria-hidden="true"
+        width='16'
+        height='16'
+        viewBox='0 0 24 24'
+        fill='none'
+        stroke='currentColor'
+        stroke-width='2'
+        aria-hidden='true'
       >
-        <path d="M5 12h14M12 5l7 7-7 7" />
+        <path d='M5 12h14M12 5l7 7-7 7'></path>
       </svg>
     </a>
   </div>

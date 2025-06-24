@@ -3,45 +3,42 @@
 ---
 
 <!-- Cookie Consent Banner -->
-<div id="cookieBanner" class="cookie-banner">
-  <div class="cookie-banner-content">
-    <div class="cookie-info">
-      <div class="cookie-icon">
+<div id='cookieBanner' class='cookie-banner'>
+  <div class='cookie-banner-content'>
+    <div class='cookie-info'>
+      <div class='cookie-icon'>
         <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
+          width='24'
+          height='24'
+          viewBox='0 0 24 24'
+          fill='none'
+          stroke='currentColor'
+          stroke-width='2'
         >
-          <circle cx="12" cy="12" r="10" />
-          <circle cx="12" cy="12" r="4" />
-          <path d="M4.93 4.93l4.24 4.24" />
-          <path d="M14.83 9.17l4.24-4.24" />
-          <path d="M14.83 14.83l4.24 4.24" />
-          <path d="M9.17 14.83l-4.24 4.24" />
+          <circle cx='12' cy='12' r='10'></circle>
+          <circle cx='12' cy='12' r='4'></circle>
+          <path d='M4.93 4.93l4.24 4.24'></path>
+          <path d='M14.83 9.17l4.24-4.24'></path>
+          <path d='M14.83 14.83l4.24 4.24'></path>
+          <path d='M9.17 14.83l-4.24 4.24'></path>
         </svg>
       </div>
-      <div class="cookie-text">
+      <div class='cookie-text'>
         <h4>Website uses cookies</h4>
         <p>
           I use essential cookies to provide basic functionality and improve
-          your experience. I also use analytics cookies to understand how
-          you interact with my site.
+          your experience. I also use analytics cookies to understand how you
+          interact with my site.
         </p>
       </div>
     </div>
-    <div class="cookie-actions">
-      <button
-        class="cookie-btn cookie-btn-secondary"
-        onclick="manageCookies()"
-      >
+    <div class='cookie-actions'>
+      <button class='cookie-btn cookie-btn-secondary' onclick='manageCookies()'>
         Manage Preferences
       </button>
       <button
-        class="cookie-btn cookie-btn-primary"
-        onclick="acceptAllCookies()"
+        class='cookie-btn cookie-btn-primary'
+        onclick='acceptAllCookies()'
       >
         Accept All
       </button>
@@ -50,85 +47,83 @@
 </div>
 
 <!-- Cookie Preferences Modal -->
-<div id="cookieModal" class="cookie-modal">
-  <div class="cookie-modal-content">
-    <div class="cookie-modal-header">
+<div id='cookieModal' class='cookie-modal'>
+  <div class='cookie-modal-content'>
+    <div class='cookie-modal-header'>
       <h3>Cookie Preferences</h3>
       <button
-        class="cookie-modal-close"
-        onclick="closeCookieModal()"
-        aria-label="Close"
+        class='cookie-modal-close'
+        onclick='closeCookieModal()'
+        aria-label='Close'
       >
         <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
+          width='20'
+          height='20'
+          viewBox='0 0 24 24'
+          fill='none'
+          stroke='currentColor'
+          stroke-width='2'
         >
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
+          <line x1='18' y1='6' x2='6' y2='18'></line>
+          <line x1='6' y1='6' x2='18' y2='18'></line>
         </svg>
       </button>
     </div>
-    <div class="cookie-modal-body">
-      <p>
-        Control your privacy by selecting which cookies to accept.
-      </p>
+    <div class='cookie-modal-body'>
+      <p>Control your privacy by selecting which cookies to accept.</p>
 
-      <div class="cookie-category">
-        <div class="cookie-category-header">
-          <label class="cookie-toggle">
-            <input type="checkbox" id="essentialCookies" checked disabled />
-            <span class="cookie-label">Essential Cookies</span>
-            <span class="cookie-required">(Required)</span>
+      <div class='cookie-category'>
+        <div class='cookie-category-header'>
+          <label class='cookie-toggle'>
+            <input type='checkbox' id='essentialCookies' checked disabled />
+            <span class='cookie-label'>Essential Cookies</span>
+            <span class='cookie-required'>(Required)</span>
           </label>
         </div>
-        <p class="cookie-description">
-          These cookies are necessary for the website to function and cannot
-          be disabled. They include authentication, security, and basic
+        <p class='cookie-description'>
+          These cookies are necessary for the website to function and cannot be
+          disabled. They include authentication, security, and basic
           functionality.
         </p>
       </div>
 
-      <div class="cookie-category">
-        <div class="cookie-category-header">
-          <label class="cookie-toggle">
-            <input type="checkbox" id="preferencesCookies" />
-            <span class="cookie-label">Preference Cookies</span>
+      <div class='cookie-category'>
+        <div class='cookie-category-header'>
+          <label class='cookie-toggle'>
+            <input type='checkbox' id='preferencesCookies' />
+            <span class='cookie-label'>Preference Cookies</span>
           </label>
         </div>
-        <p class="cookie-description">
+        <p class='cookie-description'>
           These cookies remember your settings and preferences to provide a
           personalized experience.
         </p>
       </div>
 
-      <div class="cookie-category">
-        <div class="cookie-category-header">
-          <label class="cookie-toggle">
-            <input type="checkbox" id="analyticsCookies" />
-            <span class="cookie-label">Analytics Cookies</span>
+      <div class='cookie-category'>
+        <div class='cookie-category-header'>
+          <label class='cookie-toggle'>
+            <input type='checkbox' id='analyticsCookies' />
+            <span class='cookie-label'>Analytics Cookies</span>
           </label>
         </div>
-        <p class="cookie-description">
+        <p class='cookie-description'>
           These cookies help us understand how visitors interact with our
           website by collecting anonymized information.
         </p>
       </div>
     </div>
-    <div class="cookie-modal-footer">
+    <div class='cookie-modal-footer'>
       <button
-        class="cookie-btn cookie-btn-secondary"
-        id="acceptSelectedBtn"
-        onclick="savePreferences()"
+        class='cookie-btn cookie-btn-secondary'
+        id='acceptSelectedBtn'
+        onclick='savePreferences()'
       >
         Accept Selected
       </button>
       <button
-        class="cookie-btn cookie-btn-primary"
-        onclick="acceptAllFromModal()"
+        class='cookie-btn cookie-btn-primary'
+        onclick='acceptAllFromModal()'
       >
         Accept All
       </button>
@@ -142,4 +137,4 @@
   window.GA_MEASUREMENT_ID = GA_MEASUREMENT_ID;
 </script>
 
-<script src="../scripts/cookieConsent.js"></script>
+<script src='../scripts/cookieConsent.js'></script>
