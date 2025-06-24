@@ -17,125 +17,149 @@ export interface Props {
 const {
   title,
   description,
-  keywords = "encrypted chat, secure messaging, end-to-end encryption, private chat, secure communication, military-grade encryption, privacy-first messaging, real-time chat",
-  ogImage = "https://quasar.contact/assets/images/og-image.jpg",
+  keywords = 'encrypted chat, secure messaging, end-to-end encryption, private chat, secure communication, military-grade encryption, privacy-first messaging, real-time chat',
+  ogImage = 'https://quasar.contact/assets/images/og-image.jpg',
   canonical,
   noIndex = false,
-  structuredData
+  structuredData,
 } = Astro.props;
 
 const currentUrl = new URL(Astro.request.url);
 const canonicalUrl = canonical || currentUrl.href;
 
 const defaultStructuredData = {
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "Quasar",
-  "description": "Secure end-to-end encrypted chat application with military-grade encryption and privacy-first design",
-  "url": "https://quasar.contact",
-  "applicationCategory": "CommunicationApplication",
-  "operatingSystem": "Web, iOS, Android",
-  "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "USD"
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Quasar',
+  description:
+    'Secure end-to-end encrypted chat application with military-grade encryption and privacy-first design',
+  url: 'https://quasar.contact',
+  applicationCategory: 'CommunicationApplication',
+  operatingSystem: 'Web, iOS, Android',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
   },
-  "author": {
-    "@type": "Person",
-    "name": "Artem Turlenko",
-    "url": "https://github.com/art2url"
+  author: {
+    '@type': 'Person',
+    name: 'Artem Turlenko',
+    url: 'https://github.com/art2url',
   },
-  "aggregateRating": {
-    "@type": "AggregateRating",
-    "ratingValue": "4.5",
-    "reviewCount": "25"
+  aggregateRating: {
+    '@type': 'AggregateRating',
+    ratingValue: '4.5',
+    reviewCount: '25',
   },
-  "featureList": [
-    "End-to-end encryption",
-    "Real-time messaging",
-    "Zero data logging",
-    "Military-grade security",
-    "Cross-platform support"
-  ]
+  featureList: [
+    'End-to-end encryption',
+    'Real-time messaging',
+    'Zero data logging',
+    'Military-grade security',
+    'Cross-platform support',
+  ],
 };
 
 const finalStructuredData = structuredData || defaultStructuredData;
 ---
 
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang='en'>
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
 
     <!-- Primary Meta Tags -->
     <title>{title}</title>
-    <meta name="title" content={title} />
-    <meta name="description" content={description} />
-    <meta name="keywords" content={keywords} />
-    <meta name="author" content="Artem Turlenko" />
-    <meta name="robots" content={noIndex ? "noindex, nofollow" : "index, follow"} />
+    <meta name='title' content={title} />
+    <meta name='description' content={description} />
+    <meta name='keywords' content={keywords} />
+    <meta name='author' content='Artem Turlenko' />
+    <meta
+      name='robots'
+      content={noIndex ? 'noindex, nofollow' : 'index, follow'}
+    />
 
     <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content={canonicalUrl} />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-    <meta property="og:image" content={ogImage} />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:site_name" content="Quasar" />
-    <meta property="og:locale" content="en_US" />
+    <meta property='og:type' content='website' />
+    <meta property='og:url' content={canonicalUrl} />
+    <meta property='og:title' content={title} />
+    <meta property='og:description' content={description} />
+    <meta property='og:image' content={ogImage} />
+    <meta property='og:image:width' content='1200' />
+    <meta property='og:image:height' content='630' />
+    <meta property='og:site_name' content='Quasar' />
+    <meta property='og:locale' content='en_US' />
 
     <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content={canonicalUrl} />
-    <meta name="twitter:title" content={title} />
-    <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={ogImage} />
+    <meta name='twitter:card' content='summary_large_image' />
+    <meta name='twitter:url' content={canonicalUrl} />
+    <meta name='twitter:title' content={title} />
+    <meta name='twitter:description' content={description} />
+    <meta name='twitter:image' content={ogImage} />
 
     <!-- Canonical URL -->
-    <link rel="canonical" href={canonicalUrl} />
+    <link rel='canonical' href={canonicalUrl} />
 
     <!-- Favicon and Icons -->
-    <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png" />
-    <link rel="manifest" href="/assets/images/site.webmanifest" />
+    <link rel='icon' type='image/x-icon' href='/assets/images/favicon.ico' />
+    <link
+      rel='apple-touch-icon'
+      sizes='180x180'
+      href='/assets/images/apple-touch-icon.png'
+    />
+    <link
+      rel='icon'
+      type='image/png'
+      sizes='32x32'
+      href='/assets/images/favicon-32x32.png'
+    />
+    <link
+      rel='icon'
+      type='image/png'
+      sizes='16x16'
+      href='/assets/images/favicon-16x16.png'
+    />
+    <link rel='manifest' href='/assets/images/site.webmanifest' />
 
     <!-- DNS Prefetch -->
-    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
-    <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+    <link rel='dns-prefetch' href='//fonts.googleapis.com' />
+    <link rel='dns-prefetch' href='//fonts.gstatic.com' />
 
     <!-- Preconnect -->
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin />
 
     <!-- Fonts -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap"
-      rel="stylesheet"
+      href='https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap'
+      rel='stylesheet'
     />
 
     <!-- Schema.org structured data -->
-    <script type="application/ld+json" is:inline set:html={JSON.stringify(finalStructuredData)} />
+    <script
+      type='application/ld+json'
+      is:inline
+      set:html={JSON.stringify(finalStructuredData)}
+    />
 
     <!-- Performance hints -->
-    <link rel="preload" href="/assets/images/logo.svg" as="image" />
+    <link rel='preload' href='/assets/images/logo.svg' as='image' />
 
     <!-- Google Analytics Consent Mode -->
     <script is:inline>
       // Initialize consent mode before any analytics scripts load
       window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+
       // Set default consent state (denied until user gives consent)
       gtag('consent', 'default', {
-        'analytics_storage': 'denied',
-        'ad_storage': 'denied',
-        'wait_for_update': 500
+        analytics_storage: 'denied',
+        ad_storage: 'denied',
+        wait_for_update: 500,
       });
-      
+
       // Check if user has already given consent
       const consent = localStorage.getItem('cookieConsent');
       if (consent) {
@@ -144,7 +168,7 @@ const finalStructuredData = structuredData || defaultStructuredData;
           if (parsed.preferences && parsed.preferences.analytics) {
             // User has given consent, update consent mode
             gtag('consent', 'update', {
-              'analytics_storage': 'granted'
+              analytics_storage: 'granted',
             });
           }
         } catch (e) {
@@ -157,15 +181,13 @@ const finalStructuredData = structuredData || defaultStructuredData;
   <body>
     <AlphaBanner />
     <Header />
-    
+
     <main>
       <slot />
     </main>
-    
+
     <Footer />
     <CookieConsent />
-
-
   </body>
 </html>
 
@@ -176,4 +198,5 @@ const finalStructuredData = structuredData || defaultStructuredData;
 <script>
   // Import main JavaScript functionality
   import '../scripts/script.js';
-</script> 
+</script>
+

@@ -13,6 +13,7 @@ declare global {
     getCookieConsent?: () => any;
     getCookie?: (name: string) => string | null;
     setCookie?: (name: string, value: string, days?: number) => void;
+    toggleFaq?: (element: HTMLElement) => void;
   }
 }
 
