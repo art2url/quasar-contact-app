@@ -1,0 +1,74 @@
+---
+// No props needed for this component
+---
+
+<!-- Alpha Stage Notification -->
+<div class="alpha-banner" id="alphaBanner">
+  <div class="alpha-banner-content">
+    <div class="alpha-info">
+      <span class="alpha-badge">ALPHA</span>
+      <span class="alpha-text alpha-text-full">
+        Quasar is currently in alpha stage. Features may be limited and
+        subject to change.
+      </span>
+      <span class="alpha-text alpha-text-short">
+        Quasar is currently in alpha stage.
+      </span>
+    </div>
+    <button
+      class="alpha-close"
+      onclick="closeAlphaBanner()"
+      aria-label="Close alpha notification"
+    >
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- Inline script to prevent flickering -->
+<script is:inline>
+  (function() {
+    // Check localStorage immediately before any rendering
+    const alphaBannerClosed = localStorage.getItem('alphaBannerClosed');
+    
+    if (alphaBannerClosed === 'true') {
+      // CSS to hide banner immediately
+      const style = document.createElement('style');
+      style.textContent = `
+        .alpha-banner {
+          display: none !important;
+          transform: translateY(-100%) !important;
+        }
+        .header {
+          top: 0 !important;
+        }
+        .mobile-nav {
+          top: var(--header-height) !important;
+          height: calc(100vh - var(--header-height)) !important;
+        }
+        .main-content,
+        .page-content {
+          margin-top: var(--header-height) !important;
+          min-height: calc(100vh - var(--header-height) - var(--footer-height)) !important;
+        }
+        body {
+          --alpha-banner-height: 0px;
+        }
+      `;
+      document.head.appendChild(style);
+      
+      // Class to body for immediate styling
+      document.documentElement.classList.add('alpha-closed');
+    }
+  })();
+</script>
