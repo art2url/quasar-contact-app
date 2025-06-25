@@ -1,6 +1,3 @@
-// Current year
-document.getElementById('current-year').innerHTML = new Date().getFullYear();
-
 // Alpha banner close functionality
 function closeAlphaBanner() {
   const banner = document.getElementById('alphaBanner');

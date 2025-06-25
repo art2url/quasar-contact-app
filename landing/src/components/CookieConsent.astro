@@ -1,26 +1,45 @@
 ---
-// No props needed for this component
+// Access environment variable
+const GA_MEASUREMENT_ID = import.meta.env.GA_MEASUREMENT_ID || '';
 ---
 
 <!-- Cookie Consent Banner -->
-<div id='cookieBanner' class='cookie-banner'>
+<div class='cookie-banner show' id='cookieBanner'>
   <div class='cookie-banner-content'>
     <div class='cookie-info'>
       <div class='cookie-icon'>
         <svg
           width='24'
           height='24'
-          viewBox='0 0 24 24'
+          viewBox='0 0 1024 1024'
           fill='none'
-          stroke='currentColor'
-          stroke-width='2'
+          xmlns='http://www.w3.org/2000/svg'
         >
-          <circle cx='12' cy='12' r='10'></circle>
-          <circle cx='12' cy='12' r='4'></circle>
-          <path d='M4.93 4.93l4.24 4.24'></path>
-          <path d='M14.83 9.17l4.24-4.24'></path>
-          <path d='M14.83 14.83l4.24 4.24'></path>
-          <path d='M9.17 14.83l-4.24 4.24'></path>
+          <g clip-path='url(#clip0_627_1575)'>
+            <path
+              d='M587.139 1018.2C364.344 1053.48 138.357 926.385 44.9435 721.926C-88.8684 429.047 87.5078 81.7362 405.175 11.6642C434.193 5.2637 463.059 2.02748 492.645 0.0867842C538.909 -0.23593 571.686 2.2259 616.98 12.0751C668.887 23.3621 665.778 32.9377 651.178 73.9842C600.921 215.273 761.456 354.175 897.886 284.137C938.907 263.079 946.838 238.885 975.233 300.749C1020.45 399.258 1035.4 504.569 1014.51 611.555C973.752 820.256 798.531 989.095 587.139 1018.2ZM506.435 63.1734C231.92 68.8709 24.1732 318.307 73.275 590.693C108.364 785.338 270.604 938.125 468.379 956.628C495.61 959.174 522.61 956.856 549.706 958.458C561.607 955.842 573.765 954.944 585.801 953.177C828.183 917.563 1003.21 662.376 950.244 422.763C942.762 388.918 934.488 371.3 923.032 340.938C909.069 348.776 893.948 353.792 878.498 357.76C770.788 385.432 661.837 336.162 607.728 238.769C583.84 195.772 568.659 116.924 587.139 68.7265C560.131 65.8868 533.68 62.3304 506.435 63.1734Z'
+              fill='#C3F73A'></path>
+            <path
+              d='M341.38 358.554C309.696 362.738 280.596 340.501 276.315 308.827C272.033 277.154 294.185 247.988 325.845 243.613C357.64 239.218 386.956 261.484 391.256 293.292C395.554 325.098 373.2 354.347 341.38 358.554Z'
+              fill='#C3F73A'></path>
+            <path
+              d='M578.99 503.389C547.735 508.176 518.483 486.829 513.509 455.601C508.537 424.376 529.714 394.994 560.909 389.838C592.367 384.639 622.048 406.03 627.061 437.519C632.076 469.008 610.506 498.56 578.99 503.389Z'
+              fill='#C3F73A'></path>
+            <path
+              d='M247.625 606.761C215.885 609.972 187.508 586.945 184.119 555.223C180.726 523.502 203.598 494.996 235.301 491.429C267.254 487.833 296.035 510.923 299.452 542.897C302.869 574.872 279.619 603.522 247.625 606.761Z'
+              fill='#C3F73A'></path>
+            <path
+              d='M751.434 704.829C719.24 707.673 690.838 683.872 688.013 651.675C685.185 619.481 709.006 591.093 741.202 588.284C773.374 585.478 801.733 609.274 804.558 641.443C807.38 673.615 783.601 701.987 751.434 704.829Z'
+              fill='#C3F73A'></path>
+            <path
+              d='M487.571 832.897C455.764 835.275 428.099 811.306 425.922 779.485C423.744 747.664 447.883 720.149 479.717 718.172C511.27 716.211 538.487 740.093 540.649 771.633C542.807 803.174 519.097 830.541 487.571 832.897Z'
+              fill='#C3F73A'></path>
+          </g>
+          <defs>
+            <clipPath id='clip0_627_1575'>
+              <rect width='1024' height='1024' fill='white'></rect>
+            </clipPath>
+          </defs>
         </svg>
       </div>
       <div class='cookie-text'>
@@ -33,32 +52,37 @@
       </div>
     </div>
     <div class='cookie-actions'>
-      <button class='cookie-btn cookie-btn-secondary' onclick='manageCookies()'>
+      <button
+        class='cookie-btn cookie-btn-secondary'
+        onclick='manageCookies()'
+        aria-label='Manage cookie preferences'
+      >
         Manage Preferences
       </button>
       <button
         class='cookie-btn cookie-btn-primary'
         onclick='acceptAllCookies()'
+        aria-label='Accept all cookies'
       >
-        Accept All
+        Accept All Cookies
       </button>
     </div>
   </div>
 </div>
 
 <!-- Cookie Preferences Modal -->
-<div id='cookieModal' class='cookie-modal'>
+<div class='cookie-modal' id='cookieModal'>
   <div class='cookie-modal-content'>
     <div class='cookie-modal-header'>
       <h3>Cookie Preferences</h3>
       <button
         class='cookie-modal-close'
         onclick='closeCookieModal()'
-        aria-label='Close'
+        aria-label='Close cookie preferences'
       >
         <svg
-          width='20'
-          height='20'
+          width='24'
+          height='24'
           viewBox='0 0 24 24'
           fill='none'
           stroke='currentColor'
@@ -72,42 +96,61 @@
     <div class='cookie-modal-body'>
       <p>Control your privacy by selecting which cookies to accept.</p>
 
+      <!-- Essential Cookies -->
       <div class='cookie-category'>
         <div class='cookie-category-header'>
           <label class='cookie-toggle'>
-            <input type='checkbox' id='essentialCookies' checked disabled />
-            <span class='cookie-label'>Essential Cookies</span>
-            <span class='cookie-required'>(Required)</span>
+            <input
+              type='checkbox'
+              id='essentialCookies'
+              checked
+              disabled
+              aria-describedby='essential-desc'
+            />
+            <span class='cookie-label'>
+              Essential Cookies
+              <span class='cookie-required'>(Required)</span>
+            </span>
           </label>
         </div>
-        <p class='cookie-description'>
+        <p class='cookie-description' id='essential-desc'>
           These cookies are necessary for the website to function and cannot be
           disabled. They include authentication, security, and basic
           functionality.
         </p>
       </div>
 
+      <!-- Preference Cookies -->
       <div class='cookie-category'>
         <div class='cookie-category-header'>
           <label class='cookie-toggle'>
-            <input type='checkbox' id='preferencesCookies' />
+            <input
+              type='checkbox'
+              id='preferencesCookies'
+              aria-describedby='preferences-desc'
+            />
             <span class='cookie-label'>Preference Cookies</span>
           </label>
         </div>
-        <p class='cookie-description'>
+        <p class='cookie-description' id='preferences-desc'>
           These cookies remember your settings and preferences to provide a
           personalized experience.
         </p>
       </div>
 
+      <!-- Analytics Cookies -->
       <div class='cookie-category'>
         <div class='cookie-category-header'>
           <label class='cookie-toggle'>
-            <input type='checkbox' id='analyticsCookies' />
+            <input
+              type='checkbox'
+              id='analyticsCookies'
+              aria-describedby='analytics-desc'
+            />
             <span class='cookie-label'>Analytics Cookies</span>
           </label>
         </div>
-        <p class='cookie-description'>
+        <p class='cookie-description' id='analytics-desc'>
           These cookies help us understand how visitors interact with our
           website by collecting anonymized information.
         </p>
@@ -125,16 +168,79 @@
         class='cookie-btn cookie-btn-primary'
         onclick='acceptAllFromModal()'
       >
-        Accept All
+        Accept All Cookies
       </button>
     </div>
   </div>
 </div>
 
-<script define:vars={{ GA_MEASUREMENT_ID: import.meta.env.GA_MEASUREMENT_ID }}>
+<!-- Initialize Cookie Consent -->
+<script is:inline define:vars={{ GA_MEASUREMENT_ID }}>
   // GA_MEASUREMENT_ID is available from define:vars above
-  // Set it globally so the module can access it
   window.GA_MEASUREMENT_ID = GA_MEASUREMENT_ID;
+
+  // Initialize cookie consent state immediately
+  (function () {
+    const consent = localStorage.getItem('cookieConsent');
+    let shouldShowBanner = true;
+
+    if (consent) {
+      try {
+        const parsed = JSON.parse(consent);
+        const oneYear = 365 * 24 * 60 * 60 * 1000;
+
+        if (Date.now() - parsed.timestamp <= oneYear) {
+          // User has valid consent, hide banner
+          shouldShowBanner = false;
+          document.body.classList.add('cookies-hidden');
+          document.body.classList.remove('cookies-showing');
+        } else {
+          // Consent expired, remove it and show banner
+          localStorage.removeItem('cookieConsent');
+        }
+      } catch (e) {
+        // Invalid consent data, remove it and show banner
+        localStorage.removeItem('cookieConsent');
+      }
+    }
+
+    if (shouldShowBanner) {
+      // Set up to show banner immediately
+      document.body.classList.add('cookies-showing');
+      document.body.classList.remove('cookies-hidden');
+
+      // Add CSS to show banner immediately, but allow normal hiding
+      const style = document.createElement('style');
+      style.textContent = `
+        #cookieBanner {
+          display: block;
+          transform: translateY(0);
+        }
+        #cookieBanner.show {
+          display: block;
+          transform: translateY(0);
+        }
+        #cookieBanner:not(.show) {
+          display: none;
+          transform: translateY(100%);
+        }
+      `;
+      document.head.appendChild(style);
+    } else {
+      // Add CSS to ensure banner stays hidden
+      const style = document.createElement('style');
+      style.textContent = `
+        #cookieBanner {
+          display: none !important;
+          transform: translateY(100%) !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  })();
 </script>
 
-<script src='../scripts/cookieConsent.js'></script>
+<!-- Load Cookie Consent Module -->
+<script>
+  import '../scripts/cookieConsent.js';
+</script>

@@ -29,12 +29,13 @@ class CookieConsentManager {
 
   initializeApp() {
     const consent = this.getCookieConsent();
-    if (!consent) {
-      this.showCookieBanner();
-    } else {
-      this.hideCookieBanner();
+
+    // Don't show/hide banner here - inline scripts already handled initial state
+    // Just initialize services if consent exists
+    if (consent) {
       this.initializeServices();
     }
+    // If no consent, banner is already shown by inline script
   }
 
   // Google Analytics functions
@@ -377,30 +378,9 @@ class CookieConsentManager {
   }
 
   addCheckboxListeners() {
-    const preferencesEl = document.getElementById('preferencesCookies');
-    const analyticsEl = document.getElementById('analyticsCookies');
-    const acceptSelectedBtn = document.getElementById('acceptSelectedBtn');
-
-    const updateButtonVisibility = () => {
-      if (preferencesEl && analyticsEl && acceptSelectedBtn) {
-        const hasCustomSelection = preferencesEl.checked || analyticsEl.checked;
-
-        if (hasCustomSelection) {
-          acceptSelectedBtn.style.display = 'block';
-          acceptSelectedBtn.style.visibility = 'visible';
-        } else {
-          acceptSelectedBtn.style.display = 'none';
-          acceptSelectedBtn.style.visibility = 'hidden';
-        }
-      }
-    };
-
-    if (preferencesEl)
-      preferencesEl.addEventListener('change', updateButtonVisibility);
-    if (analyticsEl)
-      analyticsEl.addEventListener('change', updateButtonVisibility);
-
-    updateButtonVisibility();
+    // No need for checkbox listeners since we only have two buttons:
+    // "Accept Selected" and "Accept All" - both always visible
+    // This simplifies the logic and removes the dynamic button showing/hiding
   }
 
   // Expose functions globally for onclick handlers

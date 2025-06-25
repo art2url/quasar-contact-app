@@ -165,7 +165,13 @@ const finalStructuredData = structuredData || defaultStructuredData;
       if (consent) {
         try {
           const parsed = JSON.parse(consent);
-          if (parsed.preferences && parsed.preferences.analytics) {
+          const oneYear = 365 * 24 * 60 * 60 * 1000;
+
+          if (
+            Date.now() - parsed.timestamp <= oneYear &&
+            parsed.preferences &&
+            parsed.preferences.analytics
+          ) {
             // User has given consent, update consent mode
             gtag('consent', 'update', {
               analytics_storage: 'granted',
@@ -199,4 +205,3 @@ const finalStructuredData = structuredData || defaultStructuredData;
   // Import main JavaScript functionality
   import '../scripts/script.js';
 </script>
-
