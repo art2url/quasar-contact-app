@@ -81,3 +81,26 @@
     </div>
   </div>
 </footer>
+
+<!-- Inline script to set year immediately -->
+<script is:inline>
+  (function () {
+    // Set current year immediately
+    function setCurrentYear() {
+      const yearElement = document.getElementById('current-year');
+      if (yearElement) {
+        yearElement.textContent = new Date().getFullYear();
+      }
+    }
+
+    // Set year as soon as possible
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', setCurrentYear);
+    } else {
+      setCurrentYear();
+    }
+
+    // Also set it when the script runs (in case DOM is ready but not fully loaded)
+    setTimeout(setCurrentYear, 0);
+  })();
+</script>
