@@ -14,6 +14,22 @@ declare global {
     getCookie?: (name: string) => string | null;
     setCookie?: (name: string, value: string, days?: number) => void;
     toggleFaq?: (element: HTMLElement) => void;
+    trackCustomEvent?: (
+      eventName: string,
+      category: string,
+      label: string,
+      value?: number
+    ) => void;
+
+    // Google Analytics related
+    GA_MEASUREMENT_ID?: string;
+    gtag?: (...args: any[]) => void;
+    dataLayer?: any[];
+    cookieConsentManager?: any;
+
+    // Mobile menu functions
+    toggleMobileMenu?: () => void;
+    closeMobileMenu?: () => void;
   }
 }
 

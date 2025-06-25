@@ -187,7 +187,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   <script>
     function toggleFaq(element: HTMLElement) {
       const faqItem = element.parentElement;
-      const answer = faqItem?.querySelector('.faq-answer');
       const toggle = element.querySelector('.faq-toggle');
 
       if (faqItem?.classList.contains('open')) {
