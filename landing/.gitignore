@@ -83,7 +83,7 @@ dist
 
 # Gatsby files
 .cache/
-public
+# public // needed for Build
 
 # Storybook build outputs
 .out
