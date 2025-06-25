@@ -4,7 +4,7 @@ FROM node:18-alpine AS builder
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files first for better caching
 COPY package*.json ./
 COPY frontend/package*.json ./frontend/
 COPY backend/package*.json ./backend/
@@ -49,7 +49,7 @@ WORKDIR /app
 # Copy built assets from builder stage
 COPY --from=builder /app/backend/dist ./backend/dist
 COPY --from=builder /app/backend/package*.json ./backend/
-COPY --from=builder /app/frontend/dist/browser ./dist/app
+COPY --from=builder /app/frontend/dist/browser ./dist
 COPY --from=builder /app/landing/dist ./public
 
 # Install only production dependencies for backend
