@@ -1,6 +1,10 @@
 # Quasar Contact - Secure End-to-End Encrypted Chat Application
 
-<img src="public/assets/images/logo.svg" alt="Quasar Logo" width="256">
+<p align="center">
+  <a href="https://quasar.contact/" target="_blank">
+    <img src="landing/public/assets/images/preview.png" alt="Lead to Quasar Landing" width="100%">
+  </a>
+</p>
 
 ## 🔐 Overview
 
@@ -11,12 +15,14 @@ Quasar Contact is a privacy-focused, real-time messaging application that implem
 ## ✨ Key Features
 
 ### 🛡️ Security & Privacy
+
 - **End-to-End Encryption**: All messages are encrypted using Web Crypto API (AES-GCM) before leaving your device
 - **Zero Knowledge Architecture**: Server never has access to decryption keys or plaintext messages
 - **Client-Side Key Generation**: RSA-OAEP key pairs generated and stored locally
 - **No Data Logging**: Messages are stored encrypted and can only be decrypted by intended recipients
 
 ### 💬 Messaging Features
+
 - **Real-Time Communication**: Instant message delivery via WebSocket connections
 - **Message Status Indicators**: Sent, delivered, and read receipts
 - **Typing Indicators**: See when your conversation partner is typing
@@ -25,6 +31,7 @@ Quasar Contact is a privacy-focused, real-time messaging application that implem
 - **Message Queue**: Offline message delivery when users reconnect
 
 ### 🎯 User Experience
+
 - **Progressive Web App**: Installable on desktop and mobile devices
 - **Responsive Design**: Optimized for all screen sizes
 - **Dark Theme**: Modern, eye-friendly interface
@@ -35,7 +42,16 @@ Quasar Contact is a privacy-focused, real-time messaging application that implem
 
 ### Technology Stack
 
+#### Landing Pages
+
+- **Framework**: Astro 4.0 (Static Site Generator)
+- **Pages**: Home, About, FAQ, Legal, Author
+- **SEO**: Built-in sitemap generation and meta optimization
+- **Performance**: Optimized static builds with minimal JavaScript
+- **Styling**: Modern CSS with responsive design
+
 #### Frontend
+
 - **Framework**: Angular 18 (Standalone Components)
 - **UI Library**: Angular Material
 - **State Management**: RxJS BehaviorSubjects
@@ -44,6 +60,7 @@ Quasar Contact is a privacy-focused, real-time messaging application that implem
 - **Styling**: CSS3 with custom animations
 
 #### Backend
+
 - **Runtime**: Node.js 18+
 - **Framework**: Express.js
 - **WebSocket**: Socket.IO
@@ -53,6 +70,7 @@ Quasar Contact is a privacy-focused, real-time messaging application that implem
 - **Password Hashing**: bcrypt
 
 #### Infrastructure
+
 - **Containerization**: Docker (Multi-stage build)
 - **Deployment**: Railway/Cloud platforms
 - **Build Tools**: TypeScript, Webpack
@@ -62,7 +80,20 @@ Quasar Contact is a privacy-focused, real-time messaging application that implem
 
 ```
 quasar-contact-app/
-├── frontend/                # Angular application
+├── landing/                # Astro static site generator
+│   ├── public/             # Static assets for landing
+│   │   └── assets/
+│   │       └── images/
+│   ├── scripts/            # Build scripts
+│   ├── src/
+│   │   ├── components/     # Astro components
+│   │   ├── layouts/        # Page layouts
+│   │   ├── pages/          # Static pages
+│   │   ├── scripts/        # Client-side scripts
+│   │   └── styles/         # Global styles
+│   ├── astro.config.mjs
+│   └── package.json
+├── frontend/               # Angular application
 │   ├── src/
 │   │   ├── app/
 │   │   │   ├── core/       # Core services and models
@@ -72,7 +103,7 @@ quasar-contact-app/
 │   │   ├── assets/         # Images, icons, fonts
 │   │   └── environments/   # Environment configs
 │   └── angular.json
-├── backend/                 # Node.js server
+├── backend/                # Node.js server
 │   ├── src/
 │   │   ├── config/         # Server configuration
 │   │   ├── controllers/    # Route controllers
@@ -81,22 +112,20 @@ quasar-contact-app/
 │   │   ├── routes/         # API routes
 │   │   ├── services/       # Business logic
 │   │   ├── socket/         # Socket.IO handlers
-│   │   ├── app.ts         # Express app setup
-│   │   └── server.ts      # Server entry point
+│   │   ├── app.ts          # Express app setup
+│   │   └── server.ts       # Server entry point
 │   └── package.json
-├── public/                  # Landing page assets
-│   ├── index.html          # Landing page
-│   ├── css/                # Landing page styles
-│   └── assets/             # Static assets
-├── dist/                    # Production build output
+├── public/                 # Generated static files (from Astro)
+├── dist/                   # Production build output
 ├── Dockerfile              # Container configuration
-├── railway.json            # Railway deployment config
+├── nixpacks.toml           # Nixpacks deployment config
 └── package.json            # Root package file
 ```
 
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js 18+ and npm 9+
 - MongoDB instance (local or cloud)
 - Git
@@ -104,34 +133,37 @@ quasar-contact-app/
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/art2url/quasar-contact-app.git
    cd quasar-contact-app
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm run install:all
    ```
 
 3. **Set up environment variables**
-   
+
    Create `.env` file in the backend directory:
+
    ```env
    # Server Configuration
    PORT=3000
    NODE_ENV=development
-   
+
    # Database
    MONGO_URI=mongodb://localhost:27017/quasar-chat
-   
+
    # Security
    JWT_SECRET=your-super-secret-jwt-key
    JWT_EXPIRES_IN=7d
-   
+
    # Client URLs
    CLIENT_ORIGIN=http://localhost:4200
-   
+
    # Email Service (optional)
    EMAIL_HOST=smtp.gmail.com
    EMAIL_PORT=587
@@ -141,43 +173,52 @@ quasar-contact-app/
    ```
 
    Create `environment.ts` in frontend/src/environments/:
+
    ```typescript
    export const environment = {
      production: false,
      apiUrl: 'http://localhost:3000/api',
-     wsUrl: 'http://localhost:3000'
+     wsUrl: 'http://localhost:3000',
    };
    ```
 
 ### Development
 
 1. **Start MongoDB** (if running locally)
+
    ```bash
    mongod
    ```
 
 2. **Run in development mode**
+
    ```bash
+
    npm run dev
    ```
 
-   This will:
-   - Start the backend server on http://localhost:3000
-   - Start the Angular dev server on http://localhost:4200
-   - Enable hot-reloading for both frontend and backend
-
 3. **Access the application**
-   - Landing page: http://localhost:3000
-   - Angular app: http://localhost:4200
+   - Landing pages: http://localhost:3000 (in production mode)
+   - Landing dev: http://localhost:4321 (in dev mode)
+   - Angular app: http://localhost:4200 (dev) or http://localhost:3000/app (production)
 
 ### Production Build
 
 1. **Build for production**
+
    ```bash
    npm run build
    ```
 
+   This will:
+
+   - Build Astro landing pages
+   - Build Angular application
+   - Copy all assets to public directory
+   - Build backend TypeScript
+
 2. **Start production server**
+
    ```bash
    npm start
    ```
@@ -185,11 +226,13 @@ quasar-contact-app/
 ### Docker Deployment
 
 1. **Build Docker image**
+
    ```bash
    docker build -t quasar-contact-app .
    ```
 
 2. **Run container**
+
    ```bash
    docker run -p 3000:3000 \
      -e MONGO_URI=your-mongodb-uri \
@@ -204,6 +247,7 @@ quasar-contact-app/
 ### Authentication Endpoints
 
 #### Register
+
 ```http
 POST /api/auth/register
 Content-Type: application/json
@@ -217,6 +261,7 @@ Content-Type: application/json
 ```
 
 #### Login
+
 ```http
 POST /api/auth/login
 Content-Type: application/json
@@ -230,6 +275,7 @@ Content-Type: application/json
 ### Key Exchange
 
 #### Upload Public Key
+
 ```http
 POST /api/keys/upload
 Authorization: Bearer <token>
@@ -240,6 +286,7 @@ Authorization: Bearer <token>
 ```
 
 #### Get User's Public Key
+
 ```http
 GET /api/keys/:userId
 Authorization: Bearer <token>
@@ -248,17 +295,19 @@ Authorization: Bearer <token>
 ### Messaging
 
 #### Get Messages
+
 ```http
 GET /api/messages/:userId
 Authorization: Bearer <token>
 ```
 
 #### Send Message (via WebSocket)
+
 ```javascript
 socket.emit('send-message', {
   toUserId: 'string',
   ciphertext: 'string (encrypted message)',
-  avatarUrl: 'string (optional)'
+  avatarUrl: 'string (optional)',
 });
 ```
 
@@ -267,11 +316,13 @@ socket.emit('send-message', {
 ### Encryption Flow
 
 1. **Key Generation** (on user registration)
+
    - Generate RSA-OAEP key pair
    - Store private key in browser's IndexedDB
    - Upload public key to server
 
 2. **Sending Messages**
+
    - Generate AES-GCM session key
    - Encrypt message with AES-GCM
    - Encrypt session key with recipient's RSA public key
@@ -283,6 +334,7 @@ socket.emit('send-message', {
    - Display plaintext message
 
 ### Security Features
+
 - **HTTPS Only**: All production traffic must use TLS
 - **JWT Authentication**: Stateless authentication with token expiry
 - **Rate Limiting**: Protection against brute force attacks
@@ -296,6 +348,7 @@ socket.emit('send-message', {
 Currently, the project doesn't include automated tests. Testing implementation is planned for future releases.
 
 ### Manual Testing Checklist
+
 - [ ] User registration and login
 - [ ] Key generation and exchange
 - [ ] Message encryption/decryption
@@ -304,6 +357,8 @@ Currently, the project doesn't include automated tests. Testing implementation i
 - [ ] Connection recovery
 - [ ] Message editing/deletion
 - [ ] User search functionality
+- [ ] Landing page navigation
+- [ ] SEO meta tags and sitemap
 
 ## 🚦 Deployment
 
@@ -311,7 +366,7 @@ Currently, the project doesn't include automated tests. Testing implementation i
 
 1. Connect your GitHub repository to Railway
 2. Set environment variables in Railway dashboard
-3. Deploy using the included `railway.json` configuration
+3. Deploy using the included `nixpacks.toml` configuration
 
 ### Environment Variables for Production
 
@@ -328,6 +383,7 @@ EMAIL_HOST=smtp.provider.com
 EMAIL_PORT=587
 EMAIL_USER=your-email
 EMAIL_PASS=your-password
+GA_MEASUREMENT_ID=G-XXXXXXXXXX
 ```
 
 ## 🤝 Contributing
@@ -341,13 +397,17 @@ Contributions are welcome! Please follow these steps:
 5. Open a Pull Request
 
 ### Code Style
+
 - Follow Angular style guide for frontend code
+- Follow Astro best practices for landing pages
 - Use ESLint and Prettier for code formatting
 - Write meaningful commit messages
 - Add comments for complex logic
 
 ### GPL-3.0 License Implications
+
 When contributing to this project, please note:
+
 - Your contributions will also be licensed under GPL-3.0
 - Any derivative work must also be open-source under GPL-3.0
 - You must preserve copyright notices and license information
@@ -358,12 +418,14 @@ When contributing to this project, please note:
 This project is licensed under the **GNU General Public License v3.0** - see the LICENSE file for details.
 
 ### What this means:
+
 - ✅ **Freedom to use** - Use for any purpose, including commercial
 - ✅ **Freedom to study** - Access and study the source code
 - ✅ **Freedom to share** - Copy and distribute the software
 - ✅ **Freedom to improve** - Modify and distribute your modifications
 
 ### Requirements:
+
 - 📋 Any distributed modifications must also be GPL-3.0
 - 📋 Must include original copyright and license notices
 - 📋 Must disclose source code when distributing
@@ -371,6 +433,7 @@ This project is licensed under the **GNU General Public License v3.0** - see the
 
 ## 💡 Acknowledgments
 
+- Astro team for the excellent static site generator
 - Angular team for the amazing framework
 - Socket.IO for real-time capabilities
 - Web Crypto API for client-side encryption
