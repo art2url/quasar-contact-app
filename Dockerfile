@@ -10,7 +10,7 @@ COPY frontend/package*.json ./frontend/
 COPY backend/package*.json ./backend/
 COPY landing/package*.json ./landing/
 
-# Install dependencies
+# Install dependencies for all parts
 RUN npm install
 RUN cd frontend && npm install
 RUN cd backend && npm install
@@ -51,7 +51,6 @@ COPY --from=builder /app/backend/dist ./backend/dist
 COPY --from=builder /app/backend/package*.json ./backend/
 COPY --from=builder /app/frontend/dist/browser ./dist/app
 COPY --from=builder /app/landing/dist ./public
-COPY --from=builder /app/static ./static
 
 # Install only production dependencies for backend
 RUN cd backend && npm ci --only=production && npm cache clean --force
