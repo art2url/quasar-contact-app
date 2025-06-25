@@ -227,6 +227,11 @@ class CookieConsentManager {
   showCookieBanner() {
     const banner = document.getElementById('cookieBanner');
     if (banner && !this.getCookieConsent()) {
+      // Add body class to indicate cookies are showing
+      document.body.classList.add('cookies-showing');
+      document.body.classList.remove('cookies-hidden');
+
+      // Show banner with animation
       banner.classList.add('show');
     }
   }
@@ -234,7 +239,17 @@ class CookieConsentManager {
   hideCookieBanner() {
     const banner = document.getElementById('cookieBanner');
     if (banner) {
+      // Remove body class and add hidden class
+      document.body.classList.remove('cookies-showing');
+      document.body.classList.add('cookies-hidden');
+
+      // Hide banner with animation
       banner.classList.remove('show');
+
+      // After animation completes, hide completely
+      setTimeout(() => {
+        banner.style.display = 'none';
+      }, 300);
     }
   }
 
