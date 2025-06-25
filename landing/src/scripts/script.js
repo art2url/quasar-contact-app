@@ -1,21 +1,49 @@
-// Current year
-document.getElementById('current-year').innerHTML = new Date().getFullYear();
-
 // Alpha banner close functionality
 function closeAlphaBanner() {
   const banner = document.getElementById('alphaBanner');
   const header = document.querySelector('.header');
   const body = document.body;
+  const mobileNav = document.querySelector('.mobile-nav');
 
-  banner.style.transform = 'translateY(-100%)';
+  if (banner) {
+    banner.style.transform = 'translateY(-100%)';
 
-  setTimeout(() => {
-    banner.style.display = 'none';
-    body.classList.add('alpha-closed');
-    header.classList.add('alpha-closed');
-  }, 300);
+    setTimeout(() => {
+      banner.style.display = 'none';
+      body.classList.add('alpha-closed');
+      if (header) {
+        header.classList.add('alpha-closed');
+      }
+      if (mobileNav) {
+        mobileNav.classList.add('alpha-closed');
+      }
+    }, 300);
 
-  localStorage.setItem('alphaBannerClosed', 'true');
+    localStorage.setItem('alphaBannerClosed', 'true');
+  }
+}
+
+// Mobile menu functionality
+function toggleMobileMenu() {
+  const mobileNav = document.getElementById('mobileNav');
+  if (mobileNav) {
+    mobileNav.classList.toggle('open');
+
+    // Prevent body scroll when menu is open
+    if (mobileNav.classList.contains('open')) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+  }
+}
+
+function closeMobileMenu() {
+  const mobileNav = document.getElementById('mobileNav');
+  if (mobileNav) {
+    mobileNav.classList.remove('open');
+    document.body.style.overflow = '';
+  }
 }
 
 // Prevent auto-scroll on page reload
@@ -35,12 +63,20 @@ document.addEventListener('DOMContentLoaded', function () {
     const banner = document.getElementById('alphaBanner');
     const header = document.querySelector('.header');
     const body = document.body;
+    const mobileNav = document.querySelector('.mobile-nav');
 
-    // Hide banner immediately without animation on page load
-    banner.style.display = 'none';
-    banner.style.transform = 'translateY(-100%)';
-    body.classList.add('alpha-closed');
-    header.classList.add('alpha-closed');
+    if (banner) {
+      // Hide banner immediately without animation on page load
+      banner.style.display = 'none';
+      banner.style.transform = 'translateY(-100%)';
+      body.classList.add('alpha-closed');
+      if (header) {
+        header.classList.add('alpha-closed');
+      }
+      if (mobileNav) {
+        mobileNav.classList.add('alpha-closed');
+      }
+    }
   }
 
   // Header scroll effect
@@ -106,6 +142,29 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
+  // Mobile menu event handlers
+  const mobileToggle = document.querySelector('.mobile-menu-toggle');
+  const mobileNav = document.getElementById('mobileNav');
+
+  // Close mobile menu when clicking outside
+  document.addEventListener('click', function (event) {
+    if (
+      mobileNav &&
+      mobileToggle &&
+      !mobileNav.contains(event.target) &&
+      !mobileToggle.contains(event.target)
+    ) {
+      closeMobileMenu();
+    }
+  });
+
+  // Close mobile menu on window resize to desktop
+  window.addEventListener('resize', function () {
+    if (window.innerWidth > 768) {
+      closeMobileMenu();
+    }
+  });
+
   // Intersection Observer for scroll animations
   const observerOptions = {
     threshold: 0.1,
@@ -153,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   // Logo hover animation
-  const logo = document.querySelector('.logo-image');
+  const logo = document.querySelector('.logo-icon');
   if (logo) {
     logo.addEventListener('mouseenter', function () {
       this.style.transform = 'scale(1.1) rotate(0deg)';
@@ -202,7 +261,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // Preload critical images
-  const criticalImages = ['assets/images/logo.svg'];
+  const criticalImages = ['/assets/images/logo.svg'];
 
   criticalImages.forEach((src) => {
     const img = new Image();
@@ -258,3 +317,20 @@ document.addEventListener('DOMContentLoaded', function () {
     encryptionTech.classList.add('fade-in-up');
   }
 });
+
+// Add required CSS for ripple animation
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes ripple {
+    to {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+`;
+document.head.appendChild(style);
+
+// Make functions globally available
+window.closeAlphaBanner = closeAlphaBanner;
+window.toggleMobileMenu = toggleMobileMenu;
+window.closeMobileMenu = closeMobileMenu;
