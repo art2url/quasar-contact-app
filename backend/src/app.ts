@@ -2,7 +2,18 @@
 import express from 'express';
 import helmet from 'helmet';
 import path from 'path';
-import {httpCors} from './config/cors';
+import { httpCors } from './config/cors';
+
+// ─── Security Middleware ────────────────────────────────────
+import { blockBots, honeypot } from './middleware/bot-blocker';
+import { setupBotTraps, checkTrappedIP } from './middleware/bot-trap';
+import { securityHeaders } from './middleware/security-headers';
+import {
+  logSuspiciousRequest,
+  accessLogger,
+  analyzeAttackPatterns,
+} from './middleware/request-logger';
+import { debugMiddleware } from './middleware/debug';
 
 // ─── Route Imports ─────────────────────────────────────────
 import authRoutes from './routes/auth.routes';
@@ -14,9 +25,13 @@ import roomsRoutes from './routes/rooms.routes';
 // ─── App Initialization ────────────────────────────────────
 const app = express();
 
-// ─── HTTPS Redirect Middleware (must be first) ─────────────
+// ─── DEBUG: to see ALL requests ────────────
+if (process.env.NODE_ENV !== 'production') {
+  app.use(debugMiddleware);
+}
+
+// ─── SECURITY LAYER 1: HTTPS Redirect ──────────────────────
 app.use((req, res, next) => {
-  // Force HTTPS in production
   if (process.env.NODE_ENV === 'production') {
     if (req.header('x-forwarded-proto') !== 'https') {
       return res.redirect(`https://${req.header('host')}${req.url}`);
@@ -30,6 +45,32 @@ if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
 }
 
+// ─── SECURITY LAYER 2: Custom Security Headers ─────────────
+app.use(securityHeaders);
+
+// ─── SECURITY LAYER 3: Request Logging ─────────────────────
+app.use(accessLogger);
+app.use(logSuspiciousRequest);
+
+// Start attack pattern analysis
+analyzeAttackPatterns();
+
+// ─── SECURITY LAYER 4: Bot Blocking & Traps ────────────────
+// Check trapped IPs first
+app.use(checkTrappedIP);
+
+// Main bot blocker
+app.use(blockBots);
+
+// Setup bot traps (before routes)
+setupBotTraps(app);
+
+// ─── Honeypot Routes (High Priority) ───────────────────────
+app.get('/admin', honeypot);
+app.get('/wp-admin', honeypot);
+app.get('/wp-login.php', honeypot);
+app.get('/.env', honeypot);
+
 // ─── Health-check route ────────────────────────────────────
 app.get('/health', (_req, res) =>
   res.status(200).json({
@@ -38,10 +79,11 @@ app.get('/health', (_req, res) =>
     date: new Date().toISOString(),
     secure: process.env.NODE_ENV === 'production',
     stage: process.env.NODE_ENV === 'production' ? 'production' : 'alpha',
+    security: 'enhanced',
   })
 );
 
-// ─── Security Headers ──────────────────────────────────────
+// ─── SECURITY LAYER 5: Helmet ──────────────────────────────
 app.use(
   helmet({
     contentSecurityPolicy: false, // Disable CSP for Angular app
@@ -50,48 +92,56 @@ app.use(
       includeSubDomains: true,
       preload: true,
     },
+    hidePoweredBy: true,
+    noSniff: true,
+    xssFilter: true,
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   })
-);
-
-// ─── Error-handler  ────────────────────────────────────────
-app.use(
-  (
-    err: unknown,
-    _req: express.Request,
-    res: express.Response,
-    _next: express.NextFunction
-  ) => {
-    console.error('[Unhandled]', err);
-    res.status(500).json({message: 'Server error'});
-  }
 );
 
 // ─── CORS ──────────────────────────────────────────────────
 app.use(httpCors);
 
-// ─── Body Parsing ──────────────────────────────────────────
-app.use(express.json());
+// ─── Body Parsing with Limits ─────────────────────────────
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// ─── Serve Static Files ────────────────────────────────────
-app.use('/', express.static(path.join(__dirname, '../../public')));
-app.use('/app', express.static(path.join(__dirname, '../../dist')));
-app.use(express.static(path.join(__dirname, '../../dist')));
+// ─── Serve Static Files BEFORE API routes ─────────────────
+const staticOptions = {
+  dotfiles: 'ignore',
+  etag: true,
+  extensions: ['html', 'js', 'css', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'ico'],
+  index: 'index.html', // Enable index.html serving
+  maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0,
+  redirect: false,
+};
 
-// ─── SMART RATE LIMITING: Only for sensitive endpoints ─────
-// Only apply rate limiting to auth endpoints that need protection
+app.use(
+  '/',
+  express.static(path.join(__dirname, '../../public'), staticOptions)
+);
+app.use(
+  '/app',
+  express.static(path.join(__dirname, '../../dist'), staticOptions)
+);
+app.use(express.static(path.join(__dirname, '../../dist'), staticOptions));
+
+// ─── SECURITY LAYER 6: Smart Rate Limiting ─────────────────
 import rateLimit from 'express-rate-limit';
 
-const authOnlyLimiter = rateLimit({
+// Strict rate limiting for auth endpoints
+const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // Much higher limit - 50 attempts per 15 min
+  max: 20, // 20 attempts per window
   message: {
-    error: 'Too many auth attempts. Please wait 15 minutes.',
+    error: 'Too many authentication attempts. Please try again later.',
     type: 'auth_rate_limit',
+    retryAfter: 15,
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Only apply to login/register
   skip: (req) => {
+    // Only apply to sensitive endpoints
     const sensitiveEndpoints = [
       '/api/auth/login',
       '/api/auth/register',
@@ -99,27 +149,91 @@ const authOnlyLimiter = rateLimit({
     ];
     return !sensitiveEndpoints.some((endpoint) => req.path === endpoint);
   },
+  handler: (req, res) => {
+    console.log(`⚠️  Rate limit exceeded for ${req.ip} on ${req.path}`);
+    res.status(429).json({
+      error: 'Too many requests',
+      message: 'Please try again later',
+    });
+  },
 });
 
-// Apply smart rate limiting only to auth routes
-app.use('/api/auth', authOnlyLimiter);
+// General API rate limiting
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 100, // 100 requests per minute
+  message: {
+    error: 'Too many requests',
+    type: 'api_rate_limit',
+  },
+  skip: (req) => {
+    // Skip rate limiting for static assets
+    return !!req.path.match(
+      /\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/
+    );
+  },
+  keyGenerator: (req) => {
+    // Use the real IP from X-Forwarded-For header
+    return req.ip || 'unknown';
+  },
+});
 
-// ─── API Routes (no global rate limiting) ──────────────────
-app.use('/api/auth', authRoutes);
-app.use('/api/keys', keyRoutes);
-app.use('/api/messages', messageRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/rooms', roomsRoutes);
+// ─── API Routes with Rate Limiting ────────────────────────
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/keys', apiLimiter, keyRoutes);
+app.use('/api/messages', apiLimiter, messageRoutes);
+app.use('/api/users', apiLimiter, userRoutes);
+app.use('/api/rooms', apiLimiter, roomsRoutes);
+
+// ─── Handle /app redirect ─────────────────────────────────
+app.get('/app', (_req, res) => {
+  res.redirect('/app/');
+});
 
 // ─── Angular Router fallback ───────────────────────────────
 app.get('/app/*', (_req, res) => {
   res.sendFile(path.join(__dirname, '../../dist', 'index.html'));
 });
 
-// ─── 404 fallback  ─────────────────────────────────────────
-app.use((_req, res) => {
-  res.status(404).json({message: 'Not Found'});
+// ─── 404 Handler ───────────────────────────────────────────
+app.use((req, res) => {
+  // Log 404s as they might be scanning attempts
+  console.log(`404: ${req.method} ${req.path} from ${req.ip}`);
+  res.status(404).json({
+    error: 'Not Found',
+    message: 'The requested resource does not exist',
+  });
 });
+
+// ─── Error Handler ─────────────────────────────────────────
+app.use(
+  (
+    err: unknown,
+    req: express.Request,
+    res: express.Response,
+    _next: express.NextFunction
+  ) => {
+    console.error('[ERROR]', {
+      error: err,
+      path: req.path,
+      method: req.method,
+      ip: req.ip,
+    });
+
+    // Don't leak error details in production
+    if (process.env.NODE_ENV === 'production') {
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'An unexpected error occurred',
+      });
+    } else {
+      res.status(500).json({
+        error: 'Server Error',
+        message: err instanceof Error ? err.message : 'Unknown error',
+      });
+    }
+  }
+);
 
 // ─── Export App ────────────────────────────────────────────
 export default app;
