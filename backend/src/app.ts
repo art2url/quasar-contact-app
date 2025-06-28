@@ -21,6 +21,7 @@ import keyRoutes from './routes/keys.routes';
 import messageRoutes from './routes/messages.routes';
 import userRoutes from './routes/users.routes';
 import roomsRoutes from './routes/rooms.routes';
+import analyticsRoutes from './routes/analytics.routes';
 
 // ─── App Initialization ────────────────────────────────────
 const app = express();
@@ -184,6 +185,7 @@ app.use('/api/keys', apiLimiter, keyRoutes);
 app.use('/api/messages', apiLimiter, messageRoutes);
 app.use('/api/users', apiLimiter, userRoutes);
 app.use('/api/rooms', apiLimiter, roomsRoutes);
+app.use('/api/analytics', apiLimiter, analyticsRoutes);
 
 // ─── Handle /app redirect ─────────────────────────────────
 app.get('/app', (_req, res) => {
