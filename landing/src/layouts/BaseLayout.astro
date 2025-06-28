@@ -144,44 +144,6 @@ const finalStructuredData = structuredData || defaultStructuredData;
 
     <!-- Performance hints -->
     <link rel='preload' href='/assets/images/logo.svg' as='image' />
-
-    <!-- Google Analytics Consent Mode -->
-    <script is:inline>
-      // Initialize consent mode before any analytics scripts load
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-
-      // Set default consent state (denied until user gives consent)
-      gtag('consent', 'default', {
-        analytics_storage: 'denied',
-        ad_storage: 'denied',
-        wait_for_update: 500,
-      });
-
-      // Check if user has already given consent
-      const consent = localStorage.getItem('cookieConsent');
-      if (consent) {
-        try {
-          const parsed = JSON.parse(consent);
-          const oneYear = 365 * 24 * 60 * 60 * 1000;
-
-          if (
-            Date.now() - parsed.timestamp <= oneYear &&
-            parsed.preferences &&
-            parsed.preferences.analytics
-          ) {
-            // User has given consent, update consent mode
-            gtag('consent', 'update', {
-              analytics_storage: 'granted',
-            });
-          }
-        } catch (e) {
-          console.error('Error parsing cookie consent:', e);
-        }
-      }
-    </script>
   </head>
 
   <body>

@@ -1,8 +1,3 @@
----
-// Access environment variable
-const GA_MEASUREMENT_ID = import.meta.env.GA_MEASUREMENT_ID || '';
----
-
 <!-- Cookie Consent Banner -->
 <div class='cookie-banner show' id='cookieBanner'>
   <div class='cookie-banner-content'>
@@ -175,10 +170,7 @@ const GA_MEASUREMENT_ID = import.meta.env.GA_MEASUREMENT_ID || '';
 </div>
 
 <!-- Initialize Cookie Consent -->
-<script is:inline define:vars={{ GA_MEASUREMENT_ID }}>
-  // GA_MEASUREMENT_ID is available from define:vars above
-  window.GA_MEASUREMENT_ID = GA_MEASUREMENT_ID;
-
+<script is:inline>
   // Initialize cookie consent state immediately
   (function () {
     const consent = localStorage.getItem('cookieConsent');
@@ -190,52 +182,18 @@ const GA_MEASUREMENT_ID = import.meta.env.GA_MEASUREMENT_ID || '';
         const oneYear = 365 * 24 * 60 * 60 * 1000;
 
         if (Date.now() - parsed.timestamp <= oneYear) {
-          // User has valid consent, hide banner
           shouldShowBanner = false;
           document.body.classList.add('cookies-hidden');
-          document.body.classList.remove('cookies-showing');
         } else {
-          // Consent expired, remove it and show banner
           localStorage.removeItem('cookieConsent');
         }
       } catch (e) {
-        // Invalid consent data, remove it and show banner
         localStorage.removeItem('cookieConsent');
       }
     }
 
     if (shouldShowBanner) {
-      // Set up to show banner immediately
       document.body.classList.add('cookies-showing');
-      document.body.classList.remove('cookies-hidden');
-
-      // Add CSS to show banner immediately, but allow normal hiding
-      const style = document.createElement('style');
-      style.textContent = `
-        #cookieBanner {
-          display: block;
-          transform: translateY(0);
-        }
-        #cookieBanner.show {
-          display: block;
-          transform: translateY(0);
-        }
-        #cookieBanner:not(.show) {
-          display: none;
-          transform: translateY(100%);
-        }
-      `;
-      document.head.appendChild(style);
-    } else {
-      // Add CSS to ensure banner stays hidden
-      const style = document.createElement('style');
-      style.textContent = `
-        #cookieBanner {
-          display: none !important;
-          transform: translateY(100%) !important;
-        }
-      `;
-      document.head.appendChild(style);
     }
   })();
 </script>
