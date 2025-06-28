@@ -57,6 +57,14 @@
         </mat-form-field>
       </div>
 
+      <!-- reCAPTCHA Widget -->
+      <div class="form-group recaptcha-container">
+        <div id="recaptcha-login" #recaptchaElement></div>
+        <div *ngIf="!recaptchaToken && formSubmitted" class="recaptcha-error">
+          Please complete the security verification
+        </div>
+      </div>
+
       <div class="form-actions">
         <a routerLink="/auth/forgot-password" class="forgot-link">
           Forgot your password?

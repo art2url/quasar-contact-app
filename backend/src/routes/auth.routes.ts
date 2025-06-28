@@ -6,6 +6,7 @@ import { body, validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import axios from 'axios';
 import User from '../models/User';
 import Message from '../models/Message';
 import PasswordReset from '../models/PasswordReset';
@@ -14,6 +15,50 @@ import env from '../config/env';
 import emailService from '../services/email.service';
 
 const router = Router();
+
+// reCAPTCHA verification function
+async function verifyRecaptcha(recaptchaToken: string): Promise<boolean> {
+  if (!recaptchaToken) {
+    return false;
+  }
+
+  try {
+    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+    if (!secretKey) {
+      console.error('[reCAPTCHA] Secret key not configured');
+      return false;
+    }
+
+    const response = await axios.post(
+      'https://www.google.com/recaptcha/api/siteverify',
+      null,
+      {
+        params: {
+          secret: secretKey,
+          response: recaptchaToken,
+        },
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      }
+    );
+
+    const { success, score, action } = response.data;
+
+    // For reCAPTCHA v2, check if success is true
+    // For reCAPTCHA v3, you might also want to check the score (score >= 0.5)
+    if (success) {
+      console.log('[reCAPTCHA] Verification successful');
+      return true;
+    } else {
+      console.log('[reCAPTCHA] Verification failed:', response.data);
+      return false;
+    }
+  } catch (error) {
+    console.error('[reCAPTCHA] Verification error:', error);
+    return false;
+  }
+}
 
 // POST /api/auth/register
 router.post(
@@ -27,6 +72,10 @@ router.post(
     body('password')
       .isLength({ min: 6 })
       .withMessage('Password must be at least 6 characters long.'),
+    body('recaptchaToken')
+      .optional()
+      .isString()
+      .withMessage('Invalid reCAPTCHA token.'),
   ],
   authLimiter,
   async (req: Request, res: Response) => {
@@ -36,9 +85,19 @@ router.post(
     }
 
     // Destructure email along with username and password.
-    const { username, email, password, avatarUrl } = req.body;
+    const { username, email, password, avatarUrl, recaptchaToken } = req.body;
 
     try {
+      // Verify reCAPTCHA if token is provided
+      if (recaptchaToken) {
+        const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
+        if (!isRecaptchaValid) {
+          return res.status(400).json({
+            message: 'reCAPTCHA verification failed. Please try again.',
+          });
+        }
+      }
+
       // Optionally check if username or email already exists.
       const existingUser = await User.findOne({
         $or: [{ username }, { email }],
@@ -76,6 +135,10 @@ router.post(
   [
     body('username').notEmpty().withMessage('Username or email is required.'),
     body('password').notEmpty().withMessage('Password is required.'),
+    body('recaptchaToken')
+      .optional()
+      .isString()
+      .withMessage('Invalid reCAPTCHA token.'),
   ],
   authLimiter,
   async (req: Request, res: Response) => {
@@ -84,9 +147,19 @@ router.post(
       return res.status(422).json({ errors: errors.array() });
     }
 
-    const { username, password } = req.body;
+    const { username, password, recaptchaToken } = req.body;
 
     try {
+      // Verify reCAPTCHA if token is provided
+      if (recaptchaToken) {
+        const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
+        if (!isRecaptchaValid) {
+          return res.status(400).json({
+            message: 'reCAPTCHA verification failed. Please try again.',
+          });
+        }
+      }
+
       // Search for a user by either username or email.
       const user = await User.findOne({
         $or: [{ username: username }, { email: username }],
@@ -136,7 +209,13 @@ router.post(
 // POST /api/auth/forgot-password
 router.post(
   '/forgot-password',
-  [body('email').isEmail().withMessage('Valid email is required.')],
+  [
+    body('email').isEmail().withMessage('Valid email is required.'),
+    body('recaptchaToken')
+      .optional()
+      .isString()
+      .withMessage('Invalid reCAPTCHA token.'),
+  ],
   authLimiter,
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
@@ -144,9 +223,19 @@ router.post(
       return res.status(422).json({ errors: errors.array() });
     }
 
-    const { email } = req.body;
+    const { email, recaptchaToken } = req.body;
 
     try {
+      // Verify reCAPTCHA if token is provided
+      if (recaptchaToken) {
+        const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
+        if (!isRecaptchaValid) {
+          return res.status(400).json({
+            message: 'reCAPTCHA verification failed. Please try again.',
+          });
+        }
+      }
+
       // Find user by email
       const user = await User.findOne({ email });
 

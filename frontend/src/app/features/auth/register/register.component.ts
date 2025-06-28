@@ -1,4 +1,11 @@
-import { Component } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  AfterViewInit,
+  ElementRef,
+  ViewChild,
+} from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -12,6 +19,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { AuthService } from '@services/auth.service';
 import { LoadingService } from '@services/loading.service';
+import { RecaptchaService } from '@services/recaptcha.service';
 import { defaultAvatarFor } from '@utils/avatar.util';
 
 interface ValidationError {
@@ -36,7 +44,10 @@ interface ValidationError {
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.css'],
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
+  @ViewChild('recaptchaElement', { static: false })
+  recaptchaElement!: ElementRef;
+
   username = '';
   email = '';
   password = '';
@@ -44,12 +55,49 @@ export class RegisterComponent {
   isLoading = false;
   hidePassword = true;
   formSubmitted = false;
+  recaptchaToken = '';
+  recaptchaWidgetId: number | undefined;
 
   constructor(
     private authService: AuthService,
     private router: Router,
-    private loadingService: LoadingService
+    private loadingService: LoadingService,
+    private recaptchaService: RecaptchaService
   ) {}
+
+  ngOnInit(): void {
+    // Initialize form validation and reCAPTCHA when component loads
+    console.log('[Register] Component initialized');
+  }
+
+  ngAfterViewInit(): void {
+    this.initializeRecaptcha();
+  }
+
+  private initializeRecaptcha(): void {
+    setTimeout(() => {
+      try {
+        this.recaptchaWidgetId = this.recaptchaService.renderRecaptcha(
+          'recaptcha-register',
+          (token: string) => {
+            this.recaptchaToken = token;
+            this.error = ''; // Clear any reCAPTCHA-related errors
+          }
+        );
+      } catch (error) {
+        console.error('Failed to initialize reCAPTCHA:', error);
+        this.error =
+          'Failed to load security verification. Please refresh the page.';
+      }
+    }, 500);
+  }
+
+  private resetRecaptcha(): void {
+    this.recaptchaToken = '';
+    if (this.recaptchaWidgetId !== undefined) {
+      this.recaptchaService.resetRecaptcha(this.recaptchaWidgetId);
+    }
+  }
 
   isValidEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -60,7 +108,8 @@ export class RegisterComponent {
     return (
       this.username.length >= 3 &&
       this.isValidEmail(this.email) &&
-      this.password.length >= 6
+      this.password.length >= 6 &&
+      this.recaptchaToken.length > 0
     );
   }
 
@@ -103,7 +152,11 @@ export class RegisterComponent {
     this.error = '';
 
     if (!this.isFormValid()) {
-      this.error = 'Please fix the errors above';
+      if (!this.recaptchaToken) {
+        this.error = 'Please complete the security verification';
+      } else {
+        this.error = 'Please fix the errors above';
+      }
       return;
     }
 
@@ -114,7 +167,13 @@ export class RegisterComponent {
     const avatarUrl = defaultAvatarFor(this.username);
 
     this.authService
-      .register(this.username, this.email, this.password, avatarUrl)
+      .register(
+        this.username,
+        this.email,
+        this.password,
+        avatarUrl,
+        this.recaptchaToken
+      )
       .subscribe({
         next: () => {
           console.log('[Register] Registration successful');
@@ -125,6 +184,7 @@ export class RegisterComponent {
         },
         error: (err) => {
           console.error('[Register] Registration failed:', err);
+          this.resetRecaptcha(); // Reset reCAPTCHA on failed attempt
 
           this.isLoading = false;
           this.loadingService.hide('register');
@@ -136,13 +196,17 @@ export class RegisterComponent {
           } else if (err.status === 422) {
             // Validation errors from server
             if (err.error && err.error.errors && err.error.errors.length > 0) {
-              // Fixed: (e: any) -> (e: ValidationError)
               this.error = err.error.errors
                 .map((e: ValidationError) => e.msg)
                 .join(', ');
             } else {
               this.error = 'Invalid input. Please check your information.';
             }
+          } else if (
+            err.status === 400 &&
+            err.error?.message?.includes('recaptcha')
+          ) {
+            this.error = 'Security verification failed. Please try again.';
           } else if (err.status === 0) {
             this.error =
               'Cannot connect to server. Please check your connection.';
@@ -158,5 +222,11 @@ export class RegisterComponent {
           }
         },
       });
+  }
+
+  ngOnDestroy(): void {
+    if (this.recaptchaWidgetId !== undefined) {
+      this.recaptchaService.resetRecaptcha(this.recaptchaWidgetId);
+    }
   }
 }
