@@ -1,5 +1,60 @@
+---
+// Clean CookieConsent component
+---
+
+<!-- Prevent banner flicker with improved inline script -->
+<script>
+  (function () {
+    const consentData = localStorage.getItem('cookieConsent');
+    let hasValidConsent = false;
+
+    if (consentData) {
+      try {
+        const parsed = JSON.parse(consentData);
+        if (
+          parsed.preferences &&
+          parsed.timestamp &&
+          Date.now() - parsed.timestamp <= 31536000000
+        ) {
+          // Check if any preference is actually true (user made a real choice)
+          const prefs = parsed.preferences;
+          if (prefs.essential || prefs.preferences || prefs.analytics) {
+            hasValidConsent = true;
+          }
+        }
+      } catch (e) {
+        // Invalid data, remove it
+        localStorage.removeItem('cookieConsent');
+      }
+    }
+
+    // Only hide banner if user actually made a choice
+    if (hasValidConsent) {
+      document.documentElement.setAttribute('data-cookies-accepted', 'true');
+
+      // Add CSS to immediately hide banner
+      const style = document.createElement('style');
+      style.textContent = `
+        #cookieBanner { 
+          display: none !important; 
+          opacity: 0 !important; 
+          visibility: hidden !important;
+          transform: translateY(100%) !important; 
+        }
+        body { 
+          --cookies-hidden: true; 
+        }
+      `;
+      document.head.appendChild(style);
+    } else {
+      // No valid consent - let banner show with animation
+      document.documentElement.setAttribute('data-show-cookies', 'true');
+    }
+  })();
+</script>
+
 <!-- Cookie Consent Banner -->
-<div class='cookie-banner show' id='cookieBanner'>
+<div class='cookie-banner' id='cookieBanner'>
   <div class='cookie-banner-content'>
     <div class='cookie-info'>
       <div class='cookie-icon'>
@@ -168,35 +223,6 @@
     </div>
   </div>
 </div>
-
-<!-- Initialize Cookie Consent -->
-<script is:inline>
-  // Initialize cookie consent state immediately
-  (function () {
-    const consent = localStorage.getItem('cookieConsent');
-    let shouldShowBanner = true;
-
-    if (consent) {
-      try {
-        const parsed = JSON.parse(consent);
-        const oneYear = 365 * 24 * 60 * 60 * 1000;
-
-        if (Date.now() - parsed.timestamp <= oneYear) {
-          shouldShowBanner = false;
-          document.body.classList.add('cookies-hidden');
-        } else {
-          localStorage.removeItem('cookieConsent');
-        }
-      } catch (e) {
-        localStorage.removeItem('cookieConsent');
-      }
-    }
-
-    if (shouldShowBanner) {
-      document.body.classList.add('cookies-showing');
-    }
-  })();
-</script>
 
 <!-- Load Cookie Consent Module -->
 <script>

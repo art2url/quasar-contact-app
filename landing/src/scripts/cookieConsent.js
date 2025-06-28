@@ -5,6 +5,7 @@ class CookieConsentManager {
     this.clientId = this.getOrCreateClientId();
     this.eventQueue = [];
     this.batchTimer = null;
+    this.consentExists = false;
     this.init();
   }
 
@@ -24,10 +25,32 @@ class CookieConsentManager {
   }
 
   initializeApp() {
+    // Check if inline script already detected consent
+    const hasConsentFlag =
+      document.documentElement.getAttribute('data-cookies-accepted') === 'true';
     const consent = this.getCookieConsent();
-    if (consent?.analytics) {
-      this.enableAnalytics();
+
+    this.consentExists =
+      hasConsentFlag || (consent && this.hasRealConsent(consent));
+
+    if (this.consentExists) {
+      // User has made a choice - ensure banner stays hidden
+      this.hideCookieBannerPermanently();
+
+      if (consent && consent.analytics) {
+        this.enableAnalytics();
+      }
+    } else {
+      // No consent yet - show banner with smooth animation
+      this.showCookieBannerAnimated();
     }
+  }
+
+  // Check if user made a real choice (not all false)
+  hasRealConsent(consent) {
+    return (
+      consent && (consent.essential || consent.preferences || consent.analytics)
+    );
   }
 
   getOrCreateClientId() {
@@ -147,9 +170,30 @@ class CookieConsentManager {
   // Cookie management
   showCookieBanner() {
     const banner = document.getElementById('cookieBanner');
-    if (banner && !this.getCookieConsent()) {
+    if (banner && !this.consentExists) {
       document.body.classList.add('cookies-showing');
+      document.body.classList.remove('cookies-hidden');
       banner.classList.add('show');
+      banner.classList.remove('hide-immediate');
+    }
+  }
+
+  showCookieBannerAnimated() {
+    const banner = document.getElementById('cookieBanner');
+    if (banner && !this.consentExists) {
+      // Small delay to ensure smooth appearance after page load
+      setTimeout(() => {
+        requestAnimationFrame(() => {
+          document.body.classList.add('cookies-showing');
+          document.body.classList.remove('cookies-hidden');
+          banner.classList.remove('hide-immediate');
+
+          // Small delay for smooth animation
+          setTimeout(() => {
+            banner.classList.add('show');
+          }, 50);
+        });
+      }, 100);
     }
   }
 
@@ -157,7 +201,18 @@ class CookieConsentManager {
     const banner = document.getElementById('cookieBanner');
     if (banner) {
       document.body.classList.add('cookies-hidden');
+      document.body.classList.remove('cookies-showing');
       banner.classList.remove('show');
+    }
+  }
+
+  hideCookieBannerPermanently() {
+    const banner = document.getElementById('cookieBanner');
+    if (banner) {
+      document.body.classList.add('cookies-hidden');
+      document.body.classList.remove('cookies-showing');
+      banner.classList.remove('show');
+      banner.classList.add('hide-immediate');
     }
   }
 
@@ -180,8 +235,12 @@ class CookieConsentManager {
       preferences: true,
       analytics: true,
     });
-    this.hideCookieBanner();
+    this.consentExists = true;
+    this.hideCookieBannerPermanently();
     this.enableAnalytics();
+
+    // Set the flag for future page loads
+    document.documentElement.setAttribute('data-cookies-accepted', 'true');
   }
 
   acceptAllFromModal() {
@@ -196,8 +255,12 @@ class CookieConsentManager {
       document.getElementById('preferencesCookies')?.checked || false;
 
     this.setCookieConsent({ essential: true, preferences, analytics });
-    this.hideCookieBanner();
+    this.consentExists = true;
+    this.hideCookieBannerPermanently();
     this.closeCookieModal();
+
+    // Set the flag for future page loads
+    document.documentElement.setAttribute('data-cookies-accepted', 'true');
 
     if (analytics) {
       this.enableAnalytics();
@@ -225,10 +288,13 @@ class CookieConsentManager {
       const oneYear = 365 * 24 * 60 * 60 * 1000;
       if (Date.now() - parsed.timestamp > oneYear) {
         localStorage.removeItem('cookieConsent');
+        document.documentElement.removeAttribute('data-cookies-accepted');
         return null;
       }
       return parsed.preferences;
     } catch (e) {
+      localStorage.removeItem('cookieConsent');
+      document.documentElement.removeAttribute('data-cookies-accepted');
       return null;
     }
   }
