@@ -7,7 +7,7 @@
     "start": "cd backend && npm start",
     "dev": "npm run copy && cd backend && npm run dev",
     "build": "npm run build:frontend && npm run copy && npm run build:backend",
-    "build:frontend": "cd frontend && echo 'DEBUG: NG_APP_API_URL=' $NG_APP_API_URL && echo 'DEBUG: NG_APP_WS_URL=' $NG_APP_WS_URL && echo 'DEBUG: NODE_ENV=' $NODE_ENV && npx ng build --configuration production",
+    "build:frontend": "cd frontend && echo 'DEBUG: NG_APP_API_URL=' $NG_APP_API_URL && echo 'DEBUG: NG_APP_WS_URL=' $NG_APP_WS_URL && echo 'DEBUG: NG_APP_RECAPTCHA_SITE_KEY=' $NG_APP_RECAPTCHA_SITE_KEY && echo 'DEBUG: NODE_ENV=' $NODE_ENV && NG_APP_API_URL=$NG_APP_API_URL NG_APP_WS_URL=$NG_APP_WS_URL NG_APP_RECAPTCHA_SITE_KEY=$NG_APP_RECAPTCHA_SITE_KEY npx ng build --configuration production",
     "build:backend": "cd backend && npm run build",
     "copy": "rm -rf dist && mkdir -p dist && if [ -d 'frontend/dist/browser' ]; then cp -r frontend/dist/browser/* dist/; elif [ -d 'frontend/dist' ]; then cp -r frontend/dist/* dist/; else echo 'No frontend dist found'; fi",
     "full": "npm run clean && npm run build:frontend && npm run copy && npm run build:backend && npm start",
