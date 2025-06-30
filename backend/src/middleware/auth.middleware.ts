@@ -11,9 +11,14 @@ export const authenticateToken = (
   res: Response,
   next: NextFunction
 ) => {
-  const authHeader = req.headers.authorization;
-
-  const token = authHeader?.split(' ')[1]; // Expecting: "Bearer <token>"
+  // First check for token in cookies (preferred method)
+  let token = req.cookies?.auth_token;
+  
+  // Fallback to Authorization header for backward compatibility
+  if (!token) {
+    const authHeader = req.headers.authorization;
+    token = authHeader?.split(' ')[1]; // Expecting: "Bearer <token>"
+  }
 
   if (!token) {
     return res.status(401).json({message: 'Access denied. Token missing.'});

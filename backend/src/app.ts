@@ -1,6 +1,7 @@
 // ─── Imports ───────────────────────────────────────────────
 import express from 'express';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import path from 'path';
 import { httpCors } from './config/cors';
 
@@ -106,6 +107,9 @@ app.use(httpCors);
 // ─── Body Parsing with Limits ─────────────────────────────
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// ─── Cookie Parser ─────────────────────────────────────────
+app.use(cookieParser(process.env.COOKIE_SECRET || 'fallback-secret-key'));
 
 // ─── Serve Static Files BEFORE API routes ─────────────────
 const staticOptions = {

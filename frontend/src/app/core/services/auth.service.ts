@@ -8,6 +8,7 @@ import { LoadingService } from '@services/loading.service';
 import { WebSocketService } from '@services/websocket.service';
 import { VaultService, VAULT_KEYS } from '@services/vault.service';
 import { CryptoService } from '@services/crypto.service';
+import { CsrfService } from '@services/csrf.service';
 import { LoginResponse, RegisterResponse } from '@models/auth.model';
 import { getApiPath } from '@utils/api-paths.util';
 
@@ -23,7 +24,8 @@ export class AuthService {
     private loadingService: LoadingService,
     private wsService: WebSocketService,
     private vault: VaultService,
-    private crypto: CryptoService
+    private crypto: CryptoService,
+    private csrfService: CsrfService
   ) {
     this.loadingService.setAuthState(this.hasToken());
     this.isAuthenticated$.subscribe((isAuth) => {
@@ -32,7 +34,9 @@ export class AuthService {
   }
 
   private hasToken(): boolean {
-    return !!localStorage.getItem('token');
+    // Check if we have user authentication data (username and userId)
+    // The actual auth token is now in HttpOnly cookies
+    return !!(localStorage.getItem('username') && localStorage.getItem('userId'));
   }
 
   login(
@@ -58,26 +62,18 @@ export class AuthService {
       .post<LoginResponse>(`${environment.apiUrl}/auth/login`, loginData)
       .pipe(
         switchMap(async (response) => {
-          const token =
-            response.token ?? response.accessToken ?? response.data?.token;
-          if (!token) {
-            throw new Error('No token in response');
+          // Store CSRF token from response
+          if (response.csrfToken) {
+            this.csrfService.setToken(response.csrfToken);
           }
 
-          // Store auth data
-          localStorage.setItem('token', token);
+          // Store user auth data (JWT token is now in HttpOnly cookies)
           localStorage.setItem('username', username);
 
-          let userId = response.user?.id;
+          const userId = response.user?.id;
           if (!userId) {
-            const tokenParts = token.split('.');
-            if (tokenParts.length === 3) {
-              const payload = JSON.parse(atob(tokenParts[1]));
-              userId = payload.userId || payload.sub || payload.id;
-            }
+            throw new Error('No userId available in response');
           }
-
-          if (!userId) throw new Error('No userId available');
           localStorage.setItem('userId', userId);
 
           if (response.user?.avatarUrl) {
@@ -94,7 +90,8 @@ export class AuthService {
           await this.ensurePrivateKey(userId);
 
           console.log('[Auth] Connecting WebSocket');
-          this.wsService.connect(token);
+          // WebSocket will use cookies for authentication now
+          this.wsService.connect(''); // No token needed, cookies will be used
 
           return response;
         }),
@@ -227,10 +224,14 @@ export class AuthService {
   }
 
   private clearAuthData(): void {
-    localStorage.removeItem('token');
+    // Clear user data from localStorage (JWT token is cleared via logout API call)
     localStorage.removeItem('username');
     localStorage.removeItem('userId');
     localStorage.removeItem('myAvatar');
+    
+    // Clear CSRF token
+    this.csrfService.clearToken();
+    
     this.authenticatedSubject.next(false);
   }
 
@@ -270,6 +271,17 @@ export class AuthService {
       if (this.wsService.isConnected()) {
         this.wsService.disconnect();
       }
+
+      // Call backend logout to clear cookies
+      this.http.post(`${environment.apiUrl}/auth/logout`, {}).subscribe({
+        next: () => {
+          console.log('[Auth] Server logout successful');
+        },
+        error: (error) => {
+          console.error('[Auth] Server logout failed:', error);
+          // Continue with client-side cleanup even if server call fails
+        }
+      });
 
       this.clearAuthData();
       // Note: We don't clear vault storage on normal logout
