@@ -70,10 +70,15 @@ export class RecaptchaService {
 
   resetRecaptcha(widgetId?: number): void {
     if (typeof grecaptcha !== 'undefined') {
-      if (widgetId !== undefined) {
-        grecaptcha.reset(widgetId);
-      } else {
-        grecaptcha.reset();
+      try {
+        if (widgetId !== undefined) {
+          grecaptcha.reset(widgetId);
+        } else {
+          grecaptcha.reset();
+        }
+      } catch (error) {
+        // Silently ignore reCAPTCHA reset errors during component destruction
+        console.debug('reCAPTCHA reset error (ignored):', error);
       }
     }
   }
