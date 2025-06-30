@@ -14,9 +14,10 @@
     </a>
 
     <!-- Mobile controls - status + hamburger button with notification badge -->
-    <div class="mobile-controls" *ngIf="authService.isAuthenticated()">
+    <div class="mobile-controls" *ngIf="authService.isAuthenticated() || (!authService.isAuthenticated() && isAuthPage())">
       <!-- Connection status near hamburger button on mobile -->
       <div
+        *ngIf="authService.isAuthenticated()"
         class="status mobile-status"
         [class.connected]="online"
         [class.disconnected]="!online"
