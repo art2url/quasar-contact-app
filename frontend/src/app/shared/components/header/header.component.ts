@@ -163,6 +163,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
     );
   }
 
+  // Check if user is currently on an auth page
+  isAuthPage(): boolean {
+    return this.router.url.startsWith('/auth');
+  }
+
   ngOnDestroy(): void {
     console.log('[Header] Component destroying');
     this.sub.unsubscribe();
