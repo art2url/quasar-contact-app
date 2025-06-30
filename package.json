@@ -5,14 +5,17 @@
   "main": "backend/dist/server.js",
   "scripts": {
     "start": "cd backend && npm start",
-    "dev": "npm run copy && cd backend && npm run dev",
-    "build": "npm run build:frontend && npm run copy && npm run build:backend",
-    "build:frontend": "cd frontend && echo 'DEBUG: NG_APP_API_URL=' $NG_APP_API_URL && echo 'DEBUG: NG_APP_WS_URL=' $NG_APP_WS_URL && echo 'DEBUG: NODE_ENV=' $NODE_ENV && npx ng build --configuration production",
+    "dev": "npm run copy:landing && cd backend && npm run dev",
+    "dev:landing": "cd landing && npm run dev",
+    "build": "npm run build:landing && npm run build:frontend && npm run copy && npm run build:backend",
+    "build:frontend": "cd frontend && set -a && source .env && set +a && echo 'DEBUG: NG_APP_API_URL=' $NG_APP_API_URL && echo 'DEBUG: NG_APP_WS_URL=' $NG_APP_WS_URL && echo 'DEBUG: NG_APP_RECAPTCHA_SITE_KEY=' $NG_APP_RECAPTCHA_SITE_KEY && echo 'DEBUG: NODE_ENV=' $NODE_ENV && npx ng build --configuration production",
     "build:backend": "cd backend && npm run build",
-    "copy": "rm -rf dist && mkdir -p dist && if [ -d 'frontend/dist/browser' ]; then cp -r frontend/dist/browser/* dist/; elif [ -d 'frontend/dist' ]; then cp -r frontend/dist/* dist/; else echo 'No frontend dist found'; fi",
-    "full": "npm run clean && npm run build:frontend && npm run copy && npm run build:backend && npm start",
+    "copy": "mkdir -p dist && if [ -d 'frontend/dist/browser' ]; then cp -r frontend/dist/browser/* dist/; elif [ -d 'frontend/dist' ]; then cp -r frontend/dist/* dist/; else echo 'No frontend dist found'; fi",
+    "copy:landing": "rm -rf dist && mkdir -p dist && if [ -d 'landing/dist' ]; then cp -r landing/dist/* dist/; else echo 'No landing dist found - building...'; cd landing && npm run build && cd .. && cp -r landing/dist/* dist/; fi",
+    "full": "npm run clean && npm run build:landing && npm run build:frontend && npm run copy && npm run build:backend && npm start",
+    "build:landing": "cd landing && npm run build && cd .. && mkdir -p public && cp -r landing/dist/* public/",
     "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
-    "clean": "rm -rf dist/ && rm -rf frontend/dist/ && rm -rf backend/dist/",
+    "clean": "rm -rf dist/ && rm -rf public/ && rm -rf frontend/dist/ && rm -rf backend/dist/ && rm -rf landing/dist/",
     "test": "echo 'No tests specified'"
   },
   "keywords": [

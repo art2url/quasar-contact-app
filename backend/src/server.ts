@@ -1,22 +1,20 @@
 import http from 'http';
-import {Server} from 'socket.io';
+import { Server } from 'socket.io';
 import mongoose from 'mongoose';
-import path from 'path';
-import express from 'express';
 import app from './app';
-import {setupSocket} from './sockets';
+import { setupSocket } from './sockets';
 import env from './config/env';
 
 // Static file serving is now handled in app.ts - remove from here to avoid conflicts
 
 // Health check endpoint (this might be duplicate - check app.ts)
 app.get('/health', (req, res) => {
-  res.json({status: 'OK', timestamp: new Date().toISOString()});
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
 const server = http.createServer(app);
 
-import {socketCorsOptions} from './config/cors';
+import { socketCorsOptions } from './config/cors';
 const io = new Server(server, {
   ...socketCorsOptions,
   // Additional stability configurations
