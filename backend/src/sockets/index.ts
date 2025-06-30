@@ -103,10 +103,30 @@ const emitToUser = (
 };
 
 export const setupSocket = (io: Server) => {
-  // Enhanced authentication middleware
+  // Enhanced authentication middleware (now using cookies)
   io.use((socket: Socket, next) => {
-    const token = socket.handshake.auth.token as string | undefined;
-    if (!token) return next(new Error('Authentication token missing'));
+    // First try to get token from auth.token (backward compatibility)
+    let token = socket.handshake.auth.token as string | undefined;
+    
+    // If no token in auth, try to get from cookies
+    if (!token) {
+      const cookies = socket.handshake.headers.cookie;
+      if (cookies) {
+        const cookiePairs = cookies.split(';');
+        for (const cookie of cookiePairs) {
+          const [name, value] = cookie.trim().split('=');
+          if (name === 'auth_token') {
+            token = value;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!token) {
+      console.error('❌ Socket auth failed: No token in auth or cookies');
+      return next(new Error('Authentication token missing'));
+    }
 
     try {
       const {userId, username, avatarUrl} = jwt.verify(
@@ -118,6 +138,7 @@ export const setupSocket = (io: Server) => {
       socket.data.username = username;
       socket.data.avatarUrl = avatarUrl;
 
+      console.log(`✅ Socket authenticated: ${username} (${userId})`);
       next();
     } catch (err) {
       console.error('❌ Socket auth failed:', err);
