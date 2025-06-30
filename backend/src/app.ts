@@ -179,6 +179,18 @@ const apiLimiter = rateLimit({
   },
 });
 
+// ─── API Health Check (under /api prefix) ──────────────────
+app.get('/api/health', (_req, res) =>
+  res.status(200).json({
+    status: 'ok',
+    uptime: process.uptime(),
+    date: new Date().toISOString(),
+    secure: process.env.NODE_ENV === 'production',
+    stage: process.env.NODE_ENV === 'production' ? 'production' : 'alpha',
+    security: 'enhanced',
+  })
+);
+
 // ─── API Routes with Rate Limiting ────────────────────────
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/keys', apiLimiter, keyRoutes);
