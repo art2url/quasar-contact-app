@@ -23,10 +23,12 @@ COPY . .
 # These will be replaced at build time with actual values
 ARG NG_APP_API_URL
 ARG NG_APP_WS_URL
+ARG NG_APP_RECAPTCHA_SITE_KEY
 ARG NODE_ENV=production
 
 ENV NG_APP_API_URL=$NG_APP_API_URL
 ENV NG_APP_WS_URL=$NG_APP_WS_URL
+ENV NG_APP_RECAPTCHA_SITE_KEY=$NG_APP_RECAPTCHA_SITE_KEY
 ENV NODE_ENV=$NODE_ENV
 
 # Build all components from root
