@@ -87,10 +87,12 @@ export class WebSocketService {
     this.cleanupSocket();
     this.resetState();
 
-    // Create socket with enhanced configuration
+    // Create socket with enhanced configuration (using cookies for auth)
     this.socket = io(environment.wsUrl, {
       transports: ['websocket', 'polling'],
-      auth: { token },
+      // Remove auth.token as we now use cookies for authentication
+      // auth: { token },
+      withCredentials: true, // Include cookies in WebSocket handshake
       reconnection: false, // Handle reconnection manually
       timeout: 10000,
       forceNew: true,
@@ -299,9 +301,11 @@ export class WebSocketService {
       clearTimeout(this.reconnectionTimer);
     }
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      logWs('No token available for reconnection');
+    // Check if user is authenticated (JWT is now in HttpOnly cookies)
+    const username = localStorage.getItem('username');
+    const userId = localStorage.getItem('userId');
+    if (!username || !userId) {
+      logWs('No auth data available for reconnection');
       return;
     }
 
@@ -332,7 +336,7 @@ export class WebSocketService {
       logWs(
         `Attempting reconnection (attempt ${this.connectionState.reconnectAttempts})`
       );
-      this.connect(token);
+      this.connect(''); // Empty token - will use cookies for auth
     }, backoffDelay);
   }
 
@@ -621,8 +625,10 @@ export class WebSocketService {
    * Manual reconnect (for backwards compatibility)
    */
   reconnect(): void {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    // Check if user is authenticated (JWT is now in HttpOnly cookies)
+    const username = localStorage.getItem('username');
+    const userId = localStorage.getItem('userId');
+    if (!username || !userId) return;
 
     logWs('Manual reconnect requested');
     this.forceReconnect();
@@ -632,14 +638,16 @@ export class WebSocketService {
    * Force reconnection (for manual retry)
    */
   forceReconnect(): void {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    // Check if user is authenticated (JWT is now in HttpOnly cookies)
+    const username = localStorage.getItem('username');
+    const userId = localStorage.getItem('userId');
+    if (!username || !userId) return;
 
     logWs('Force reconnection requested');
     this.disconnect();
 
     setTimeout(() => {
-      this.connect(token);
+      this.connect(''); // Empty token - will use cookies for auth
     }, 1000);
   }
 }

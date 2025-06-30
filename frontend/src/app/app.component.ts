@@ -66,10 +66,11 @@ export class AppComponent implements OnInit, OnDestroy {
           this.loadingService.setAuthState(isAuthenticated);
 
           if (isAuthenticated) {
-            const token = localStorage.getItem('token');
-            if (token && !this.ws.isConnected()) {
+            const username = localStorage.getItem('username');
+            const userId = localStorage.getItem('userId');
+            if (username && userId && !this.ws.isConnected()) {
               console.log('[App] Connecting WebSocket for authenticated user');
-              this.ws.connect(token);
+              this.ws.connect(''); // Empty token - will use cookies for auth
               // Reconnection is now handled automatically by enhanced WebSocketService
             }
           } else {
@@ -119,14 +120,15 @@ export class AppComponent implements OnInit, OnDestroy {
    * Simplified app initialization to prevent change detection errors
    */
   private async initializeApp(): Promise<void> {
-    const token = localStorage.getItem('token');
+    const username = localStorage.getItem('username');
+    const userId = localStorage.getItem('userId');
 
-    if (!token) {
-      console.log('[App] No token found, skipping initialization');
+    if (!username || !userId) {
+      console.log('[App] No auth data found, skipping initialization');
       return;
     }
 
-    console.log('[App] Token found, setting up app');
+    console.log('[App] Auth data found, setting up app');
 
     try {
       const userId = localStorage.getItem('userId');

@@ -35,6 +35,8 @@ export const httpCors = cors({
     'Content-Type',
     'Authorization',
     'x-access-token',
+    'x-csrf-token',
+    'csrf-token',
     'Cache-Control',
     'Origin',
     'X-Requested-With',
