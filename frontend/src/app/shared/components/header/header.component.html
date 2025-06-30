@@ -34,6 +34,29 @@
     </div>
 
     <div class="nav-links" [class.open]="menuOpen">
+      <!-- Auth navigation buttons (only when not authenticated and on auth pages) -->
+      <ng-container *ngIf="!authService.isAuthenticated() && isAuthPage()">
+        <button
+          *ngIf="router.url !== '/auth/register'"
+          mat-button
+          routerLink="/auth/register"
+          (click)="closeMenu()"
+        >
+          <mat-icon>person_add</mat-icon>
+          <span class="mobile-hidden">Create Account</span>
+        </button>
+        
+        <button
+          *ngIf="router.url !== '/auth/login'"
+          mat-button
+          routerLink="/auth/login"
+          (click)="closeMenu()"
+        >
+          <mat-icon>login</mat-icon>
+          <span class="mobile-hidden">Sign In</span>
+        </button>
+      </ng-container>
+
       <!-- Desktop connection status (hidden on mobile) -->
       <div
         *ngIf="authService.isAuthenticated()"
