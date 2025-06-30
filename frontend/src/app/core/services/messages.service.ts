@@ -100,6 +100,7 @@ export class MessagesService {
    * Check if user is authenticated
    */
   private isAuthenticated(): boolean {
-    return !!localStorage.getItem('token');
+    // Check for user authentication data (JWT is now in HttpOnly cookies)
+    return !!(localStorage.getItem('username') && localStorage.getItem('userId'));
   }
 }

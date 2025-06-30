@@ -13,6 +13,8 @@ import PasswordReset from '../models/PasswordReset';
 import { authLimiter } from '../config/ratelimits';
 import env from '../config/env';
 import emailService from '../services/email.service';
+import { setAuthCookie, clearAuthCookie, generateCSRFToken, setCSRFCookie } from '../utils/cookie.utils';
+import { validateCSRF } from '../middleware/csrf.middleware';
 
 const router = Router();
 
@@ -190,9 +192,16 @@ router.post(
         { expiresIn: '7d' }
       );
 
+      // Generate CSRF token for additional security
+      const csrfToken = generateCSRFToken();
+
+      // Set secure cookies
+      setAuthCookie(res, token);
+      setCSRFCookie(res, csrfToken);
+
       res.status(200).json({
         message: 'Login successful.',
-        token,
+        csrfToken, // Send CSRF token to client
         user: {
           id: user._id,
           username: user.username,
@@ -413,5 +422,29 @@ router.post(
     }
   }
 );
+
+// POST /api/auth/logout
+router.post('/logout', validateCSRF, async (req: Request, res: Response) => {
+  try {
+    // Clear authentication cookies
+    clearAuthCookie(res);
+    res.clearCookie('csrf_token', {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      path: '/',
+      ...(process.env.NODE_ENV === 'production' && {
+        domain: '.quasar.contact'
+      })
+    });
+
+    res.status(200).json({
+      message: 'Logout successful.',
+    });
+  } catch (error) {
+    console.error('[Logout Error]', error);
+    res.status(500).json({ message: 'Server error during logout.' });
+  }
+});
 
 export default router;

@@ -8,6 +8,7 @@ import {
 } from '@angular/common/http';
 import {Router} from '@angular/router';
 import {catchError, throwError, timer, mergeMap, Observable} from 'rxjs';
+import {CsrfService} from '../../services/csrf.service';
 
 // Track rate limiting across the application using Record instead of index signature
 const rateLimitedUntil: Record<string, number> = {};
@@ -20,6 +21,7 @@ export const authInterceptor: HttpInterceptorFn = (
   next: HttpHandlerFn
 ) => {
   const router = inject(Router);
+  const csrfService = inject(CsrfService);
 
   // Check if this URL is currently rate limited
   const urlKey = getUrlKey(req);
@@ -35,11 +37,11 @@ export const authInterceptor: HttpInterceptorFn = (
       )} seconds...`
     );
     return timer(waitTime).pipe(
-      mergeMap(() => proceedWithRequest(req, next, router, urlKey))
+      mergeMap(() => proceedWithRequest(req, next, router, urlKey, csrfService))
     );
   }
 
-  return proceedWithRequest(req, next, router, urlKey);
+  return proceedWithRequest(req, next, router, urlKey, csrfService);
 };
 
 /**
@@ -52,49 +54,39 @@ function getUrlKey(request: HttpRequest<unknown>): string {
 }
 
 /**
- * Add auth token and proceed with the request
+ * Add auth cookies, CSRF token and proceed with the request
  */
 function proceedWithRequest(
   request: HttpRequest<unknown>,
   next: HttpHandlerFn,
   router: Router,
-  urlKey: string
+  urlKey: string,
+  csrfService: CsrfService
 ): Observable<HttpEvent<unknown>> {
-  if (
-    request.url.includes('/api/auth/login') ||
-    request.url.includes('/api/auth/register') ||
-    request.url.includes('/health')
-  ) {
-    console.log('[AuthInterceptor] Skipping token for endpoint:', request.url);
-    return next(request).pipe(
-      catchError((error: HttpErrorResponse) => {
-        if (error.status === 429) {
-          return handleRateLimitError(error, urlKey);
+  // Always include credentials (cookies) for all API requests
+  request = request.clone({
+    setHeaders: {},
+    withCredentials: true
+  });
+
+  // Handle CSRF token for state-changing operations (POST, PUT, DELETE, PATCH)
+  const needsCSRF = !['GET', 'HEAD', 'OPTIONS'].includes(request.method);
+  
+  if (needsCSRF) {
+    const csrfToken = csrfService.getToken();
+    if (csrfToken) {
+      console.log('[AuthInterceptor] Adding CSRF token to request:', request.url);
+      request = request.clone({
+        setHeaders: {
+          'X-CSRF-Token': csrfToken
         }
-        return throwError(() => error);
-      })
-    );
+      });
+    } else if (!request.url.includes('/api/auth/login') && !request.url.includes('/api/auth/register')) {
+      console.warn('[AuthInterceptor] No CSRF token found for state-changing request!');
+    }
   }
 
-  const token = localStorage.getItem('token');
-  console.log(
-    '[AuthInterceptor] Adding token to request:',
-    request.url,
-    !!token
-  );
-
-  // If the token exists, clone the request and attach the Authorization header
-  if (token) {
-    // Clone and set both headers
-    request = request.clone({
-      setHeaders: {
-        Authorization: `Bearer ${token}`,
-        'x-access-token': token,
-      },
-    });
-  } else {
-    console.warn('[AuthInterceptor] No token found for authenticated request!');
-  }
+  console.log('[AuthInterceptor] Request configured with credentials:', request.url);
 
   // Forward the request with error handling
   return next(request).pipe(
@@ -111,12 +103,12 @@ function proceedWithRequest(
 
       // Handle auth errors
       if (error.status === 401) {
-        // Unauthorized - token may be expired
+        // Unauthorized - cookies may be expired or invalid
         console.warn(
           '[AuthInterceptor] Received 401 Unauthorized - redirecting to login'
         );
-        // Clear token since it's invalid
-        localStorage.removeItem('token');
+        // Clear CSRF token since auth is invalid
+        csrfService.clearToken();
         // Navigate to login with /app prefix since we're inside the Angular app
         router.navigate(['/auth/login']);
       }
