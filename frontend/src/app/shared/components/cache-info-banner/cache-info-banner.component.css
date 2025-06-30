@@ -38,6 +38,15 @@ button {
   .cache-info-banner {
     font-size: 0.8rem;
     padding: 10px;
+    margin: 0;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background-color: #e3f2fd;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 }
 

@@ -5,6 +5,7 @@ dotenv.config();
 
 interface EnvConfig {
   PORT: number;
+  NODE_ENV: string;
   MONGO_URI: string;
   APP_NAME: string;
   JWT_SECRET: string;
@@ -25,6 +26,7 @@ interface EnvConfig {
 // Define and validate environment variables
 export const env: EnvConfig = {
   PORT: parseInt(process.env.PORT || '5000', 10),
+  NODE_ENV: process.env.NODE_ENV || 'development',
   MONGO_URI: process.env.MONGO_URI || '',
   APP_NAME: process.env.APP_NAME || 'Quasar Contact',
   JWT_SECRET: process.env.JWT_SECRET || '',
@@ -41,9 +43,7 @@ export const env: EnvConfig = {
   SMTP_SECURE: process.env.SMTP_SECURE === 'true',
   SMTP_USER: process.env.SMTP_USER,
   SMTP_PASS: process.env.SMTP_PASS,
-  SMTP_FROM:
-    process.env.SMTP_FROM ||
-    `noreply@${process.env.APP_NAME?.toLowerCase().replace(/\s+/g, '-')}.com`,
+  SMTP_FROM: process.env.SMTP_FROM || `noreply@quasar.contact`,
 };
 
 // Validate required environment variables
@@ -65,10 +65,22 @@ const validateEnv = () => {
   // Warn if email settings are not configured
   if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) {
     console.warn(
-      'WARNING: Email settings not configured. Password reset emails will not be sent.'
+      'WARNING: email settings not configured. Password reset emails will not be sent.'
     );
     console.warn(
       'To enable email functionality, set SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS in your .env file.'
+    );
+    console.warn(
+      'Example settings:\n' +
+        '  SMTP_HOST=mail.yourdomain.com\n' +
+        '  SMTP_PORT=587\n' +
+        '  SMTP_SECURE=false\n' +
+        '  SMTP_USER=noreply@yourdomain.com\n' +
+        '  SMTP_PASS=your-email-password'
+    );
+  } else {
+    console.log(
+      `[EmailService] email configured: ${env.SMTP_USER}@${env.SMTP_HOST}:${env.SMTP_PORT}`
     );
   }
 

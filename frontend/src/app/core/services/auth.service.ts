@@ -35,14 +35,27 @@ export class AuthService {
     return !!localStorage.getItem('token');
   }
 
-  login(username: string, password: string): Observable<LoginResponse> {
+  login(
+    username: string,
+    password: string,
+    recaptchaToken?: string
+  ): Observable<LoginResponse> {
     console.log('[Auth] Starting login for:', username);
 
+    // Build login data with optional reCAPTCHA token
+    interface LoginData {
+      username: string;
+      password: string;
+      recaptchaToken?: string;
+    }
+
+    const loginData: LoginData = { username, password };
+    if (recaptchaToken) {
+      loginData.recaptchaToken = recaptchaToken;
+    }
+
     return this.http
-      .post<LoginResponse>(`${environment.apiUrl}/auth/login`, {
-        username,
-        password,
-      })
+      .post<LoginResponse>(`${environment.apiUrl}/auth/login`, loginData)
       .pipe(
         switchMap(async (response) => {
           const token =
@@ -97,6 +110,13 @@ export class AuthService {
 
           if (err.status === 401) {
             return throwError(() => new Error('Invalid username or password'));
+          } else if (
+            err.status === 400 &&
+            err.error?.message?.includes('recaptcha')
+          ) {
+            return throwError(
+              () => new Error('Security verification failed. Please try again.')
+            );
           } else if (err.status === 0) {
             return throwError(() => new Error('Cannot connect to server'));
           } else {
@@ -218,14 +238,27 @@ export class AuthService {
     username: string,
     email: string,
     password: string,
-    avatarUrl: string
+    avatarUrl: string,
+    recaptchaToken?: string
   ): Observable<RegisterResponse> {
-    return this.http.post<RegisterResponse>(getApiPath('auth/register'), {
-      username,
-      email,
-      password,
-      avatarUrl,
-    });
+    // Build register data with optional reCAPTCHA token
+    interface RegisterData {
+      username: string;
+      email: string;
+      password: string;
+      avatarUrl: string;
+      recaptchaToken?: string;
+    }
+
+    const registerData: RegisterData = { username, email, password, avatarUrl };
+    if (recaptchaToken) {
+      registerData.recaptchaToken = recaptchaToken;
+    }
+
+    return this.http.post<RegisterResponse>(
+      getApiPath('auth/register'),
+      registerData
+    );
   }
 
   logout(): void {
@@ -263,10 +296,24 @@ export class AuthService {
   }
 
   // Password reset methods
-  requestPasswordReset(email: string): Observable<{ message: string }> {
+  requestPasswordReset(
+    email: string,
+    recaptchaToken?: string
+  ): Observable<{ message: string }> {
+    // Build reset data with optional reCAPTCHA token
+    interface ResetData {
+      email: string;
+      recaptchaToken?: string;
+    }
+
+    const resetData: ResetData = { email };
+    if (recaptchaToken) {
+      resetData.recaptchaToken = recaptchaToken;
+    }
+
     return this.http.post<{ message: string }>(
       getApiPath('auth/forgot-password'),
-      { email }
+      resetData
     );
   }
 

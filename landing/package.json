@@ -1,0 +1,23 @@
+{
+  "name": "quasar-landing",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "build:selective": "npm run build && npm run deploy:pages",
+    "deploy:pages": "cp dist/index.html ../public/ && cp dist/about/index.html ../public/about.html && cp dist/faq/index.html ../public/faq.html && cp dist/legal/index.html ../public/legal.html && cp dist/author/index.html ../public/author.html"
+  },
+  "dependencies": {
+    "astro": "^4.0.0",
+    "@astrojs/check": "^0.3.0",
+    "@astrojs/sitemap": "^3.0.0",
+    "typescript": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  }
+}

@@ -1,4 +1,11 @@
-import { Component } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  AfterViewInit,
+  ElementRef,
+  ViewChild,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -10,10 +17,11 @@ import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { HttpClient } from '@angular/common/http';
-import { catchError, firstValueFrom, timeout, TimeoutError, of } from 'rxjs';
+import { catchError, firstValueFrom, timeout, TimeoutError } from 'rxjs';
 
 import { AuthService } from '@services/auth.service';
 import { LoadingService } from '@services/loading.service';
+import { RecaptchaService } from '@services/recaptcha.service';
 import { environment } from '@environments/environment';
 
 @Component({
@@ -33,26 +41,62 @@ import { environment } from '@environments/environment';
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css'],
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
+  @ViewChild('recaptchaElement', { static: false })
+  recaptchaElement!: ElementRef;
+
   username = '';
   password = '';
   error = '';
   isLoading = false;
   hidePassword = true;
   formSubmitted = false;
+  recaptchaToken = '';
+  recaptchaWidgetId: number | undefined;
 
   constructor(
     private auth: AuthService,
     private router: Router,
     private loadingService: LoadingService,
-    private http: HttpClient
-  ) {
-    // Check for success message from registration
+    private http: HttpClient,
+    private recaptchaService: RecaptchaService
+  ) {}
+
+  ngOnInit(): void {
+    // Check for success message from registration during navigation
     const navigation = this.router.getCurrentNavigation();
     const state = navigation?.extras?.state as { message?: string };
     if (state?.message) {
-      // Could display this in a snackbar or banner
-      console.log(state.message);
+      console.log('Registration success:', state.message);
+    }
+  }
+
+  ngAfterViewInit(): void {
+    this.initializeRecaptcha();
+  }
+
+  private initializeRecaptcha(): void {
+    setTimeout(() => {
+      try {
+        this.recaptchaWidgetId = this.recaptchaService.renderRecaptcha(
+          'recaptcha-login',
+          (token: string) => {
+            this.recaptchaToken = token;
+            this.error = ''; // Clear any reCAPTCHA-related errors
+          }
+        );
+      } catch (error) {
+        console.error('Failed to initialize reCAPTCHA:', error);
+        this.error =
+          'Failed to load security verification. Please refresh the page.';
+      }
+    }, 500);
+  }
+
+  private resetRecaptcha(): void {
+    this.recaptchaToken = '';
+    if (this.recaptchaWidgetId !== undefined) {
+      this.recaptchaService.resetRecaptcha(this.recaptchaWidgetId);
     }
   }
 
@@ -61,6 +105,11 @@ export class LoginComponent {
 
     if (!this.username || !this.password) {
       this.error = 'Please fill in all fields';
+      return;
+    }
+
+    if (!this.recaptchaToken) {
+      this.error = 'Please complete the security verification';
       return;
     }
 
@@ -73,12 +122,15 @@ export class LoginComponent {
       await this.checkBackendAvailability();
       console.log('[Login] Authenticating with server...');
 
-      await firstValueFrom(this.auth.login(this.username, this.password));
+      await firstValueFrom(
+        this.auth.login(this.username, this.password, this.recaptchaToken)
+      );
       console.log('[Login] Login successful! Navigating...');
 
       await this.router.navigate(['/chat']);
     } catch (error) {
       console.error('[Login] Login failed:', error);
+      this.resetRecaptcha(); // Reset reCAPTCHA on failed attempt
 
       if (error instanceof Error) {
         if (error.message.includes('connect')) {
@@ -89,16 +141,13 @@ export class LoginComponent {
           error.message.includes('Invalid')
         ) {
           this.error = 'Invalid username or password.';
-        } else if (
-          error.message.includes('429') ||
-          error.message.includes('attempts')
-        ) {
-          this.error = error.message;
+        } else if (error.message.includes('recaptcha')) {
+          this.error = 'Security verification failed. Please try again.';
         } else {
-          this.error = error.message || 'Login failed. Please try again.';
+          this.error = 'Login failed. Please try again.';
         }
       } else {
-        this.error = 'Login failed. Please try again.';
+        this.error = 'An unexpected error occurred. Please try again.';
       }
     } finally {
       this.isLoading = false;
@@ -107,55 +156,29 @@ export class LoginComponent {
 
   private async checkBackendAvailability(): Promise<void> {
     try {
-      const apiBase = environment.apiUrl.replace(/\/api$/, '');
-      const healthUrl = `${apiBase}/health`;
-
-      console.log('[Login] Checking backend health at:', healthUrl);
-
+      console.log('[Login] Checking backend availability...');
       await firstValueFrom(
-        this.http
-          .get<{ status: string; uptime: number; date: string }>(healthUrl)
-          .pipe(
-            timeout(5000),
-            catchError((error) => {
-              console.error('[Login] Health check error:', error);
-
-              if (error instanceof TimeoutError) {
-                throw new Error('Backend server is not responding.');
-              }
-
-              if (error.status === 404) {
-                console.warn(
-                  '[Login] Health endpoint not found, continuing anyway'
-                );
-                return of({
-                  status: 'unknown',
-                  uptime: 0,
-                  date: new Date().toISOString(),
-                });
-              }
-
-              if (error.status >= 500) {
-                throw new Error(
-                  'Backend server error. Please try again later.'
-                );
-              }
-
-              if (error.status === 0) {
-                throw new Error('Cannot connect to backend server.');
-              }
-
-              throw error;
-            })
-          )
+        this.http.get(`${environment.apiUrl}/health`).pipe(
+          timeout(5000),
+          catchError((error) => {
+            console.error('[Login] Backend check failed:', error);
+            if (error instanceof TimeoutError) {
+              throw new Error('Connection timeout - server may be unavailable');
+            }
+            throw new Error('Cannot connect to server');
+          })
+        )
       );
-
-      console.log('[Login] Backend health check passed');
+      console.log('[Login] Backend is available');
     } catch (error) {
       console.error('[Login] Backend availability check failed:', error);
-      throw new Error(
-        'Cannot connect to server. Please ensure the backend is running.'
-      );
+      throw error;
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.recaptchaWidgetId !== undefined) {
+      this.recaptchaService.resetRecaptcha(this.recaptchaWidgetId);
     }
   }
 }
