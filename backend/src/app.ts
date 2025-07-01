@@ -118,7 +118,7 @@ const staticOptions = {
   extensions: ['html', 'js', 'css', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'ico'],
   index: 'index.html', // Enable index.html serving
   maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0,
-  redirect: false,
+  redirect: true, // Enable redirects for proper directory access
 };
 
 app.use(
