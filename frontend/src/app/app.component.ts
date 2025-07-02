@@ -19,6 +19,7 @@ import { WebSocketService } from '@services/websocket.service';
 import { AuthService } from '@services/auth.service';
 import { CryptoService } from '@services/crypto.service';
 import { VaultService, VAULT_KEYS } from '@services/vault.service';
+import { ThemeService } from '@services/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -45,8 +46,12 @@ export class AppComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private vault: VaultService,
     private crypto: CryptoService,
-    private cdr: ChangeDetectorRef
-  ) {}
+    private cdr: ChangeDetectorRef,
+    private themeService: ThemeService
+  ) {
+    // Initialize theme service - this will load saved theme from localStorage
+    console.log('[App] Theme service initialized');
+  }
 
   ngOnInit(): void {
     console.log('[App] Component initializing');

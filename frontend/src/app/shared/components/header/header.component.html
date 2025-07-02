@@ -7,7 +7,7 @@
         class="logo-icon retina-image"
       />
       <img
-        src="assets/images/text-logo-dark.svg"
+        [src]="isDarkTheme() ? 'assets/images/text-logo-white.svg' : 'assets/images/text-logo-dark.svg'"
         alt="Quasar Contact Logo Text"
         class="logo-text retina-image"
       />
@@ -58,6 +58,16 @@
         </button>
       </ng-container>
 
+      <!-- Theme toggle button -->
+      <button 
+        class="theme-toggle" 
+        (click)="toggleTheme()" 
+        [title]="isDarkTheme() ? 'Switch to light theme' : 'Switch to dark theme'"
+        aria-label="Toggle theme"
+      >
+        <mat-icon>{{ isDarkTheme() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      </button>
+
       <!-- Desktop connection status (hidden on mobile) -->
       <div
         *ngIf="authService.isAuthenticated()"
@@ -75,6 +85,7 @@
         mat-button
         title="Settings"
         (click)="navigateToSettings()"
+        [class.active]="router.url.startsWith('/settings')"
       >
         <mat-icon>settings</mat-icon>
         <span class="mobile-hidden">Settings</span>
@@ -84,6 +95,7 @@
         *ngIf="authService.isAuthenticated()"
         mat-button
         (click)="navigateToChats()"
+        [class.active]="router.url.startsWith('/chat')"
       >
         <mat-icon>chat</mat-icon>
         <span class="mobile-hidden">Chats</span>

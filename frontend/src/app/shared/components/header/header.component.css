@@ -4,13 +4,13 @@
   left: 0;
   width: 100%;
   height: var(--header-height);
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: var(--header-background);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-sm);
   z-index: 100;
   transition: all 0.3s ease;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .header-container {
@@ -79,6 +79,15 @@
 .nav-links button:hover {
   color: var(--primary-color);
   transform: translateY(-1px);
+  background: transparent !important;
+}
+
+/* Remove focus states in dark theme for header buttons */
+.dark-theme .nav-links button:focus,
+.dark-theme .theme-toggle:focus,
+.dark-theme .mobile-menu-button:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .nav-links button:active {
@@ -234,7 +243,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: white;
+    background-color: var(--background-color);
     display: flex;
     flex-direction: column;
     padding: var(--spacing-lg);
@@ -257,8 +266,8 @@
     justify-content: flex-start;
     padding: var(--spacing-md);
     border: none;
-    background-color: white;
-    border: 1px solid #e0e0e0;
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     font-size: 1rem;
     font-weight: 500;
@@ -268,14 +277,41 @@
     min-height: 56px;
     width: 100%;
     color: var(--text-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-sm);
   }
 
   .nav-links.open button:hover {
-    background-color: #f8f9fa;
+    background-color: var(--nav-hover);
     border-color: var(--primary-color);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Fix mobile menu button borders in dark theme - remove double borders */
+  .dark-theme .nav-links.open button {
+    border: 1px solid var(--border-color) !important;
+  }
+
+  .dark-theme .nav-links.open button:hover {
+    background-color: var(--nav-hover) !important;
+    border-color: var(--primary-color) !important;
+  }
+
+  /* Remove focus states for mobile menu buttons in dark theme */
+  .dark-theme .nav-links.open button:focus {
+    outline: none !important;
+    box-shadow: var(--shadow-sm) !important;
+  }
+
+  /* Active page highlighting in mobile menu */
+  .nav-links.open button.active {
+    background-color: var(--nav-hover) !important;
+    border-color: var(--primary-color) !important;
+    color: var(--primary-color) !important;
+  }
+
+  .nav-links.open button.active mat-icon {
+    color: var(--primary-color) !important;
   }
 
   .nav-links.open button:active {
@@ -308,7 +344,7 @@
   }
 
   .mobile-menu-button:hover {
-    background-color: rgba(0, 119, 204, 0.08);
+    background-color: var(--nav-hover);
     transform: scale(1.05);
   }
 
@@ -355,6 +391,44 @@
       opacity: 1;
     }
   }
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: var(--spacing-sm);
+  cursor: pointer;
+  min-height: 40px;
+  min-width: 40px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  color: var(--text-color);
+  position: relative;
+}
+
+.theme-toggle:hover {
+  background: transparent !important;
+  transform: scale(1.05);
+}
+
+.theme-toggle:active {
+  transform: scale(0.95);
+}
+
+.theme-toggle mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  transition: transform 0.3s ease;
+}
+
+/* Theme toggle animation */
+.theme-toggle:hover mat-icon {
+  transform: rotate(15deg);
 }
 
 /* Fade-in animation for mobile menu */
