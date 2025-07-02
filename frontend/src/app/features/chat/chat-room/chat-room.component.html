@@ -1,45 +1,46 @@
 <div class="chat-wrapper">
-  <div class="chat-container">
-    <div class="chat-header">
-      <div class="left-side">
-        <button
-          mat-icon-button
-          class="back-button"
-          (click)="navigateToList($event)"
-        >
-          <mat-icon>arrow_back</mat-icon>
-        </button>
+  <div class="chat-header">
+    <div class="left-side">
+      <button
+        mat-icon-button
+        class="back-button"
+        (click)="navigateToList($event)"
+      >
+        <mat-icon>arrow_back</mat-icon>
+      </button>
 
-        <div class="user-info">
-          <img
-            [src]="getPartnerAvatar()"
-            [alt]="(chat.theirUsername$ | async) || 'User'"
-            class="avatar"
-          />
-          <div>
-            <h3 class="username">
-              {{ (chat.theirUsername$ | async) || 'User' }}
-            </h3>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right side: status -->
-      <div class="right-side">
-        <div class="status">
-          <span
-            class="status-dot"
-            [class.online]="isPartnerOnline"
-            [class.offline]="!isPartnerOnline"
-          ></span>
-          <span>{{
-            isPartnerOnline
-              ? ((chat.theirUsername$ | async) || 'User') + ' is online'
-              : ((chat.theirUsername$ | async) || 'User') + ' is offline'
-          }}</span>
+      <div class="user-info">
+        <img
+          [src]="getPartnerAvatar()"
+          [alt]="(chat.theirUsername$ | async) || 'User'"
+          class="avatar"
+        />
+        <div>
+          <h3 class="username">
+            {{ (chat.theirUsername$ | async) || 'User' }}
+          </h3>
         </div>
       </div>
     </div>
+
+    <!-- Right side: status -->
+    <div class="right-side">
+      <div class="status">
+        <span
+          class="status-dot"
+          [class.online]="isPartnerOnline"
+          [class.offline]="!isPartnerOnline"
+        ></span>
+        <span>{{
+          isPartnerOnline
+            ? ((chat.theirUsername$ | async) || 'User') + ' is online'
+            : ((chat.theirUsername$ | async) || 'User') + ' is offline'
+        }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-container">
 
     <app-cache-info-banner
       [showBanner]="showCacheInfoBanner"

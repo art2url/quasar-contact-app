@@ -6,7 +6,7 @@
   width: 100%;
   height: var(--footer-height);
   backdrop-filter: blur(10px);
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-top: 1px solid var(--border-color);
   z-index: 999;
   font-family: 'Jost', sans-serif;
 }
@@ -34,7 +34,7 @@
 
 /* Copyright text */
 .footer-copyright {
-  color: rgba(0, 0, 0, 0.9);
+  color: var(--text-color);
   font-size: 0.7rem;
   font-weight: 500;
   font-family: 'Jost', sans-serif;
@@ -44,7 +44,7 @@
 
 /* Disclaimer text */
 .footer-disclaimer {
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--text-secondary);
   font-size: 0.7rem;
   font-weight: 400;
   font-family: 'Jost', sans-serif;
@@ -69,7 +69,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  color: rgba(0, 0, 0, 0.7);
+  color: var(--text-secondary);
   text-decoration: none;
   position: relative;
   overflow: hidden;
@@ -97,7 +97,7 @@
 }
 
 .footer-social a:hover {
-  color: white;
+  color: var(--button-text);
   transform: translateY(-2px);
 }
 

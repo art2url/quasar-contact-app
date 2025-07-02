@@ -242,17 +242,21 @@ input[ng-reflect] {
   -webkit-font-smoothing: antialiased;
 }
 
-:root {
+/* Light Theme Variables */
+:root,
+.light-theme {
   --primary-color: #0077cc;
+  --primary-color-rgb: 0, 119, 204;
   --secondary-color: #005599;
   --background-color: #f8f9fa;
   --text-color: #001011;
+  --text-secondary: #666666;
   --border-color: #e0e0e0;
   --danger-color: #f44336;
   --success-color: #68b684;
   --warning-color: #ff9800;
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.12);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 10px 40px rgba(0, 0, 0, 0.15);
   --border-radius: 8px;
   --header-height: 64px;
   --footer-height: 80px;
@@ -261,6 +265,65 @@ input[ng-reflect] {
   --spacing-md: 16px;
   --spacing-lg: 24px;
   --spacing-xl: 32px;
+
+  /* Component specific colors */
+  --card-background: #ffffff;
+  --input-background: #ffffff;
+  --input-border: #e0e0e0;
+  --button-background: var(--primary-color);
+  --button-text: #ffffff;
+  --header-background: rgba(255, 255, 255, 0.5);
+  --nav-hover: rgba(0, 119, 204, 0.08);
+  --warning-background: #fff3e0;
+  --warning-text: #e65100;
+  --info-background: #e1f5fe;
+  --info-text: #0277bd;
+  --chat-list-background: #ffffff;
+}
+
+/* Dark Theme Variables */
+.dark-theme {
+  --primary-color: #c3f73a;
+  --primary-color-rgb: 195, 247, 58;
+  --secondary-color: #95e06c;
+  --background-color: #0c2524;
+  --text-color: rgba(255, 255, 255, 0.9);
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --border-color: rgba(255, 255, 255, 0.1);
+  --danger-color: #ef5350;
+  --success-color: #68b684;
+  --warning-color: #ffb74d;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.794);
+  --shadow-md: 0 10px 40px rgb(0, 0, 0);
+  --border-radius: 8px;
+  --header-height: 64px;
+  --footer-height: 80px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Component specific colors */
+  /* --card-background: #102423; */
+  --card-background: #0c2524;
+  --input-background: rgba(255, 255, 255, 0);
+  --input-border: #3c4f4f;
+  --button-background: var(--primary-color);
+  --button-text: #001011;
+  --header-background: rgba(12, 37, 36, 0.5);
+  --nav-hover: rgba(195, 247, 58, 0.1);
+  --warning-background: rgba(255, 183, 77, 0.1);
+  --warning-text: #ffb74d;
+  --info-background: rgba(102, 187, 106, 0.1);
+  --info-text: #66bb6a;
+  --chat-list-background: #0c2524;
+}
+
+/* Dark theme background */
+.dark-theme body {
+  background: #011012;
+  background-attachment: fixed;
 }
 
 html,
@@ -467,4 +530,133 @@ body {
     animation: none;
     content: '⏳';
   }
+}
+
+/* Form input theming */
+input,
+textarea,
+select {
+  background-color: var(--input-background) !important;
+  border: 1px solid var(--input-border) !important;
+  color: var(--text-color) !important;
+  border-radius: var(--border-radius) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-secondary) !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--primary-color) !important;
+  outline: none !important;
+}
+
+/* Dark theme specific focus override */
+.dark-theme input:focus,
+.dark-theme textarea:focus,
+.dark-theme select:focus {
+  border-color: var(--primary-color) !important;
+}
+
+/* Angular Material form field theming */
+.mat-mdc-form-field {
+  --mdc-filled-text-field-container-color: var(--input-background);
+  --mdc-filled-text-field-label-text-color: var(--text-secondary);
+  --mdc-filled-text-field-input-text-color: var(--text-color);
+  --mdc-filled-text-field-active-indicator-color: var(--primary-color);
+  --mdc-filled-text-field-focus-active-indicator-color: var(--primary-color);
+}
+
+/* Dark theme Angular Material form field overrides */
+.dark-theme .mat-mdc-form-field {
+  --mdc-filled-text-field-active-indicator-color: var(--primary-color);
+  --mdc-filled-text-field-focus-active-indicator-color: var(--primary-color);
+  --mdc-outlined-text-field-outline-color: var(--input-border);
+  --mdc-outlined-text-field-hover-outline-color: var(--input-border);
+  --mdc-outlined-text-field-focus-outline-color: var(--primary-color);
+  --mdc-outlined-text-field-label-text-color: var(--text-secondary);
+  --mdc-outlined-text-field-supporting-text-color: var(--text-secondary);
+  --mdc-shape-corner-size-medium: var(--border-radius);
+}
+
+/* Dark theme placeholder text color */
+.dark-theme input::placeholder,
+.dark-theme textarea::placeholder {
+  color: var(--text-secondary) !important;
+}
+
+/* Dark theme mat-label color */
+.dark-theme .mat-mdc-form-field .mat-mdc-floating-label {
+  color: var(--text-secondary) !important;
+}
+
+.mat-mdc-text-field-wrapper {
+  background-color: var(--input-background) !important;
+}
+
+.mat-mdc-form-field-input-control input {
+  color: var(--text-color) !important;
+  background-color: var(--input-background) !important;
+}
+
+/* Card backgrounds */
+.mat-mdc-card,
+.mat-card,
+.card {
+  background-color: var(--card-background) !important;
+  color: var(--text-color) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+/* Button theming */
+.mat-mdc-button,
+.mat-mdc-raised-button,
+.mat-mdc-unelevated-button {
+  --mdc-text-button-label-text-color: var(--text-color);
+  --mdc-filled-button-container-color: var(--button-background);
+  --mdc-filled-button-label-text-color: var(--button-text);
+}
+
+/* Override Material Design button hover effects for dark theme */
+.dark-theme .mat-mdc-button:not(:disabled):hover .mdc-button__ripple::before,
+.dark-theme .mat-mdc-raised-button:not(:disabled):hover .mdc-button__ripple::before,
+.dark-theme .mat-mdc-outlined-button:not(:disabled):hover .mdc-button__ripple::before,
+.dark-theme .mat-mdc-unelevated-button:not(:disabled):hover .mdc-button__ripple::before {
+  opacity: 0 !important;
+}
+
+.dark-theme .mat-mdc-button:not(:disabled):hover,
+.dark-theme .mat-mdc-raised-button:not(:disabled):hover,
+.dark-theme .mat-mdc-outlined-button:not(:disabled):hover,
+.dark-theme .mat-mdc-unelevated-button:not(:disabled):hover {
+  background-color: var(--nav-hover) !important;
+}
+
+/* Override Material Design focus outline */
+.dark-theme .mat-mdc-button:focus,
+.dark-theme .mat-mdc-raised-button:focus,
+.dark-theme .mat-mdc-outlined-button:focus,
+.dark-theme .mat-mdc-unelevated-button:focus {
+  outline: 2px solid var(--primary-color) !important;
+  outline-offset: 2px !important;
+}
+
+/* Chat and content backgrounds */
+.content-background {
+  background-color: var(--card-background) !important;
+  color: var(--text-color) !important;
+  border-color: var(--border-color) !important;
+}
+
+.chat-container {
+  color: var(--text-color) !important;
+  border-color: var(--border-color) !important;
+}
+
+.chat-info {
+  color: var(--text-color) !important;
+  border-color: var(--border-color) !important;
 }
