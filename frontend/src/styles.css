@@ -635,13 +635,14 @@ select:focus {
   background-color: var(--nav-hover) !important;
 }
 
-/* Override Material Design focus outline */
+/* Remove Material Design focus outline in dark theme */
 .dark-theme .mat-mdc-button:focus,
 .dark-theme .mat-mdc-raised-button:focus,
 .dark-theme .mat-mdc-outlined-button:focus,
-.dark-theme .mat-mdc-unelevated-button:focus {
-  outline: 2px solid var(--primary-color) !important;
-  outline-offset: 2px !important;
+.dark-theme .mat-mdc-unelevated-button:focus,
+.dark-theme .mat-mdc-icon-button:focus {
+  outline: none !important;
+  outline-offset: 0 !important;
 }
 
 /* Chat and content backgrounds */

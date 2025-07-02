@@ -46,30 +46,42 @@
   color: rgba(195, 247, 58, 0.9) !important;
 }
 
-
 button {
   flex-shrink: 0;
 }
 
 @media (max-width: 599px) {
-  /* Light theme mobile */
+  /* Light theme mobile - Force solid background */
+  body .cache-info-banner,
+  html .cache-info-banner,
+  app-cache-info-banner .cache-info-banner,
+  div.cache-info-banner,
   .cache-info-banner {
-    font-size: 0.8rem;
-    padding: 10px;
-    margin: 0;
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background-color: #e3f2fd;
-    box-shadow: var(--shadow-sm);
+    font-size: 0.8rem !important;
+    padding: 10px !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border: 1px solid #2196f3 !important;
+    border-left: none !important;
+    border-right: none !important;
+    position: fixed !important;
+    top: calc(var(--header-height) + 60px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 9999 !important;
+    background: #e3f2fd !important;
+    background-color: #e3f2fd !important;
+    background-image: none !important;
+    box-shadow: var(--shadow-sm) !important;
   }
-  
-  /* Dark theme mobile */
+
+  /* Dark theme mobile - Force solid background */
+  .dark-theme body .cache-info-banner,
+  .dark-theme html .cache-info-banner,
+  .dark-theme app-cache-info-banner .cache-info-banner,
+  .dark-theme div.cache-info-banner,
   .dark-theme .cache-info-banner {
-    background-color: rgba(195, 247, 58, 0.1) !important;
+    background-color: #213928 !important;
     border: 1px solid rgba(195, 247, 58, 0.3) !important;
     border-left: none !important;
     border-right: none !important;

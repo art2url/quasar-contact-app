@@ -4,12 +4,19 @@
   margin: 0 auto;
   padding: 0 var(--spacing-xl);
   box-sizing: border-box;
+  position: fixed;
+  top: var(--header-height);
+  left: 50%;
+  transform: translateX(-50%);
+  height: calc(100vh - var(--header-height) - var(--footer-height) - 50px);
+  display: flex;
+  flex-direction: column;
 }
 
 .chat-container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - var(--header-height) - var(--footer-height) - 32px);
+  flex: 1;
   width: 100%;
   overflow: hidden;
   z-index: 1;
@@ -17,16 +24,23 @@
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-sm);
   background-color: var(--card-background);
+  position: relative;
 }
 
 .chat-header {
   display: flex;
   align-items: center;
   padding: var(--spacing-md) 0;
-  border-bottom: 1px solid var(--border-color);
   justify-content: space-between;
   background: transparent;
-  margin-bottom: var(--spacing-md);
+  flex-shrink: 0;
+}
+
+/* Large screen spacing */
+@media (min-width: 1200px) {
+  .chat-header {
+    padding: var(--spacing-lg) 0;
+  }
 }
 
 /* Left side: back button + user info */
@@ -324,8 +338,8 @@
 }
 
 .scroll-to-bottom-btn {
-  position: fixed;
-  bottom: calc(var(--footer-height) + 32px + 90px);
+  position: absolute;
+  bottom: calc(80px + 40px); /* form height + 40px above form */
   left: 50%;
   transform: translateX(-50%);
   width: 48px;
@@ -338,12 +352,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-md);
   z-index: 10;
 }
 
 .scroll-to-bottom-btn:hover {
-  box-shadow: var(--shadow-md);
+  transform: translateX(-50%) scale(1.05);
 }
 
 .message-badge {
@@ -381,6 +394,7 @@
   border-top: 1px solid var(--border-color);
   position: relative;
   z-index: 3;
+  flex-shrink: 0;
 }
 
 .message-input {
@@ -487,7 +501,7 @@
   color: var(--warning-color);
 }
 
-/* Styling for unreadable messages */
+/* Styling for unreadable messages - Light theme */
 .message.unreadable {
   opacity: 0.85;
   background-color: #f8f9fa !important;
@@ -502,11 +516,45 @@
   background-color: #e3f2fd !important;
 }
 
+/* Dark theme styling for unreadable messages */
+.dark-theme .message.unreadable {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  opacity: 0.7;
+}
+
+.dark-theme .message.unreadable .message-content {
+  color: var(--text-secondary) !important;
+}
+
+.dark-theme .message.you.unreadable {
+  background-color: rgba(195, 247, 58, 0.1) !important;
+}
+
+/* Fix message time and status visibility for unreadable messages */
+/* Light theme - make time/status darker on light blue background */
+.message.you.unreadable .message-time,
+.message.you.unreadable .message-status {
+  color: #0277bd !important;
+  opacity: 0.8 !important;
+}
+
+/* Dark theme - make time/status lighter on light green background */
+.dark-theme .message.you.unreadable .message-time,
+.dark-theme .message.you.unreadable .message-status {
+  color: rgba(195, 247, 58, 0.9) !important;
+  opacity: 1 !important;
+}
+
 /* Indicator text styling */
 .unreadable-indicator {
   color: #6c757d;
   font-size: 0.7rem;
   font-weight: normal;
+}
+
+/* Dark theme indicator */
+.dark-theme .unreadable-indicator {
+  color: var(--text-secondary) !important;
 }
 
 /* Unreadable message actions area */
@@ -522,6 +570,12 @@
   padding: 2px 6px;
   border-radius: 8px;
   box-shadow: var(--shadow-sm);
+}
+
+/* Dark theme unreadable actions */
+.dark-theme .unreadable-actions {
+  color: var(--text-secondary) !important;
+  background-color: rgba(0, 0, 0, 0.6) !important;
 }
 
 .unreadable-actions .info-icon {
@@ -560,14 +614,20 @@
 
 /* Mobile adjustments */
 @media (max-width: 599px) {
-  /* Remove all padding for full-width chat */
+  /* Reset mobile wrapper to normal positioning */
   .chat-wrapper {
     padding: 0;
     margin: 0;
+    position: static;
+    top: auto;
+    left: auto;
+    transform: none;
+    height: auto;
+    display: block;
   }
 
   .chat-container {
-    height: 100vh;
+    height: calc(100vh - var(--header-height));
     border-radius: 0;
     box-shadow: none;
     margin: 0;
@@ -582,28 +642,28 @@
     top: var(--header-height);
     left: 0;
     right: 0;
-    border-bottom: 1px solid var(--border-color);
+    background-color: #f8f9fa !important;
     z-index: 90;
     height: 60px;
     display: flex;
     align-items: center;
   }
 
+  /* Dark theme mobile chat-header */
+  .dark-theme .chat-header {
+    background-color: #001011 !important;
+  }
+
   .chat-container app-cache-info-banner {
-    position: fixed !important;
-    top: calc(var(--header-height) + 60px);
-    left: 0;
-    right: 0;
-    z-index: 85;
+    /* Let the banner component handle its own positioning */
   }
 
   .chat-window {
     padding: var(--spacing-sm) var(--spacing-md);
-    padding-top: 70px;
-    padding-bottom: 90px;
-    height: 100vh;
+    /* Calculate proper height: viewport - app header - chat header (60px) - chat form (80px) */
+    height: calc(100vh - var(--header-height) - 60px - 80px);
     overflow-y: auto;
-    margin-top: var(--header-height);
+    margin-top: calc(var(--header-height) + 60px);
     position: relative;
   }
 
@@ -613,10 +673,11 @@
     bottom: 0;
     left: 0;
     right: 0;
+    background-color: var(--card-background);
     border-top: 1px solid var(--border-color);
     z-index: 1000;
     padding-bottom: calc(var(--spacing-sm) + env(safe-area-inset-bottom));
-    min-height: 70px;
+    min-height: 80px;
     max-height: 200px;
     box-sizing: border-box;
   }
@@ -686,7 +747,7 @@
 
   .scroll-to-bottom-btn {
     position: fixed;
-    bottom: 100px;
+    bottom: 120px; /* Above the fixed chat-form */
     left: 50%;
     width: 44px;
     height: 44px;
