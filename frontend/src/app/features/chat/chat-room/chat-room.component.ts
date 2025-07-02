@@ -10,6 +10,7 @@ import {
   Injectable,
   ChangeDetectorRef,
   NgZone,
+  ViewEncapsulation,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -81,6 +82,7 @@ export class MyHammerConfig extends HammerGestureConfig {
   ],
   templateUrl: './chat-room.component.html',
   styleUrls: ['./chat-room.component.css'],
+  encapsulation: ViewEncapsulation.None
 })
 export class ChatRoomComponent
   implements OnInit, AfterViewChecked, AfterViewInit, OnDestroy

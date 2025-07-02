@@ -9,9 +9,14 @@
 .chat-header {
   display: flex;
   align-items: center;
-  margin-bottom: var(--spacing-md);
   padding: var(--spacing-md) 0;
-  border-bottom: 1px solid var(--border-color);
+}
+
+/* Large screen spacing */
+@media (min-width: 1200px) {
+  .chat-header {
+    padding: var(--spacing-lg) 0;
+  }
 }
 
 .back-button {
@@ -217,7 +222,6 @@
 
 @media (max-width: 599px) {
   .chat-header {
-    margin-bottom: var(--spacing-md);
     padding: var(--spacing-sm) 0;
   }
 

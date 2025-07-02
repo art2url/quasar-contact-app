@@ -82,12 +82,35 @@
   background: transparent !important;
 }
 
-/* Remove focus states in dark theme for header buttons */
+/* Remove focus and active states in dark theme for header buttons */
 .dark-theme .nav-links button:focus,
+.dark-theme .nav-links button:focus-visible,
+.dark-theme .nav-links button:active,
 .dark-theme .theme-toggle:focus,
-.dark-theme .mobile-menu-button:focus {
+.dark-theme .theme-toggle:focus-visible,
+.dark-theme .theme-toggle:active,
+.dark-theme .mobile-menu-button:focus,
+.dark-theme .mobile-menu-button:focus-visible,
+.dark-theme .mobile-menu-button:active,
+.dark-theme .header button:focus,
+.dark-theme .header button:focus-visible,
+.dark-theme .header button:active,
+.dark-theme .header .mat-mdc-button:focus,
+.dark-theme .header .mat-mdc-button:focus-visible,
+.dark-theme .header .mat-mdc-button:active,
+.dark-theme .header .mat-mdc-icon-button:focus,
+.dark-theme .header .mat-mdc-icon-button:focus-visible,
+.dark-theme .header .mat-mdc-icon-button:active {
   outline: none !important;
   box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+/* Remove Material Design ripple effects in dark theme header */
+.dark-theme .header .mat-mdc-button .mdc-button__ripple,
+.dark-theme .header .mat-mdc-icon-button .mdc-icon-button__ripple {
+  display: none !important;
 }
 
 .nav-links button:active {
