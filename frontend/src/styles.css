@@ -311,7 +311,7 @@ input[ng-reflect] {
   --input-border: #3c4f4f;
   --button-background: var(--primary-color);
   --button-text: #001011;
-  --header-background: rgba(12, 37, 36, 0.5);
+  --header-background: rgb(12, 37, 36, 0.5);
   --nav-hover: rgba(195, 247, 58, 0.1);
   --warning-background: rgba(255, 183, 77, 0.1);
   --warning-text: #ffb74d;
@@ -685,6 +685,85 @@ select:focus {
   background-color: var(--card-background) !important;
   color: var(--text-color) !important;
   border-color: var(--border-color) !important;
+}
+
+/* Global avatar borders - inner borders using outline */
+.avatar,
+img.avatar,
+.chat-wrapper .avatar,
+.chat-wrapper img.avatar,
+.user-info .avatar,
+.user-info img.avatar,
+.chat-wrapper .chat-header .left-side .user-info img.avatar,
+.chat-header .user-info img.avatar {
+  outline: 1px solid #fff !important;
+  outline-offset: -1px !important;
+  border-radius: 50% !important;
+}
+
+/* Settings avatars - special handling for better cross-browser compatibility */
+.avatar-option {
+  position: relative !important;
+}
+
+.avatar-option::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 54px !important;
+  height: 54px !important;
+  transform: translate(-50%, -50%) !important;
+  border: 1px solid #fff !important;
+  border-radius: 50% !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+.avatar-option::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 54px !important;
+  height: 54px !important;
+  transform: translate(-50%, -50%) !important;
+  border: 1px solid #fff !important;
+  border-radius: 50% !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+/* Dark theme avatar borders - inner borders */
+body.dark-theme .avatar,
+body.dark-theme img.avatar,
+body.dark-theme .chat-wrapper .avatar,
+body.dark-theme .chat-wrapper img.avatar,
+body.dark-theme .user-info .avatar,
+body.dark-theme .user-info img.avatar,
+body.dark-theme .chat-wrapper .chat-header .left-side .user-info img.avatar,
+body.dark-theme .chat-header .user-info img.avatar,
+.dark-theme .avatar,
+.dark-theme img.avatar,
+.dark-theme .chat-wrapper .avatar,
+.dark-theme .chat-wrapper img.avatar,
+.dark-theme .user-info .avatar,
+.dark-theme .user-info img.avatar,
+.dark-theme .chat-wrapper .chat-header .left-side .user-info img.avatar,
+.dark-theme .chat-header .user-info img.avatar {
+  outline: 1px solid #001011 !important;
+  outline-offset: -1px !important;
+}
+
+/* Dark theme settings avatars */
+body.dark-theme .avatar-option::after,
+.dark-theme .avatar-option::after {
+  border: 1px solid #001011 !important;
+}
+
+body.dark-theme .avatar-option::before,
+.dark-theme .avatar-option::before {
+  border: 1px solid #001011 !important;
 }
 
 .chat-container {
