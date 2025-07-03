@@ -244,6 +244,14 @@
   .header-container {
     padding: 0 var(--spacing-md);
   }
+
+  .nav-links {
+    gap: var(--spacing-sm);
+  }
+
+  .nav-links button {
+    font-size: 0.75rem;
+  }
 }
 
 @media (max-width: 599px) {
@@ -433,7 +441,6 @@
     }
   }
 }
-
 
 /* Mobile theme toggle (in mobile-controls) - separate styling */
 .mobile-controls .theme-toggle {
