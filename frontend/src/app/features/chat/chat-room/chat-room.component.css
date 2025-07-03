@@ -527,6 +527,17 @@
   background-color: #f9f9f9 !important;
 }
 
+/* Encrypted messages from partner - same styling as unreadable */
+.message.other.encrypted {
+  background-color: #f9f9f9 !important;
+  opacity: 0.85;
+}
+
+.message.other.encrypted .message-content {
+  font-style: italic;
+  color: #6c757d;
+}
+
 /* Dark theme styling for unreadable messages */
 .dark-theme .message.unreadable {
   background-color: rgba(255, 255, 255, 0.05) !important;
@@ -547,6 +558,16 @@
 
 .dark-theme .message.other.unreadable {
   background-color: #0b1e1e !important;
+}
+
+/* Dark theme encrypted messages from partner */
+.dark-theme .message.other.encrypted {
+  background-color: #0b1e1e !important;
+  opacity: 0.7;
+}
+
+.dark-theme .message.other.encrypted .message-content {
+  color: var(--text-secondary) !important;
 }
 
 /* Fix message time and status visibility for unreadable messages */
@@ -682,10 +703,6 @@
   /* Dark theme mobile chat-header */
   .dark-theme .chat-header {
     background-color: #001011 !important;
-  }
-
-  .chat-container app-cache-info-banner {
-    /* Let the banner component handle its own positioning */
   }
 
   .chat-window {

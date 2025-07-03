@@ -101,6 +101,7 @@
             [class.other]="m.sender !== 'You'"
             [class.deleted]="m.deletedAt"
             [class.unreadable]="isMessageUnreadable(m)"
+            [class.encrypted]="isMessageEncrypted(m)"
           >
             <div class="message-bubble">
               <p class="message-content">{{ m.text }}</p>

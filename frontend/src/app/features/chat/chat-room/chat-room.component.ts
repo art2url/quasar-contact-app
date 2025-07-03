@@ -921,6 +921,26 @@ export class ChatRoomComponent
   }
 
   /**
+   * Check if a message is encrypted (from partner)
+   * 
+   * NOTE: This uses text matching which can have false positives if users
+   * type the exact encrypted message text. For 100% accuracy, backend should
+   * provide explicit encryption status flags.
+   */
+  isMessageEncrypted(message: ChatMsg): boolean {
+    if (message.sender === 'You') return false;
+
+    // Check for exact encrypted message text
+    // Most users won't type this exact system message, so risk is minimal
+    const isEncryptedText = message.text === '🔒 Encrypted message (from partner)';
+    
+    return isEncryptedText;
+    
+    // TODO: Replace with proper backend flag when available:
+    // return message.decryptionFailed === true;
+  }
+
+  /**
    * Check if a message can be edited/deleted
    */
   canEditMessage(message: ChatMsg): boolean {
