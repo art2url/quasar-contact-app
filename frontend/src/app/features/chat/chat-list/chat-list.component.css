@@ -9,9 +9,14 @@
 .chat-header {
   display: flex;
   align-items: center;
-  margin-bottom: var(--spacing-md);
   padding: var(--spacing-md) 0;
-  border-bottom: 1px solid var(--border-color);
+}
+
+/* Large screen spacing */
+@media (min-width: 1200px) {
+  .chat-header {
+    padding: var(--spacing-lg) 0;
+  }
 }
 
 .back-button {
@@ -29,7 +34,7 @@
 }
 
 .back-button:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: var(--nav-hover);
 }
 
 .back-button mat-icon {
@@ -56,7 +61,7 @@
 
 .empty-hint {
   text-align: center;
-  color: #777;
+  color: var(--text-secondary);
   margin-top: var(--spacing-xl);
   padding: var(--spacing-lg);
 }
@@ -69,10 +74,7 @@
   list-style: none;
   padding: 0;
   margin: 0;
-  border-radius: var(--border-radius);
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
-  background-color: white;
 }
 
 .search-results span {
@@ -85,7 +87,8 @@
   width: 100%;
   padding: var(--spacing-md);
   border: none;
-  background: white;
+  background: var(--card-background);
+  color: var(--text-color);
   text-align: left;
   cursor: pointer;
   transition: background-color 0.2s;
@@ -93,7 +96,7 @@
 }
 
 .search-result-btn:hover {
-  background-color: #f5f7fa;
+  background-color: var(--nav-hover);
 }
 
 .search-result-btn img {
@@ -108,10 +111,10 @@
   list-style: none;
   padding: 0;
   margin: 0;
-  border-radius: var(--border-radius);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-  background-color: white;
+  background-color: var(--chat-list-background);
+  border-radius: var(--border-radius);
 }
 
 .chat-list li {
@@ -127,13 +130,13 @@
   align-items: center;
   padding: var(--spacing-md);
   text-decoration: none;
-  color: inherit;
+  color: var(--text-color);
   transition: background-color 0.2s;
   min-height: 60px;
 }
 
 .chat-list a:hover {
-  background-color: #f5f7fa;
+  background-color: var(--nav-hover);
 }
 
 .avatar {
@@ -164,14 +167,14 @@
 
 .time {
   font-size: 0.75rem;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .last-message {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.875rem;
   max-width: 70vw;
   margin: 0;
@@ -181,7 +184,7 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #ccc;
+  background: var(--text-secondary);
   margin-right: var(--spacing-md);
   flex-shrink: 0;
   display: inline-block;
@@ -208,7 +211,7 @@
 }
 
 ::ng-deep .mat-mdc-text-field-wrapper {
-  background-color: white !important;
+  background-color: var(--input-background) !important;
 }
 
 @media (max-width: 768px) {
@@ -219,7 +222,6 @@
 
 @media (max-width: 599px) {
   .chat-header {
-    margin-bottom: var(--spacing-md);
     padding: var(--spacing-sm) 0;
   }
 

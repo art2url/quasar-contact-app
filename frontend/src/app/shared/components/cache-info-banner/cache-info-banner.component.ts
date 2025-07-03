@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { MatIconModule } from '@angular/material/icon';
@@ -10,6 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
   imports: [CommonModule, MatIconModule, MatButtonModule],
   templateUrl: '../cache-info-banner/cache-info-banner.component.html',
   styleUrl: '../cache-info-banner/cache-info-banner.component.css',
+  encapsulation: ViewEncapsulation.None
 })
 export class CacheInfoBannerComponent {
   @Input() showBanner = false;

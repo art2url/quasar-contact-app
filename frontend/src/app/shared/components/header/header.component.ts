@@ -15,6 +15,7 @@ import { WebSocketService } from '@services/websocket.service';
 import { LoadingService } from '@services/loading.service';
 import { AuthService } from '@services/auth.service';
 import { NotificationService } from '@services/notification.service';
+import { ThemeService } from '@services/theme.service';
 
 @Component({
   selector: 'app-header',
@@ -41,7 +42,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
     private loadingService: LoadingService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private themeService: ThemeService
   ) {
     // Keep the header status in sync with WebSocket connection
     this.sub = this.wsService.isConnected$.subscribe((status) => {
@@ -166,6 +168,16 @@ export class HeaderComponent implements OnInit, OnDestroy {
   // Check if user is currently on an auth page
   isAuthPage(): boolean {
     return this.router.url.startsWith('/auth');
+  }
+
+  // Theme toggle methods
+  toggleTheme(): void {
+    console.log('[Header] Theme toggle clicked');
+    this.themeService.toggleTheme();
+  }
+
+  isDarkTheme(): boolean {
+    return this.themeService.isDarkTheme();
   }
 
   ngOnDestroy(): void {
