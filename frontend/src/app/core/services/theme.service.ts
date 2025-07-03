@@ -7,7 +7,7 @@ export type Theme = 'light' | 'dark';
   providedIn: 'root',
 })
 export class ThemeService {
-  private currentTheme: Theme = 'light';
+  private currentTheme: Theme = 'dark';
   private themeSubject = new BehaviorSubject<Theme>(this.currentTheme);
 
   public theme$ = this.themeSubject.asObservable();
@@ -27,7 +27,7 @@ export class ThemeService {
       const prefersDark = window.matchMedia(
         '(prefers-color-scheme: dark)'
       ).matches;
-      this.currentTheme = prefersDark ? 'dark' : 'light';
+      this.currentTheme = prefersDark ? 'dark' : 'dark';
     }
 
     this.applyTheme(this.currentTheme);

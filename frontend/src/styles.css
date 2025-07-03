@@ -622,9 +622,15 @@ select:focus {
 
 /* Override Material Design button hover effects for dark theme */
 .dark-theme .mat-mdc-button:not(:disabled):hover .mdc-button__ripple::before,
-.dark-theme .mat-mdc-raised-button:not(:disabled):hover .mdc-button__ripple::before,
-.dark-theme .mat-mdc-outlined-button:not(:disabled):hover .mdc-button__ripple::before,
-.dark-theme .mat-mdc-unelevated-button:not(:disabled):hover .mdc-button__ripple::before {
+.dark-theme
+  .mat-mdc-raised-button:not(:disabled):hover
+  .mdc-button__ripple::before,
+.dark-theme
+  .mat-mdc-outlined-button:not(:disabled):hover
+  .mdc-button__ripple::before,
+.dark-theme
+  .mat-mdc-unelevated-button:not(:disabled):hover
+  .mdc-button__ripple::before {
   opacity: 0 !important;
 }
 
@@ -643,6 +649,35 @@ select:focus {
 .dark-theme .mat-mdc-icon-button:focus {
   outline: none !important;
   outline-offset: 0 !important;
+}
+
+/* Dark theme spinner colors */
+.dark-theme .mat-mdc-progress-spinner,
+.dark-theme .mat-spinner {
+  --mdc-circular-progress-active-indicator-color: var(--primary-color);
+}
+
+.dark-theme
+  .mat-mdc-progress-spinner
+  .mdc-circular-progress__determinate-circle,
+.dark-theme
+  .mat-mdc-progress-spinner
+  .mdc-circular-progress__indeterminate-circle-graphic,
+.dark-theme .mat-spinner .mdc-circular-progress__determinate-circle,
+.dark-theme .mat-spinner .mdc-circular-progress__indeterminate-circle-graphic {
+  stroke: var(--primary-color) !important;
+}
+
+/* Dark theme button spinner colors */
+.dark-theme .button-spinner {
+  --mdc-circular-progress-active-indicator-color: var(--button-text);
+}
+
+.dark-theme .button-spinner .mdc-circular-progress__determinate-circle,
+.dark-theme
+  .button-spinner
+  .mdc-circular-progress__indeterminate-circle-graphic {
+  stroke: var(--button-text) !important;
 }
 
 /* Chat and content backgrounds */
