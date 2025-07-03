@@ -13,9 +13,9 @@
       />
     </a>
 
-    <!-- Mobile controls - status + hamburger button with notification badge -->
+    <!-- Mobile controls - status + theme toggle + hamburger button with notification badge -->
     <div class="mobile-controls" *ngIf="authService.isAuthenticated() || (!authService.isAuthenticated() && isAuthPage())">
-      <!-- Connection status near hamburger button on mobile -->
+      <!-- Connection status with text on mobile -->
       <div
         *ngIf="authService.isAuthenticated()"
         class="status mobile-status"
@@ -23,7 +23,18 @@
         [class.disconnected]="!online"
       >
         <span class="status-dot"></span>
+        <span>{{ online ? 'Online' : 'Offline' }}</span>
       </div>
+
+      <!-- Theme toggle - always visible -->
+      <button 
+        class="theme-toggle" 
+        (click)="toggleTheme()" 
+        [title]="isDarkTheme() ? 'Switch to light theme' : 'Switch to dark theme'"
+        aria-label="Toggle theme"
+      >
+        <mat-icon>{{ isDarkTheme() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      </button>
 
       <button class="mobile-menu-button" (click)="toggleMenu()">
         <mat-icon>{{ menuOpen ? 'close' : 'menu' }}</mat-icon>
@@ -58,16 +69,6 @@
         </button>
       </ng-container>
 
-      <!-- Theme toggle button -->
-      <button 
-        class="theme-toggle" 
-        (click)="toggleTheme()" 
-        [title]="isDarkTheme() ? 'Switch to light theme' : 'Switch to dark theme'"
-        aria-label="Toggle theme"
-      >
-        <mat-icon>{{ isDarkTheme() ? 'light_mode' : 'dark_mode' }}</mat-icon>
-      </button>
-
       <!-- Desktop connection status (hidden on mobile) -->
       <div
         *ngIf="authService.isAuthenticated()"
@@ -78,6 +79,17 @@
         <span class="status-dot"></span>
         <span>{{ online ? `Online` : `Offline` }}</span>
       </div>
+
+      <!-- Theme toggle button (desktop only) -->
+      <button 
+        class="desktop-theme-toggle"
+        (click)="toggleTheme()"
+        [title]="isDarkTheme() ? 'Switch to light theme' : 'Switch to dark theme'"
+        aria-label="Toggle theme"
+        mat-button>
+        <mat-icon>{{ isDarkTheme() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+        <span class="mobile-hidden">{{ isDarkTheme() ? 'Light' : 'Dark' }}</span>
+      </button>
 
       <!-- settings (only when authenticated) -->
       <button
