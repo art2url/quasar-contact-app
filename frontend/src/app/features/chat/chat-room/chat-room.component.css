@@ -663,7 +663,6 @@
     /* Calculate proper height: viewport - app header - chat header (60px) - chat form (80px) */
     height: calc(100vh - var(--header-height) - 60px - 80px);
     overflow-y: auto;
-    margin-top: calc(var(--header-height) + 60px);
     position: relative;
   }
 
