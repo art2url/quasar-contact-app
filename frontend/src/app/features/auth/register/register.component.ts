@@ -6,6 +6,7 @@ import {
   ElementRef,
   ViewChild,
 } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -20,6 +21,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '@services/auth.service';
 import { LoadingService } from '@services/loading.service';
 import { RecaptchaService } from '@services/recaptcha.service';
+import { ThemeService } from '@services/theme.service';
 import { defaultAvatarFor } from '@utils/avatar.util';
 
 interface ValidationError {
@@ -57,6 +59,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
   formSubmitted = false;
   recaptchaToken = '';
   recaptchaWidgetId: number | undefined;
+  private themeSubscription?: Subscription;
 
   constructor(
     private authService: AuthService,

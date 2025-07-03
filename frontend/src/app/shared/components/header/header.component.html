@@ -1,21 +1,31 @@
 <header class="header">
   <div class="header-container">
-    <a routerLink="/" class="logo">
+    <a href="/" class="logo">
       <img
         src="assets/images/logo.svg"
         alt="Quasar Contact Logo Icon"
         class="logo-icon retina-image"
       />
       <img
-        src="assets/images/text-logo-dark.svg"
+        [src]="
+          isDarkTheme()
+            ? 'assets/images/text-logo-white.svg'
+            : 'assets/images/text-logo-dark.svg'
+        "
         alt="Quasar Contact Logo Text"
         class="logo-text retina-image"
       />
     </a>
 
-    <!-- Mobile controls - status + hamburger button with notification badge -->
-    <div class="mobile-controls" *ngIf="authService.isAuthenticated() || (!authService.isAuthenticated() && isAuthPage())">
-      <!-- Connection status near hamburger button on mobile -->
+    <!-- Mobile controls - status + theme toggle + hamburger button with notification badge -->
+    <div
+      class="mobile-controls"
+      *ngIf="
+        authService.isAuthenticated() ||
+        (!authService.isAuthenticated() && isAuthPage())
+      "
+    >
+      <!-- Connection status with text on mobile -->
       <div
         *ngIf="authService.isAuthenticated()"
         class="status mobile-status"
@@ -23,7 +33,20 @@
         [class.disconnected]="!online"
       >
         <span class="status-dot"></span>
+        <span>{{ online ? 'Online' : 'Offline' }}</span>
       </div>
+
+      <!-- Theme toggle - always visible -->
+      <button
+        class="theme-toggle"
+        (click)="toggleTheme()"
+        [title]="
+          isDarkTheme() ? 'Switch to light theme' : 'Switch to dark theme'
+        "
+        aria-label="Toggle theme"
+      >
+        <mat-icon>{{ isDarkTheme() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      </button>
 
       <button class="mobile-menu-button" (click)="toggleMenu()">
         <mat-icon>{{ menuOpen ? 'close' : 'menu' }}</mat-icon>
@@ -46,7 +69,7 @@
           <mat-icon>person_add</mat-icon>
           <span class="mobile-hidden">Create Account</span>
         </button>
-        
+
         <button
           *ngIf="router.url !== '/auth/login'"
           mat-button
@@ -69,28 +92,47 @@
         <span>{{ online ? `Online` : `Offline` }}</span>
       </div>
 
-      <!-- settings (only when authenticated) -->
-      <button
-        *ngIf="authService.isAuthenticated()"
-        mat-button
-        title="Settings"
-        (click)="navigateToSettings()"
-      >
-        <mat-icon>settings</mat-icon>
-        <span class="mobile-hidden">Settings</span>
-      </button>
-
+      <!-- Chats (only when authenticated) -->
       <button
         *ngIf="authService.isAuthenticated()"
         mat-button
         (click)="navigateToChats()"
+        [class.active]="router.url.startsWith('/chat')"
       >
         <mat-icon>chat</mat-icon>
         <span class="mobile-hidden">Chats</span>
         <span *ngIf="unreadTotal" class="badge">{{ unreadTotal }}</span>
       </button>
 
-      <!-- existing logout -->
+      <!-- Settings (only when authenticated) -->
+      <button
+        *ngIf="authService.isAuthenticated()"
+        mat-button
+        title="Settings"
+        (click)="navigateToSettings()"
+        [class.active]="router.url.startsWith('/settings')"
+      >
+        <mat-icon>settings</mat-icon>
+        <span class="mobile-hidden">Settings</span>
+      </button>
+
+      <!-- Theme toggle button (desktop only) -->
+      <button
+        class="desktop-theme-toggle"
+        (click)="toggleTheme()"
+        [title]="
+          isDarkTheme() ? 'Switch to light theme' : 'Switch to dark theme'
+        "
+        aria-label="Toggle theme"
+        mat-button
+      >
+        <mat-icon>{{ isDarkTheme() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+        <span class="mobile-hidden">{{
+          isDarkTheme() ? 'Light' : 'Dark'
+        }}</span>
+      </button>
+
+      <!-- Logout -->
       <button *ngIf="showLogout" mat-button (click)="logout()">
         <mat-icon>exit_to_app</mat-icon>
         <span class="mobile-hidden">Logout</span>

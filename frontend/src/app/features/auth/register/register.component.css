@@ -7,39 +7,12 @@
   overflow: hidden;
 }
 
-.auth-container::before {
-  content: "";
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 255, 255, 0.1) 0%,
-    transparent 70%
-  );
-  animation: pulse 20s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 0.5;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 0.3;
-  }
-}
-
 .auth-card {
   width: 100%;
   max-width: 420px;
-  background: white;
+  background: var(--card-background);
   border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
   position: relative;
   z-index: 1;
@@ -60,7 +33,7 @@
 .auth-header {
   padding: var(--spacing-xl) var(--spacing-lg) var(--spacing-lg);
   text-align: center;
-  background: linear-gradient(to bottom, #f8f9fa, white);
+  background: var(--card-background);
 }
 
 .auth-header h1 {
@@ -73,7 +46,7 @@
 
 .auth-header p {
   margin: 0;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.95rem;
 }
 
@@ -95,7 +68,7 @@
 }
 
 ::ng-deep .auth-container .mat-mdc-text-field-wrapper {
-  /* background-color: #f8f9fa; */
+  background-color: var(--input-background);
   border-radius: 12px;
   transition: all 0.3s ease;
 }
@@ -104,7 +77,7 @@
   .auth-container
   .mat-mdc-form-field.mat-focused
   .mat-mdc-text-field-wrapper {
-  background-color: white;
+  background-color: var(--card-background);
 }
 
 ::ng-deep .auth-container .mat-mdc-form-field-error {
@@ -113,12 +86,12 @@
 }
 
 ::ng-deep .auth-container .mat-mdc-floating-label {
-  color: #666 !important;
+  color: var(--text-secondary) !important;
 }
 
 /* Input icons */
 ::ng-deep .auth-container .mat-mdc-form-field-icon-prefix {
-  color: #999;
+  color: var(--text-secondary);
   margin-right: 8px;
 }
 
@@ -132,7 +105,7 @@
 /* Hints */
 ::ng-deep .auth-container .mat-mdc-form-field-hint {
   font-size: 0.75rem;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .hint-valid {
@@ -147,7 +120,7 @@
 
 .strength-label {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--text-secondary);
   margin-bottom: var(--spacing-xs);
 }
 
@@ -199,10 +172,11 @@
   display: flex;
   align-items: flex-start;
   gap: var(--spacing-sm);
-  background-color: #e3f2fd;
-  color: #0d47a1;
+  background-color: var(--info-background);
+  color: var(--info-text);
   padding: var(--spacing-md);
   border-radius: 8px;
+  border: 1px solid var(--border-color);
   margin-bottom: var(--spacing-md);
   font-size: 0.85rem;
 }
@@ -223,10 +197,11 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  background-color: #ffebee;
+  background-color: rgba(244, 67, 54, 0.1);
   color: var(--danger-color);
   padding: var(--spacing-md);
   border-radius: 8px;
+  border: 1px solid var(--border-color);
   margin-bottom: var(--spacing-md);
   font-size: 0.9rem;
   animation: shake 0.5s ease-out;
@@ -301,27 +276,23 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--button-text);
 }
 
 .button-spinner {
   margin-right: 10px;
-
-  ::ng-deep circle {
-    stroke: #fff;
-  }
 }
 
 .auth-footer {
   text-align: center;
   margin-top: var(--spacing-xl);
   padding-top: var(--spacing-lg);
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border-color);
 }
 
 .auth-footer p {
   margin: 0;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
