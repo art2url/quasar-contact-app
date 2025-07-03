@@ -7,7 +7,6 @@
   overflow: hidden;
 }
 
-
 .auth-card {
   width: 100%;
   max-width: 420px;
@@ -214,10 +213,6 @@
 
 .button-spinner {
   margin-right: 10px;
-
-  ::ng-deep circle {
-    stroke: #fff;
-  }
 }
 
 .auth-footer {
