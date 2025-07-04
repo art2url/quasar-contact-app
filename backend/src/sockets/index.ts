@@ -1,4 +1,4 @@
-import {Server, Socket} from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import Message from '../models/Message';
 import env from '../config/env';
@@ -64,15 +64,11 @@ const replayQueuedEvents = (socket: Socket, userId: string) => {
   if (!queue || queue.length === 0) return;
 
   const now = Date.now();
-  const validEvents = queue.filter(
-    (event) => now - event.timestamp < EVENT_QUEUE_TTL
-  );
+  const validEvents = queue.filter(event => now - event.timestamp < EVENT_QUEUE_TTL);
 
-  console.log(
-    `🔄 Replaying ${validEvents.length} queued events for user ${userId}`
-  );
+  console.log(`🔄 Replaying ${validEvents.length} queued events for user ${userId}`);
 
-  validEvents.forEach((event) => {
+  validEvents.forEach(event => {
     socket.emit(event.type, event.data);
   });
 
@@ -81,18 +77,11 @@ const replayQueuedEvents = (socket: Socket, userId: string) => {
 };
 
 // Enhanced socket emission with queueing fallback
-const emitToUser = (
-  io: Server,
-  userId: string,
-  eventType: string,
-  data: any
-) => {
+const emitToUser = (io: Server, userId: string, eventType: string, data: any) => {
   const socketId = getSocketId(userId);
 
   if (socketId) {
-    console.log(
-      `📤 Emitting ${eventType} to user ${userId} via socket ${socketId}`
-    );
+    console.log(`📤 Emitting ${eventType} to user ${userId} via socket ${socketId}`);
     io.to(socketId).emit(eventType, data);
     return true;
   } else {
@@ -107,7 +96,7 @@ export const setupSocket = (io: Server) => {
   io.use((socket: Socket, next) => {
     // First try to get token from auth.token (backward compatibility)
     let token = socket.handshake.auth.token as string | undefined;
-    
+
     // If no token in auth, try to get from cookies
     if (!token) {
       const cookies = socket.handshake.headers.cookie;
@@ -129,7 +118,7 @@ export const setupSocket = (io: Server) => {
     }
 
     try {
-      const {userId, username, avatarUrl} = jwt.verify(
+      const { userId, username, avatarUrl } = jwt.verify(
         token,
         env.JWT_SECRET
       ) as JwtPayload;
@@ -172,14 +161,12 @@ export const setupSocket = (io: Server) => {
     // Send current online users to the new connection
     const currentOnlineUsers = [...userSockets.keys()];
     console.log(`📤 Sending online users to ${username}:`, currentOnlineUsers);
-    socket.emit('online-users', {userIds: currentOnlineUsers});
+    socket.emit('online-users', { userIds: currentOnlineUsers });
 
     // Broadcast user online (only if they weren't already online)
     if (userSockets.get(userId)!.size === 1) {
-      console.log(
-        `📢 Broadcasting that ${username} is online to all other users`
-      );
-      socket.broadcast.emit('user-online', {userId, username});
+      console.log(`📢 Broadcasting that ${username} is online to all other users`);
+      socket.broadcast.emit('user-online', { userId, username });
     } else {
       console.log(
         `👤 ${username} already had connections, not broadcasting online status`
@@ -213,13 +200,13 @@ export const setupSocket = (io: Server) => {
 
           console.log('[Socket] Message saved:', {
             id: saved._id,
-            timestamp: timestamp,
+            timestamp,
           });
 
           // Always acknowledge to sender first
           socket.emit('message-sent', {
             messageId: saved._id,
-            timestamp: timestamp,
+            timestamp,
           });
 
           // Enhanced recipient delivery with fallback
@@ -229,7 +216,7 @@ export const setupSocket = (io: Server) => {
             avatarUrl: avatarUrl ?? socket.data.avatarUrl,
             ciphertext,
             messageId: saved._id,
-            timestamp: timestamp,
+            timestamp,
           });
 
           if (!delivered) {
@@ -246,7 +233,7 @@ export const setupSocket = (io: Server) => {
     );
 
     // Enhanced typing indicator with better delivery
-    socket.on('typing', ({toUserId}: {toUserId: string}) => {
+    socket.on('typing', ({ toUserId }: { toUserId: string }) => {
       console.log(`⌨️ ${username} is typing to ${toUserId}`);
 
       // Don't queue typing events (they're ephemeral)
@@ -262,17 +249,17 @@ export const setupSocket = (io: Server) => {
     });
 
     // Enhanced read receipts
-    socket.on('read-message', async ({messageId}: {messageId: string}) => {
+    socket.on('read-message', async ({ messageId }: { messageId: string }) => {
       try {
         const updated = await Message.findByIdAndUpdate(
           messageId,
-          {read: true, readAt: new Date()},
-          {new: true}
+          { read: true, readAt: new Date() },
+          { new: true }
         );
 
         if (updated) {
           const senderId = updated.senderId.toString();
-          emitToUser(io, senderId, 'message-read', {messageId});
+          emitToUser(io, senderId, 'message-read', { messageId });
         }
       } catch (err) {
         console.error('[Socket] read-message error:', err);
@@ -293,9 +280,9 @@ export const setupSocket = (io: Server) => {
       }) => {
         try {
           const updated = await Message.findOneAndUpdate(
-            {_id: messageId, senderId: userId},
-            {ciphertext, avatarUrl, editedAt: new Date()},
-            {new: true}
+            { _id: messageId, senderId: userId },
+            { ciphertext, avatarUrl, editedAt: new Date() },
+            { new: true }
           );
 
           if (!updated) {
@@ -328,12 +315,12 @@ export const setupSocket = (io: Server) => {
     );
 
     // Enhanced delete-message with better synchronization
-    socket.on('delete-message', async ({messageId}: {messageId: string}) => {
+    socket.on('delete-message', async ({ messageId }: { messageId: string }) => {
       try {
         const msg = await Message.findOneAndUpdate(
-          {_id: messageId, senderId: userId},
-          {deleted: true, deletedAt: new Date(), ciphertext: ''},
-          {new: true}
+          { _id: messageId, senderId: userId },
+          { deleted: true, deletedAt: new Date(), ciphertext: '' },
+          { new: true }
         );
 
         if (!msg) {
@@ -363,7 +350,7 @@ export const setupSocket = (io: Server) => {
     });
 
     // Enhanced disconnect handling
-    socket.on('disconnect', (reason) => {
+    socket.on('disconnect', reason => {
       console.log(
         `❌ Socket ${socket.id} disconnected (user ${username}), reason: ${reason}`
       );
@@ -384,10 +371,8 @@ export const setupSocket = (io: Server) => {
           const offlineTimer = setTimeout(() => {
             console.log(`🛑 User ${username} considered offline after timeout`);
             // FIXED: Emit to all clients that user went offline
-            socket.broadcast.emit('user-offline', {userId});
-            console.log(
-              `📢 Broadcasted that ${username} (${userId}) is offline`
-            );
+            socket.broadcast.emit('user-offline', { userId });
+            console.log(`📢 Broadcasted that ${username} (${userId}) is offline`);
             offlineTimers.delete(userId);
 
             // Clean up old queued events
@@ -395,7 +380,7 @@ export const setupSocket = (io: Server) => {
             if (queue) {
               const now = Date.now();
               const validEvents = queue.filter(
-                (event) => now - event.timestamp < EVENT_QUEUE_TTL
+                event => now - event.timestamp < EVENT_QUEUE_TTL
               );
 
               if (validEvents.length === 0) {
@@ -433,7 +418,7 @@ export const setupSocket = (io: Server) => {
       }
 
       // Log offline timers for debugging
-      for (const [userId, timer] of offlineTimers.entries()) {
+      for (const [userId] of offlineTimers.entries()) {
         console.log(`  - Offline timer for user ${userId}`);
       }
     }, 30000);

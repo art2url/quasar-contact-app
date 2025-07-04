@@ -1,4 +1,4 @@
-import mongoose, {Schema, Document} from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IUser extends Document {
   username: string;
@@ -13,12 +13,12 @@ export interface IUser extends Document {
 }
 
 const UserSchema: Schema = new Schema<IUser>({
-  username: {type: String, required: true, unique: true},
-  email: {type: String, required: true, unique: true}, // New required and unique email field.
-  passwordHash: {type: String, required: true},
-  publicKeyBundle: {type: Schema.Types.Mixed, default: null},
-  avatarUrl: {type: String, default: ''},
-  createdAt: {type: Date, default: Date.now},
+  username: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true }, // New required and unique email field.
+  passwordHash: { type: String, required: true },
+  publicKeyBundle: { type: Schema.Types.Mixed, default: null },
+  avatarUrl: { type: String, default: '' },
+  createdAt: { type: Date, default: Date.now },
 });
 
 const User = mongoose.model<IUser>('User', UserSchema);

@@ -1,11 +1,5 @@
 import { Injectable, OnDestroy, NgZone } from '@angular/core';
-import {
-  BehaviorSubject,
-  Subject,
-  Subscription,
-  debounceTime,
-  filter,
-} from 'rxjs';
+import { BehaviorSubject, Subject, Subscription, debounceTime, filter } from 'rxjs';
 import { Router, NavigationEnd } from '@angular/router';
 
 import { WebSocketService } from './websocket.service';
@@ -28,9 +22,7 @@ export interface ChatNotification {
 export class NotificationService implements OnDestroy {
   // Public observables for components to subscribe to
   public readonly totalUnread$ = new BehaviorSubject<number>(0);
-  public readonly chatNotifications$ = new BehaviorSubject<ChatNotification[]>(
-    []
-  );
+  public readonly chatNotifications$ = new BehaviorSubject<ChatNotification[]>([]);
 
   private subs = new Subscription();
   private refresh$ = new Subject<void>();
@@ -62,9 +54,7 @@ export class NotificationService implements OnDestroy {
 
     // Enhanced debounced refresh with immediate update support
     this.subs.add(
-      this.refresh$
-        .pipe(debounceTime(400))
-        .subscribe(() => this.loadNotifications())
+      this.refresh$.pipe(debounceTime(400)).subscribe(() => this.loadNotifications())
     );
 
     // Add immediate update stream for badge resets
@@ -78,7 +68,7 @@ export class NotificationService implements OnDestroy {
     this.subs.add(
       this.router.events
         .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
-        .subscribe((e) => {
+        .subscribe(e => {
           if (e.url === '/chat' || e.url.startsWith('/chat-room/')) {
             this.loadNotifications();
           }
@@ -87,7 +77,7 @@ export class NotificationService implements OnDestroy {
 
     // Handle WebSocket reconnections
     this.subs.add(
-      this.ws.isConnected$.subscribe((connected) => {
+      this.ws.isConnected$.subscribe(connected => {
         if (connected) {
           // When reconnected, refresh notifications
           setTimeout(() => this.loadNotifications(), 1000);
@@ -125,10 +115,7 @@ export class NotificationService implements OnDestroy {
     // Listen for chat room entry events
     const chatRoomEnteredHandler = (event: CustomEvent) => {
       const { roomId } = event.detail;
-      console.log(
-        '[NotificationService] Chat room entered event received:',
-        roomId
-      );
+      console.log('[NotificationService] Chat room entered event received:', roomId);
 
       // Use immediate update for faster badge reset
       this.ngZone.run(() => {
@@ -138,23 +125,14 @@ export class NotificationService implements OnDestroy {
       });
     };
 
-    window.addEventListener(
-      'messages-read',
-      messagesReadHandler as EventListener
-    );
+    window.addEventListener('messages-read', messagesReadHandler as EventListener);
 
-    window.addEventListener(
-      'chat-room-entered',
-      chatRoomEnteredHandler as EventListener
-    );
+    window.addEventListener('chat-room-entered', chatRoomEnteredHandler as EventListener);
 
     // Clean up event listeners on destroy
     this.subs.add({
       unsubscribe: () => {
-        window.removeEventListener(
-          'messages-read',
-          messagesReadHandler as EventListener
-        );
+        window.removeEventListener('messages-read', messagesReadHandler as EventListener);
         window.removeEventListener(
           'chat-room-entered',
           chatRoomEnteredHandler as EventListener
@@ -208,9 +186,7 @@ export class NotificationService implements OnDestroy {
     const username = localStorage.getItem('username');
     const userId = localStorage.getItem('userId');
     if (!username || !userId) {
-      console.log(
-        '[NotificationService] No auth data found, skipping notification load'
-      );
+      console.log('[NotificationService] No auth data found, skipping notification load');
       return;
     }
 
@@ -224,7 +200,7 @@ export class NotificationService implements OnDestroy {
           this.notificationsMap.clear();
 
           // Process each overview
-          overviews.forEach((overview) => {
+          overviews.forEach(overview => {
             if (overview.unread > 0) {
               console.log(
                 `[NotificationService] Adding notification for user ${overview.peerId}: ${overview.unread} unread`
@@ -244,21 +220,15 @@ export class NotificationService implements OnDestroy {
           this.updateStreams();
         });
       },
-      error: (error) => {
-        console.error(
-          '[NotificationService] Failed to load notifications:',
-          error
-        );
+      error: error => {
+        console.error('[NotificationService] Failed to load notifications:', error);
       },
     });
   }
 
   private updateStreams(): void {
     const notifications = Array.from(this.notificationsMap.values());
-    const totalUnread = notifications.reduce(
-      (sum, n) => sum + n.unreadCount,
-      0
-    );
+    const totalUnread = notifications.reduce((sum, n) => sum + n.unreadCount, 0);
 
     console.log('[NotificationService] Updating streams:', {
       totalUnread,
@@ -279,10 +249,7 @@ export class NotificationService implements OnDestroy {
    * This should be called when user opens a chat room
    */
   public markUserMessagesAsRead(userId: string): void {
-    console.log(
-      '[NotificationService] Marking messages as read for user:',
-      userId
-    );
+    console.log('[NotificationService] Marking messages as read for user:', userId);
 
     // Use NgZone for proper mobile change detection
     this.ngZone.run(() => {
@@ -298,13 +265,9 @@ export class NotificationService implements OnDestroy {
           `[NotificationService] Cleared ${previousCount} notifications for user ${userId}`
         );
         this.updateStreams();
-        console.log(
-          '[NotificationService] Immediately updated badge for mobile'
-        );
+        console.log('[NotificationService] Immediately updated badge for mobile');
       } else {
-        console.log(
-          `[NotificationService] No notifications found for user ${userId}`
-        );
+        console.log(`[NotificationService] No notifications found for user ${userId}`);
       }
     });
 
@@ -344,9 +307,7 @@ export class NotificationService implements OnDestroy {
    * Enhanced refresh with immediate update option
    */
   public refreshNotificationsImmediate(): void {
-    console.log(
-      '[NotificationService] Force refreshing notifications (immediate)'
-    );
+    console.log('[NotificationService] Force refreshing notifications (immediate)');
     this.immediateUpdate$.next();
   }
 

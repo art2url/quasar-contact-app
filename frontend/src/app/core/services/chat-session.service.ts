@@ -27,9 +27,7 @@ import {
 export class ChatSessionService implements OnDestroy {
   /* ── public streams for the template ─────────────── */
   readonly theirUsername$ = new BehaviorSubject<string>('');
-  readonly theirAvatar$ = new BehaviorSubject<string>(
-    'assets/images/avatars/01.svg'
-  );
+  readonly theirAvatar$ = new BehaviorSubject<string>('assets/images/avatars/01.svg');
   readonly messages$ = new BehaviorSubject<ChatMsg[]>([]);
   readonly keyLoading$ = new BehaviorSubject<boolean>(true);
   readonly keyMissing$ = new BehaviorSubject<boolean>(false);
@@ -98,7 +96,7 @@ export class ChatSessionService implements OnDestroy {
   private setupConnectionHandlers(): void {
     // Monitor connection state changes
     this.subs.add(
-      this.ws.isConnected$.subscribe((connected) => {
+      this.ws.isConnected$.subscribe(connected => {
         if (connected && this.connectionLossDetected) {
           console.log(
             '[ChatSession] Connection restored, scheduling sync and cleaning up stale messages'
@@ -127,10 +125,7 @@ export class ChatSessionService implements OnDestroy {
   /**
    * Enhanced message sent callback with fallback sync
    */
-  private readonly messageSentCb = async ({
-    messageId,
-    timestamp,
-  }: AckPayload) => {
+  private readonly messageSentCb = async ({ messageId, timestamp }: AckPayload) => {
     console.log(
       '[ChatSession] Message sent ack received for:',
       messageId,
@@ -171,13 +166,10 @@ export class ChatSessionService implements OnDestroy {
 
     try {
       const messages = this.messages$.value;
-      const messageIndex = messages.findIndex((m) => m.id === messageId);
+      const messageIndex = messages.findIndex(m => m.id === messageId);
 
       if (messageIndex === -1) {
-        console.warn(
-          '[ChatSession] Message not found for read receipt:',
-          messageId
-        );
+        console.warn('[ChatSession] Message not found for read receipt:', messageId);
         return;
       }
 
@@ -231,10 +223,7 @@ export class ChatSessionService implements OnDestroy {
     }
 
     if (bestMatchIdx === -1) {
-      console.warn(
-        '[ChatSession] No pending message found for ack:',
-        messageId
-      );
+      console.warn('[ChatSession] No pending message found for ack:', messageId);
       return false;
     }
 
@@ -289,7 +278,7 @@ export class ChatSessionService implements OnDestroy {
       // If no text provided, try to find it from the pending message that was just acknowledged
       if (!text) {
         const messages = this.messages$.value;
-        const message = messages.find((m) => m.id === messageId);
+        const message = messages.find(m => m.id === messageId);
         if (message) {
           text = message.text;
         }
@@ -407,13 +396,11 @@ export class ChatSessionService implements OnDestroy {
       // Get current messages for comparison
       const currentMessages = this.messages$.value;
       const lastMessageTime =
-        currentMessages.length > 0
-          ? Math.max(...currentMessages.map((m) => m.ts))
-          : 0;
+        currentMessages.length > 0 ? Math.max(...currentMessages.map(m => m.ts)) : 0;
 
       // Fetch recent messages from server
       this.api.getMessageHistory(this.roomId).subscribe({
-        next: async (response) => {
+        next: async response => {
           const serverMessages = response.messages || [];
           let hasUpdates = false;
 
@@ -422,10 +409,9 @@ export class ChatSessionService implements OnDestroy {
 
             // Check if message already exists (by ID or by content+timestamp for pending messages)
             const existingMsg = currentMessages.find(
-              (m) =>
+              m =>
                 m.id === serverMsg._id ||
-                (m.status === 'pending' &&
-                  Math.abs(m.ts - serverTimestamp) <= 5000)
+                (m.status === 'pending' && Math.abs(m.ts - serverTimestamp) <= 5000)
             );
             if (existingMsg) {
               // If existing message is pending and we got server confirmation, update it
@@ -437,14 +423,8 @@ export class ChatSessionService implements OnDestroy {
                     ...existingMsg,
                     id: serverMsg._id,
                     ts: serverTimestamp,
-                    status: fromMe
-                      ? serverMsg.read
-                        ? 'read'
-                        : 'sent'
-                      : undefined,
-                    readAt: serverMsg.read
-                      ? toEpoch(serverMsg.createdAt)
-                      : undefined,
+                    status: fromMe ? (serverMsg.read ? 'read' : 'sent') : undefined,
+                    readAt: serverMsg.read ? toEpoch(serverMsg.createdAt) : undefined,
                   };
                   hasUpdates = true;
                   console.log(
@@ -486,12 +466,8 @@ export class ChatSessionService implements OnDestroy {
               ts: serverTimestamp,
               status: fromMe ? (serverMsg.read ? 'read' : 'sent') : undefined,
               avatarUrl: this.getMessageAvatar(serverMsg, fromMe),
-              editedAt: serverMsg.editedAt
-                ? toEpoch(serverMsg.editedAt)
-                : undefined,
-              deletedAt: serverMsg.deleted
-                ? toEpoch(serverMsg.deletedAt!)
-                : undefined,
+              editedAt: serverMsg.editedAt ? toEpoch(serverMsg.editedAt) : undefined,
+              deletedAt: serverMsg.deleted ? toEpoch(serverMsg.deletedAt!) : undefined,
               readAt: serverMsg.read ? toEpoch(serverMsg.createdAt) : undefined,
             };
 
@@ -507,7 +483,7 @@ export class ChatSessionService implements OnDestroy {
 
           this.lastSyncTime = Date.now();
         },
-        error: (err) => {
+        error: err => {
           console.error('[ChatSession] Fallback sync failed:', err);
         },
         complete: () => {
@@ -548,18 +524,14 @@ export class ChatSessionService implements OnDestroy {
 
     // Optimistic update
     const list = this.messages$.value;
-    const idx = list.findIndex((m) => m.id === id);
+    const idx = list.findIndex(m => m.id === id);
     if (idx !== -1) {
       const patched: ChatMsg = {
         ...list[idx],
         text: newText,
         editedAt: Date.now(),
       };
-      this.messages$.next([
-        ...list.slice(0, idx),
-        patched,
-        ...list.slice(idx + 1),
-      ]);
+      this.messages$.next([...list.slice(0, idx), patched, ...list.slice(idx + 1)]);
 
       await this.vault.set(this.key(id), {
         id,
@@ -570,15 +542,8 @@ export class ChatSessionService implements OnDestroy {
 
     // Send to server
     try {
-      const ct = await this.crypto.encryptWithPublicKey(
-        newText,
-        this.theirPubKey
-      );
-      this.ws.sendEditMessage(
-        id,
-        ct,
-        localStorage.getItem('myAvatar') ?? undefined
-      );
+      const ct = await this.crypto.encryptWithPublicKey(newText, this.theirPubKey);
+      this.ws.sendEditMessage(id, ct, localStorage.getItem('myAvatar') ?? undefined);
     } catch (error) {
       console.error('[ChatSession] Failed to send edit message:', error);
       this.scheduleFallbackSync();
@@ -610,9 +575,7 @@ export class ChatSessionService implements OnDestroy {
         console.log('[ChatSession] Loading private key from vault');
         await this.vault.waitUntilReady();
 
-        const privateKeyData = await this.vault.get<ArrayBuffer>(
-          VAULT_KEYS.PRIVATE_KEY
-        );
+        const privateKeyData = await this.vault.get<ArrayBuffer>(VAULT_KEYS.PRIVATE_KEY);
         if (!privateKeyData) {
           console.error('[ChatSession] Private key not found in vault');
           this.keyMissing$.next(true);
@@ -631,23 +594,18 @@ export class ChatSessionService implements OnDestroy {
       // Get partner's public key
       this.users.getPublicKey(roomId).subscribe({
         next: ({ publicKeyBundle, username, avatarUrl }) => {
-          console.log(
-            '[ChatSession] Received partner public key for:',
-            username
-          );
+          console.log('[ChatSession] Received partner public key for:', username);
           this.theirPubKey = publicKeyBundle;
           this.theirUsername$.next(username);
 
           const partnerAvatar =
-            avatarUrl && avatarUrl.trim()
-              ? avatarUrl
-              : 'assets/images/avatars/01.svg';
+            avatarUrl && avatarUrl.trim() ? avatarUrl : 'assets/images/avatars/01.svg';
 
           this.theirAvatar$.next(partnerAvatar);
           this.partnerAvatar = partnerAvatar;
           this.keyLoading$.next(false);
         },
-        error: (err) => {
+        error: err => {
           console.error('[ChatSession] Failed to get partner public key:', err);
           this.keyMissing$.next(true);
           this.keyLoading$.next(false);
@@ -672,11 +630,8 @@ export class ChatSessionService implements OnDestroy {
    */
   private loadMessageHistory(): void {
     this.api.getMessageHistory(this.roomId).subscribe({
-      next: async (res) => {
-        console.log(
-          '[ChatSession] Loading message history, count:',
-          res.messages.length
-        );
+      next: async res => {
+        console.log('[ChatSession] Loading message history, count:', res.messages.length);
         const historyMessages: ChatMsg[] = [];
 
         for (const m of res.messages) {
@@ -717,7 +672,7 @@ export class ChatSessionService implements OnDestroy {
         this.finishLoadingOperation();
         this.lastSyncTime = Date.now();
       },
-      error: (err) => {
+      error: err => {
         console.error('[ChatSession] Error loading history:', err);
         this.finishLoadingOperation();
       },
@@ -744,8 +699,7 @@ export class ChatSessionService implements OnDestroy {
 
     try {
       const ts = Date.now();
-      const myAvatar =
-        localStorage.getItem('myAvatar') || 'assets/images/avatars/01.svg';
+      const myAvatar = localStorage.getItem('myAvatar') || 'assets/images/avatars/01.svg';
 
       this.markPreviousMessagesAsRead();
 
@@ -776,10 +730,7 @@ export class ChatSessionService implements OnDestroy {
       this.push(pendingMessage);
 
       // Encrypt and send
-      const ct = await this.crypto.encryptWithPublicKey(
-        plain,
-        this.theirPubKey
-      );
+      const ct = await this.crypto.encryptWithPublicKey(plain, this.theirPubKey);
 
       const pendingCacheEntry = {
         id: pendingKey,
@@ -831,14 +782,12 @@ export class ChatSessionService implements OnDestroy {
 
     // Clear timeouts and tracking, but keep messages in UI
     // Let fallback sync determine what actually needs to be done
-    this.pendingMessages.forEach((pendingInfo) => {
+    this.pendingMessages.forEach(pendingInfo => {
       clearTimeout(pendingInfo.timeoutId);
     });
 
     this.pendingMessages.clear();
-    console.log(
-      '[ChatSession] Cleared pending message tracking (messages kept in UI)'
-    );
+    console.log('[ChatSession] Cleared pending message tracking (messages kept in UI)');
   }
 
   private startLoadingOperation(): void {
@@ -862,13 +811,11 @@ export class ChatSessionService implements OnDestroy {
 
     try {
       const list = this.messages$.value;
-      const idx = list.findIndex((x) => x.id === m.messageId);
+      const idx = list.findIndex(x => x.id === m.messageId);
       if (idx === -1) return;
 
       const plain =
-        list[idx].sender === 'You'
-          ? list[idx].text
-          : await this.tryDecrypt(m.ciphertext);
+        list[idx].sender === 'You' ? list[idx].text : await this.tryDecrypt(m.ciphertext);
 
       const patched: ChatMsg = {
         ...list[idx],
@@ -883,11 +830,7 @@ export class ChatSessionService implements OnDestroy {
         ts: patched.ts,
       });
 
-      this.messages$.next([
-        ...list.slice(0, idx),
-        patched,
-        ...list.slice(idx + 1),
-      ]);
+      this.messages$.next([...list.slice(0, idx), patched, ...list.slice(idx + 1)]);
     } catch (error) {
       console.error('[ChatSession] Error handling message edit:', error);
       this.scheduleFallbackSync();
@@ -897,7 +840,7 @@ export class ChatSessionService implements OnDestroy {
   private readonly messageDeletedCb = (d: MessageDeletedEvent) => {
     try {
       const list = this.messages$.value;
-      const idx = list.findIndex((m) => m.id === d.messageId);
+      const idx = list.findIndex(m => m.id === d.messageId);
       if (idx === -1) return;
 
       const patched: ChatMsg = {
@@ -909,11 +852,7 @@ export class ChatSessionService implements OnDestroy {
         deletedAt: +new Date(d.deletedAt),
       };
 
-      this.messages$.next([
-        ...list.slice(0, idx),
-        patched,
-        ...list.slice(idx + 1),
-      ]);
+      this.messages$.next([...list.slice(0, idx), patched, ...list.slice(idx + 1)]);
     } catch (error) {
       console.error('[ChatSession] Error handling message delete:', error);
       this.scheduleFallbackSync();
@@ -958,7 +897,7 @@ export class ChatSessionService implements OnDestroy {
 
   async deleteMessage(id: string) {
     const list = this.messages$.value;
-    const idx = list.findIndex((m) => m.id === id);
+    const idx = list.findIndex(m => m.id === id);
     if (idx !== -1) {
       const tomb: ChatMsg = {
         ...list[idx],
@@ -968,11 +907,7 @@ export class ChatSessionService implements OnDestroy {
         status: undefined,
         ct: undefined,
       };
-      this.messages$.next([
-        ...list.slice(0, idx),
-        tomb,
-        ...list.slice(idx + 1),
-      ]);
+      this.messages$.next([...list.slice(0, idx), tomb, ...list.slice(idx + 1)]);
     }
 
     await this.vault.set(this.key(id), null);
@@ -990,7 +925,7 @@ export class ChatSessionService implements OnDestroy {
 
     try {
       return await this.crypto.decryptMessage(ct);
-    } catch (error) {
+    } catch {
       // Mark this ciphertext as failed to avoid retrying
       this.failedDecryptions.add(ct);
 
@@ -999,9 +934,7 @@ export class ChatSessionService implements OnDestroy {
         const entries = Array.from(this.failedDecryptions);
         this.failedDecryptions.clear();
         // Keep the most recent 50 entries
-        entries
-          .slice(-50)
-          .forEach((entry) => this.failedDecryptions.add(entry));
+        entries.slice(-50).forEach(entry => this.failedDecryptions.add(entry));
       }
 
       return '🔒 Encrypted message (from partner)';
@@ -1023,7 +956,7 @@ export class ChatSessionService implements OnDestroy {
     const messages = this.messages$.value;
     let hasChanges = false;
 
-    const updatedMessages = messages.map((msg) => {
+    const updatedMessages = messages.map(msg => {
       if (msg.sender !== 'You' && !msg.readAt && msg.id) {
         this.ws.markMessageRead(msg.id);
         hasChanges = true;
@@ -1055,9 +988,7 @@ export class ChatSessionService implements OnDestroy {
     for (const key of strategies) {
       const cached = await this.vault.get<SentCacheEntry>(key);
       if (cached && cached.text) {
-        console.log(
-          `[ChatSession] Found cached text for ${messageId} with key: ${key}`
-        );
+        console.log(`[ChatSession] Found cached text for ${messageId} with key: ${key}`);
         return cached.text;
       }
     }
@@ -1068,9 +999,7 @@ export class ChatSessionService implements OnDestroy {
 
     // Fuzzy match for pending messages with expanded time window
     const keys = await this.vault.keysStartingWith(this.key('pending::'));
-    console.log(
-      `[ChatSession] Found ${keys.length} pending keys for fuzzy matching`
-    );
+    console.log(`[ChatSession] Found ${keys.length} pending keys for fuzzy matching`);
 
     for (const key of keys) {
       const match = key.match(/pending::(\d+)$/);
@@ -1143,7 +1072,7 @@ export class ChatSessionService implements OnDestroy {
     this.isInitializing = false;
 
     // Clean up pending message timeouts
-    this.pendingMessages.forEach((pendingInfo) => {
+    this.pendingMessages.forEach(pendingInfo => {
       clearTimeout(pendingInfo.timeoutId);
     });
     this.pendingMessages.clear();

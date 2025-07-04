@@ -1,10 +1,4 @@
-import {
-  Component,
-  OnInit,
-  OnDestroy,
-  ChangeDetectorRef,
-  NgZone,
-} from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { RouterModule, Router } from '@angular/router';
@@ -134,12 +128,12 @@ export class ChatListComponent implements OnInit, OnDestroy {
     console.log('[ChatList] Setting up notification handlers');
 
     this.subs.add(
-      this.notificationService.chatNotifications$.subscribe((notifications) => {
+      this.notificationService.chatNotifications$.subscribe(notifications => {
         console.log('[ChatList] Chat notifications updated:', notifications);
 
         // Update unread counts for existing chats
-        notifications.forEach((notification) => {
-          const chat = this.chats.find((c) => c.id === notification.userId);
+        notifications.forEach(notification => {
+          const chat = this.chats.find(c => c.id === notification.userId);
           if (chat) {
             const oldUnread = chat.unread;
             chat.unread = notification.unreadCount;
@@ -153,10 +147,8 @@ export class ChatListComponent implements OnInit, OnDestroy {
         });
 
         // Clear unread counts for chats not in notifications
-        this.chats.forEach((chat) => {
-          const hasNotification = notifications.some(
-            (n) => n.userId === chat.id
-          );
+        this.chats.forEach(chat => {
+          const hasNotification = notifications.some(n => n.userId === chat.id);
           if (!hasNotification && chat.unread > 0) {
             console.log(`[ChatList] Clearing unread count for ${chat.name}`);
             chat.unread = 0;
@@ -175,13 +167,11 @@ export class ChatListComponent implements OnInit, OnDestroy {
    * Enhanced WebSocket handlers for better online status tracking with debugging
    */
   private setupWebSocketHandlers(): void {
-    console.log(
-      '[ChatList] Setting up enhanced WebSocket handlers for online status'
-    );
+    console.log('[ChatList] Setting up enhanced WebSocket handlers for online status');
 
     // Subscribe to the main online users list with better debugging
     this.subs.add(
-      this.ws.onlineUsers$.subscribe((onlineUsers) => {
+      this.ws.onlineUsers$.subscribe(onlineUsers => {
         console.log('[ChatList] Online users list updated:', onlineUsers);
         this.applyOnlineStatus(onlineUsers);
       })
@@ -189,9 +179,9 @@ export class ChatListComponent implements OnInit, OnDestroy {
 
     // Subscribe to individual user online events with debugging
     this.subs.add(
-      this.ws.userOnline$.subscribe((userId) => {
+      this.ws.userOnline$.subscribe(userId => {
         console.log('[ChatList] User came online:', userId);
-        const chat = this.chats.find((c) => c.id === userId);
+        const chat = this.chats.find(c => c.id === userId);
         if (chat && !chat.online) {
           console.log(`[ChatList] Marking ${chat.name} as online`);
           chat.online = true;
@@ -202,9 +192,9 @@ export class ChatListComponent implements OnInit, OnDestroy {
 
     // Subscribe to individual user offline events with debugging
     this.subs.add(
-      this.ws.userOffline$.subscribe((userId) => {
+      this.ws.userOffline$.subscribe(userId => {
         console.log('[ChatList] User went offline:', userId);
-        const chat = this.chats.find((c) => c.id === userId);
+        const chat = this.chats.find(c => c.id === userId);
         if (chat && chat.online) {
           console.log(`[ChatList] Marking ${chat.name} as offline`);
           chat.online = false;
@@ -215,22 +205,18 @@ export class ChatListComponent implements OnInit, OnDestroy {
 
     // Handle WebSocket connection status changes with debugging
     this.subs.add(
-      this.ws.isConnected$.subscribe((connected) => {
+      this.ws.isConnected$.subscribe(connected => {
         console.log('[ChatList] WebSocket connection status:', connected);
         if (!connected) {
           // When disconnected, mark all users as offline
-          console.log(
-            '[ChatList] WebSocket disconnected, marking all users as offline'
-          );
-          this.chats.forEach((chat) => {
+          console.log('[ChatList] WebSocket disconnected, marking all users as offline');
+          this.chats.forEach(chat => {
             chat.online = false;
           });
           this.cdr.detectChanges();
         } else {
           // When reconnected, get fresh online status
-          console.log(
-            '[ChatList] WebSocket reconnected, requesting fresh online status'
-          );
+          console.log('[ChatList] WebSocket reconnected, requesting fresh online status');
 
           // Wait a moment for the connection to stabilize
           setTimeout(() => {
@@ -270,7 +256,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
 
     let changesDetected = false;
 
-    this.chats.forEach((chat) => {
+    this.chats.forEach(chat => {
       const wasOnline = chat.online;
       const isOnline = onlineUsers.includes(chat.id);
 
@@ -307,57 +293,55 @@ export class ChatListComponent implements OnInit, OnDestroy {
     this.chatLoadingFinished = false;
 
     // Load from API
-    this.http
-      .get<UserSummary[]>(`${environment.apiUrl}/rooms/my-dms`)
-      .subscribe({
-        next: (response) => {
-          console.log('=== API Response received ===', response);
+    this.http.get<UserSummary[]>(`${environment.apiUrl}/rooms/my-dms`).subscribe({
+      next: response => {
+        console.log('=== API Response received ===', response);
 
-          const chatEntries: ChatEntry[] = [];
-          const chatsList = Array.isArray(response)
-            ? response
-            : response && typeof response === 'object' && '_id' in response
+        const chatEntries: ChatEntry[] = [];
+        const chatsList = Array.isArray(response)
+          ? response
+          : response && typeof response === 'object' && '_id' in response
             ? [response as UserSummary]
             : [];
 
-          for (const chat of chatsList) {
-            if (chat && chat._id) {
-              chatEntries.push({
-                id: chat._id,
-                name: chat.username || 'Unknown User',
-                avatar: chat.avatarUrl || 'assets/images/avatars/01.svg',
-                unread: 0,
-                online: false,
-              });
-            }
+        for (const chat of chatsList) {
+          if (chat && chat._id) {
+            chatEntries.push({
+              id: chat._id,
+              name: chat.username || 'Unknown User',
+              avatar: chat.avatarUrl || 'assets/images/avatars/01.svg',
+              unread: 0,
+              online: false,
+            });
           }
+        }
 
-          this.chats = chatEntries;
-          this.isLoadingChats = false;
-          this.chatLoadingFinished = true;
-          console.log('=== Chats updated ===', this.chats.length);
+        this.chats = chatEntries;
+        this.isLoadingChats = false;
+        this.chatLoadingFinished = true;
+        console.log('=== Chats updated ===', this.chats.length);
 
-          // Load previews and apply status in batched operation
-          this.loadAllMessagePreviewsBatched();
-        },
-        error: (error) => {
-          console.error('Failed to load chats:', error);
-          this.isLoadingChats = false;
-          this.chatLoadingFinished = true;
+        // Load previews and apply status in batched operation
+        this.loadAllMessagePreviewsBatched();
+      },
+      error: error => {
+        console.error('Failed to load chats:', error);
+        this.isLoadingChats = false;
+        this.chatLoadingFinished = true;
 
-          // Try fallback
-          this.tryFallback();
-        },
-      });
+        // Try fallback
+        this.tryFallback();
+      },
+    });
   }
 
   private tryFallback(): void {
     console.log('=== Trying fallback method ===');
 
     this.users.listMyDms().subscribe({
-      next: (chats) => {
+      next: chats => {
         if (chats && chats.length > 0) {
-          this.chats = chats.map((u) => ({
+          this.chats = chats.map(u => ({
             id: u._id,
             name: u.username || 'Unknown User',
             avatar: u.avatarUrl || 'assets/images/avatars/01.svg',
@@ -371,7 +355,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
           this.loadAllMessagePreviewsBatched();
         }
       },
-      error: (error) => {
+      error: error => {
         console.error('=== Fallback failed ===', error);
       },
     });
@@ -388,9 +372,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
     this.pendingSortOperations = this.chats.length;
 
     // Load all previews concurrently
-    const previewPromises = this.chats.map((chat) =>
-      this.loadMessagePreview(chat)
-    );
+    const previewPromises = this.chats.map(chat => this.loadMessagePreview(chat));
 
     try {
       await Promise.all(previewPromises);
@@ -401,10 +383,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
 
     // Apply online status after all previews are loaded
     const currentOnlineUsers = this.ws.getCurrentOnlineUsers();
-    console.log(
-      '[ChatList] Applying initial online status:',
-      currentOnlineUsers
-    );
+    console.log('[ChatList] Applying initial online status:', currentOnlineUsers);
     this.applyOnlineStatus(currentOnlineUsers);
 
     // Trigger notification service to update badge counts
@@ -420,9 +399,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
    */
   private async loadMessagePreview(chat: ChatEntry): Promise<void> {
     try {
-      const response = await firstValueFrom(
-        this.api.getMessageHistory(chat.id)
-      );
+      const response = await firstValueFrom(this.api.getMessageHistory(chat.id));
 
       if (!response?.messages?.length) {
         this.decrementPendingOperations();
@@ -438,9 +415,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
       if (lastMessage.deleted) {
         chat.lastMessage = '⋯ message deleted ⋯';
       } else if (lastMessage.senderId === this.me) {
-        const messageKey = `sent_${this.me}_${chat.id}/${
-          lastMessage._id || ''
-        }`;
+        const messageKey = `sent_${this.me}_${chat.id}/${lastMessage._id || ''}`;
         const tsKey = `sent_${this.me}_${chat.id}/pending::${+new Date(
           lastMessage.createdAt
         )}`;
@@ -452,9 +427,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
       } else {
         try {
           if (this.crypto.hasPrivateKey()) {
-            chat.lastMessage = await this.crypto.decryptMessage(
-              lastMessage.ciphertext
-            );
+            chat.lastMessage = await this.crypto.decryptMessage(lastMessage.ciphertext);
           } else {
             chat.lastMessage = '🔒 Encrypted message';
           }
@@ -505,7 +478,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
 
   // Simplified incoming message handler - let NotificationService handle badge logic
   private handleIncomingMessage = async (message: IncomingSocketMessage) => {
-    const chat = this.chats.find((c) => c.id === message.fromUserId);
+    const chat = this.chats.find(c => c.id === message.fromUserId);
     if (!chat) return;
 
     try {
@@ -530,7 +503,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
   // Handle sent message acknowledgment
   private handleMessageSent = async (ack: AckPayload) => {
     const currentRoomId = location.pathname.split('/').pop();
-    const chat = this.chats.find((c) => c.id === currentRoomId);
+    const chat = this.chats.find(c => c.id === currentRoomId);
     if (!chat) return;
 
     const vaultKey = `sent_${this.me}_${currentRoomId}/${ack.messageId}`;
@@ -585,14 +558,12 @@ export class ChatListComponent implements OnInit, OnDestroy {
     }
 
     this.http.get<UserSummary[]>(`${environment.apiUrl}/users`).subscribe({
-      next: (users) => {
+      next: users => {
         this.searchResults = users.filter(
-          (u) =>
-            u.username.toLowerCase() === query.toLowerCase() &&
-            u._id !== this.me
+          u => u.username.toLowerCase() === query.toLowerCase() && u._id !== this.me
         );
       },
-      error: (err) => {
+      error: err => {
         console.error('Search error:', err);
         this.searchResults = [];
       },
@@ -608,7 +579,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
     try {
       this.loadingService.show('starting-chat');
 
-      const existingChat = this.chats.find((chat) => chat.id === user._id);
+      const existingChat = this.chats.find(chat => chat.id === user._id);
       if (existingChat) {
         // Mark messages as read when opening existing chat
         console.log(
@@ -646,10 +617,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
     event.preventDefault();
 
     // Mark messages as read when navigating to chat room
-    console.log(
-      '[ChatList] Navigating to chat room, marking messages as read:',
-      chatId
-    );
+    console.log('[ChatList] Navigating to chat room, marking messages as read:', chatId);
     this.notificationService.markUserMessagesAsRead(chatId);
 
     this.router.navigate(['/chat-room', chatId]);
@@ -659,9 +627,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
     this.searchTerm = ' ';
     setTimeout(() => {
       this.searchTerm = '';
-      const searchInput = document.querySelector(
-        'input[matInput]'
-      ) as HTMLInputElement;
+      const searchInput = document.querySelector('input[matInput]') as HTMLInputElement;
       if (searchInput) searchInput.focus();
     }, 100);
   }

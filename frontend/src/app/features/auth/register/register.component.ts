@@ -91,8 +91,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
         );
       } catch (error) {
         console.error('Failed to initialize reCAPTCHA:', error);
-        this.error =
-          'Failed to load security verification. Please refresh the page.';
+        this.error = 'Failed to load security verification. Please refresh the page.';
       }
     }, 500);
   }
@@ -101,7 +100,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
     console.log('[Register] Setting up theme subscription...');
     let isFirstEmission = true;
 
-    this.themeSubscription = this.themeService.theme$.subscribe((theme) => {
+    this.themeSubscription = this.themeService.theme$.subscribe(theme => {
       console.log('[Register] Theme subscription triggered with theme:', theme);
 
       if (isFirstEmission) {
@@ -139,10 +138,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.error = '';
               }
             );
-            console.log(
-              '[Register] New reCAPTCHA widget ID:',
-              this.recaptchaWidgetId
-            );
+            console.log('[Register] New reCAPTCHA widget ID:', this.recaptchaWidgetId);
           } catch (error) {
             console.error(
               '[Register] Failed to re-render reCAPTCHA after theme change:',
@@ -231,13 +227,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
     const avatarUrl = defaultAvatarFor(this.username);
 
     this.authService
-      .register(
-        this.username,
-        this.email,
-        this.password,
-        avatarUrl,
-        this.recaptchaToken
-      )
+      .register(this.username, this.email, this.password, avatarUrl, this.recaptchaToken)
       .subscribe({
         next: () => {
           console.log('[Register] Registration successful');
@@ -246,7 +236,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
             state: { message: 'Account created successfully! Please sign in.' },
           });
         },
-        error: (err) => {
+        error: err => {
           console.error('[Register] Registration failed:', err);
           this.resetRecaptcha(); // Reset reCAPTCHA on failed attempt
 
@@ -260,23 +250,16 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
           } else if (err.status === 422) {
             // Validation errors from server
             if (err.error && err.error.errors && err.error.errors.length > 0) {
-              this.error = err.error.errors
-                .map((e: ValidationError) => e.msg)
-                .join(', ');
+              this.error = err.error.errors.map((e: ValidationError) => e.msg).join(', ');
             } else {
               this.error = 'Invalid input. Please check your information.';
             }
-          } else if (
-            err.status === 400 &&
-            err.error?.message?.includes('recaptcha')
-          ) {
+          } else if (err.status === 400 && err.error?.message?.includes('recaptcha')) {
             this.error = 'Security verification failed. Please try again.';
           } else if (err.status === 0) {
-            this.error =
-              'Cannot connect to server. Please check your connection.';
+            this.error = 'Cannot connect to server. Please check your connection.';
           } else {
-            this.error =
-              err.error?.message || 'Registration failed. Please try again.';
+            this.error = err.error?.message || 'Registration failed. Please try again.';
           }
         },
         complete: () => {

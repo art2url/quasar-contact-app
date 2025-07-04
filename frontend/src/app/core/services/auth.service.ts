@@ -28,7 +28,7 @@ export class AuthService {
     private csrfService: CsrfService
   ) {
     this.loadingService.setAuthState(this.hasToken());
-    this.isAuthenticated$.subscribe((isAuth) => {
+    this.isAuthenticated$.subscribe(isAuth => {
       this.loadingService.setAuthState(isAuth);
     });
   }
@@ -61,7 +61,7 @@ export class AuthService {
     return this.http
       .post<LoginResponse>(`${environment.apiUrl}/auth/login`, loginData)
       .pipe(
-        switchMap(async (response) => {
+        switchMap(async response => {
           // Store CSRF token from response
           if (response.csrfToken) {
             this.csrfService.setToken(response.csrfToken);
@@ -91,7 +91,7 @@ export class AuthService {
 
           console.log('[Auth] Connecting WebSocket');
           // WebSocket will use cookies for authentication now
-          this.wsService.connect(''); // No token needed, cookies will be used
+          this.wsService.connect(); // Uses cookies for authentication
 
           return response;
         }),
@@ -107,19 +107,14 @@ export class AuthService {
 
           if (err.status === 401) {
             return throwError(() => new Error('Invalid username or password'));
-          } else if (
-            err.status === 400 &&
-            err.error?.message?.includes('recaptcha')
-          ) {
+          } else if (err.status === 400 && err.error?.message?.includes('recaptcha')) {
             return throwError(
               () => new Error('Security verification failed. Please try again.')
             );
           } else if (err.status === 0) {
             return throwError(() => new Error('Cannot connect to server'));
           } else {
-            return throwError(
-              () => new Error(err.error?.message || 'Login failed')
-            );
+            return throwError(() => new Error(err.error?.message || 'Login failed'));
           }
         })
       );
@@ -135,9 +130,7 @@ export class AuthService {
       if (shouldGenerateNewKeys) {
         console.log(
           '[Auth] Generating new keys because:',
-          this.isPostPasswordReset
-            ? 'post-password-reset'
-            : 'no valid existing keys'
+          this.isPostPasswordReset ? 'post-password-reset' : 'no valid existing keys'
         );
         await this.generateFreshKeyPair(userId);
       } else {
@@ -161,9 +154,7 @@ export class AuthService {
       }
 
       // Try to load from vault
-      const existingKey = await this.vault.get<ArrayBuffer>(
-        VAULT_KEYS.PRIVATE_KEY
-      );
+      const existingKey = await this.vault.get<ArrayBuffer>(VAULT_KEYS.PRIVATE_KEY);
 
       if (existingKey && existingKey instanceof ArrayBuffer) {
         console.log('[Auth] Found existing private key in vault, importing');
@@ -196,17 +187,12 @@ export class AuthService {
       await this.vault.set(VAULT_KEYS.PRIVATE_KEY, privateKeyBuffer);
 
       // Verify storage
-      const storedKey = await this.vault.get<ArrayBuffer>(
-        VAULT_KEYS.PRIVATE_KEY
-      );
+      const storedKey = await this.vault.get<ArrayBuffer>(VAULT_KEYS.PRIVATE_KEY);
       if (!storedKey || !(storedKey instanceof ArrayBuffer)) {
         throw new Error('Failed to store private key in vault');
       }
 
-      console.log(
-        '[Auth] Private key stored successfully, size:',
-        storedKey.byteLength
-      );
+      console.log('[Auth] Private key stored successfully, size:', storedKey.byteLength);
 
       // Upload public key to server
       console.log('[Auth] Uploading new public key to server');
@@ -228,10 +214,10 @@ export class AuthService {
     localStorage.removeItem('username');
     localStorage.removeItem('userId');
     localStorage.removeItem('myAvatar');
-    
+
     // Clear CSRF token
     this.csrfService.clearToken();
-    
+
     this.authenticatedSubject.next(false);
   }
 
@@ -256,10 +242,7 @@ export class AuthService {
       registerData.recaptchaToken = recaptchaToken;
     }
 
-    return this.http.post<RegisterResponse>(
-      getApiPath('auth/register'),
-      registerData
-    );
+    return this.http.post<RegisterResponse>(getApiPath('auth/register'), registerData);
   }
 
   logout(): void {
@@ -277,10 +260,10 @@ export class AuthService {
         next: () => {
           console.log('[Auth] Server logout successful');
         },
-        error: (error) => {
+        error: error => {
           console.error('[Auth] Server logout failed:', error);
           // Continue with client-side cleanup even if server call fails
-        }
+        },
       });
 
       this.clearAuthData();
@@ -335,13 +318,10 @@ export class AuthService {
     );
   }
 
-  resetPassword(
-    token: string,
-    newPassword: string
-  ): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(
-      getApiPath('auth/reset-password'),
-      { token, password: newPassword }
-    );
+  resetPassword(token: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(getApiPath('auth/reset-password'), {
+      token,
+      password: newPassword,
+    });
   }
 }

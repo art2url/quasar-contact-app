@@ -39,9 +39,7 @@ export class CryptoService {
    * Import a private key from ArrayBuffer or Base64 string.
    * Returns the SHA‑256 fingerprint (hex pairs joined by `:`).
    */
-  async importPrivateKey(
-    key: ArrayBuffer | string
-  ): Promise<string /* fingerprint */> {
+  async importPrivateKey(key: ArrayBuffer | string): Promise<string /* fingerprint */> {
     let raw: ArrayBuffer;
 
     if (typeof key === 'string') {
@@ -77,7 +75,7 @@ export class CryptoService {
       // Return the SHA-256 fingerprint
       const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', raw));
       return Array.from(hash)
-        .map((b) => b.toString(16).padStart(2, '0'))
+        .map(b => b.toString(16).padStart(2, '0'))
         .join(':');
     } catch (err) {
       console.error('Failed to import private key:', err);
@@ -91,10 +89,7 @@ export class CryptoService {
 
   /* ═══════════ Encryption helpers ═══════════ */
 
-  async encryptWithPublicKey(
-    message: string,
-    base64PublicKey: string
-  ): Promise<string> {
+  async encryptWithPublicKey(message: string, base64PublicKey: string): Promise<string> {
     /* ── 1. prepare peer's RSA key ───────────────────────── */
     const peerKey = await crypto.subtle.importKey(
       'spki',
@@ -121,11 +116,7 @@ export class CryptoService {
 
     /* ── 4. wrap AES key with RSA-OAEP ───────────────────── */
     const rawAes = await crypto.subtle.exportKey('raw', aesKey);
-    const wrappedKey = await crypto.subtle.encrypt(
-      { name: 'RSA-OAEP' },
-      peerKey,
-      rawAes
-    );
+    const wrappedKey = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, peerKey, rawAes);
 
     /* ── 5. pack & base64-encode the payload ─────────────── */
     return btoa(
@@ -259,7 +250,7 @@ export class CryptoService {
   private arrayBufferToBase64(buf: ArrayBuffer): string {
     const bytes = new Uint8Array(buf);
     let bin = '';
-    bytes.forEach((b) => (bin += String.fromCharCode(b)));
+    bytes.forEach(b => (bin += String.fromCharCode(b)));
     return btoa(bin);
   }
 
@@ -270,7 +261,7 @@ export class CryptoService {
 
   private b64ToBuf(b64: string): ArrayBuffer {
     const bin = atob(b64);
-    return Uint8Array.from(bin, (c) => c.charCodeAt(0)).buffer;
+    return Uint8Array.from(bin, c => c.charCodeAt(0)).buffer;
   }
 
   // Check if private key is available

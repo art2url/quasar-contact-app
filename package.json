@@ -17,20 +17,19 @@
     "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install && cd ../landing && npm install",
     "clean": "rm -rf dist/ && rm -rf public/ && rm -rf frontend/dist/ && rm -rf backend/dist/ && rm -rf landing/dist/",
     "test": "echo 'No tests specified'",
-    "lint": "npm run lint:root && npm run lint:frontend && npm run lint:backend && npm run lint:landing",
-    "lint:root": "eslint . --ext .js,.ts,.json --ignore-path .gitignore",
+    "lint": "npm run lint:frontend && npm run lint:backend && npm run lint:landing",
     "lint:frontend": "cd frontend && npm run lint",
     "lint:backend": "cd backend && npm run lint",
     "lint:landing": "cd landing && npm run lint",
-    "lint:fix": "npm run lint:fix:root && npm run lint:fix:frontend && npm run lint:fix:backend && npm run lint:fix:landing",
-    "lint:fix:root": "eslint . --ext .js,.ts,.json --ignore-path .gitignore --fix",
+    "lint:fix": "npm run lint:fix:frontend && npm run lint:fix:backend && npm run lint:fix:landing",
     "lint:fix:frontend": "cd frontend && npm run lint:fix",
     "lint:fix:backend": "cd backend && npm run lint:fix",
     "lint:fix:landing": "cd landing && npm run lint:fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "style": "npm run lint && npm run format:check",
-    "style:fix": "npm run lint:fix && npm run format"
+    "style:fix": "npm run lint:fix && npm run format",
+    "prepare": "husky"
   },
   "keywords": [
     "chat",
@@ -54,12 +53,13 @@
     "eslint-plugin-astro": "^1.0.0",
     "astro-eslint-parser": "^1.0.0",
     "prettier": "^3.5.3",
-    "stylelint": "^16.10.0",
-    "stylelint-config-standard": "^36.0.0",
-    "stylelint-config-recess-order": "^5.1.1",
+    "prettier-plugin-astro": "^0.14.1",
+    "stylelint": "^14.16.1",
+    "stylelint-config-standard": "^29.0.0",
+    "stylelint-config-recess-order": "^3.1.0",
     "stylelint-config-prettier": "^9.0.5",
     "stylelint-order": "^6.0.4",
-    "stylelint-scss": "^6.8.1",
+    "stylelint-scss": "^4.7.0",
     "postcss-scss": "^4.0.9",
     "postcss-html": "^1.7.0",
     "husky": "^9.1.7",
@@ -68,11 +68,6 @@
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
   },
   "lint-staged": {
     "*.{js,ts,json,md}": [

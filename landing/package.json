@@ -10,8 +10,8 @@
     "astro": "astro",
     "build:selective": "npm run build && npm run deploy:pages",
     "deploy:pages": "cp dist/index.html ../public/ && cp dist/about/index.html ../public/about.html && cp dist/faq/index.html ../public/faq.html && cp dist/legal/index.html ../public/legal.html && cp dist/author/index.html ../public/author.html",
-    "lint": "eslint src --ext .astro,.ts,.js",
-    "lint:fix": "eslint src --ext .astro,.ts,.js --fix",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
     "format": "prettier --write src/**/*.{astro,ts,js,css}",
     "format:check": "prettier --check src/**/*.{astro,ts,js,css}",
     "style:css": "stylelint src/**/*.css",
@@ -35,7 +35,7 @@
     "astro-eslint-parser": "^1.0.0",
     "prettier": "^3.5.3",
     "prettier-plugin-astro": "^0.14.1",
-    "stylelint": "^16.10.0",
-    "stylelint-config-standard": "^36.0.0"
+    "stylelint": "^14.16.1",
+    "stylelint-config-standard": "^29.0.0"
   }
 }
