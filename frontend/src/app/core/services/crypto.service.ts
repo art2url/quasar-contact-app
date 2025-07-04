@@ -137,6 +137,14 @@ export class CryptoService {
     );
   }
 
+  // Track failed decryption attempts to prevent spam
+  private decryptionFailureCount = new Map<
+    string,
+    { count: number; lastAttempt: number }
+  >();
+  private readonly MAX_LOGGED_FAILURES = 3;
+  private readonly FAILURE_RESET_TIME = 30000; // 30 seconds
+
   async decryptMessage(cipherTextBase64: string): Promise<string> {
     // Use the direct privateKey property
     if (!this.privateKey) throw new Error('Missing private key');
@@ -165,11 +173,77 @@ export class CryptoService {
         aesKey,
         this.b64ToBuf(c)
       );
+
+      // Reset failure count on successful decryption
+      const failureKey = this.getFailureKey(cipherTextBase64);
+      this.decryptionFailureCount.delete(failureKey);
+
       return new TextDecoder().decode(plainBuf);
     } catch (error) {
-      console.error('Decryption error:', error);
+      // Throttle error logging to prevent console spam
+      this.logDecryptionError(cipherTextBase64, error);
       throw error;
     }
+  }
+
+  /**
+   * Log decryption errors with throttling to prevent console spam
+   */
+  private logDecryptionError(cipherTextBase64: string, error: unknown): void {
+    const failureKey = this.getFailureKey(cipherTextBase64);
+    const now = Date.now();
+    const existing = this.decryptionFailureCount.get(failureKey);
+
+    if (!existing) {
+      // First failure - log it
+      this.decryptionFailureCount.set(failureKey, {
+        count: 1,
+        lastAttempt: now,
+      });
+      console.warn(
+        '[CryptoService] Decryption failed - this may indicate corrupted data or key mismatch:',
+        error
+      );
+    } else {
+      // Check if we should reset the counter
+      if (now - existing.lastAttempt > this.FAILURE_RESET_TIME) {
+        this.decryptionFailureCount.set(failureKey, {
+          count: 1,
+          lastAttempt: now,
+        });
+        console.warn(
+          '[CryptoService] Decryption failed (first failure after reset):',
+          error
+        );
+      } else {
+        // Update the count
+        existing.count++;
+        existing.lastAttempt = now;
+
+        // Only log if under the threshold
+        if (existing.count <= this.MAX_LOGGED_FAILURES) {
+          console.warn(
+            `[CryptoService] Decryption failed (${existing.count}/${this.MAX_LOGGED_FAILURES}):`,
+            error
+          );
+        } else if (existing.count === this.MAX_LOGGED_FAILURES + 1) {
+          console.warn(
+            `[CryptoService] Decryption failures exceeded threshold. Further failures for this message will be suppressed for ${
+              this.FAILURE_RESET_TIME / 1000
+            }s`
+          );
+        }
+        // After threshold, don't log anything
+      }
+    }
+  }
+
+  /**
+   * Generate a key for tracking decryption failures
+   */
+  private getFailureKey(cipherTextBase64: string): string {
+    // Use a hash of the first 50 characters to avoid storing full cipher text
+    return cipherTextBase64.substring(0, 50);
   }
 
   /* ═══════════ Utility helpers ═══════════ */
