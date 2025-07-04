@@ -17,6 +17,7 @@ import {
   IncomingSocketMessage,
   MessageEditedEvent,
   MessageDeletedEvent,
+  ReadPayload,
 } from 'app/core/models/socket.model';
 
 /**
@@ -53,7 +54,10 @@ export class ChatSessionService implements OnDestroy {
   private isInitializing = false;
 
   // Message state management
-  private pendingMessages = new Set<string>();
+  private pendingMessages = new Map<
+    string,
+    { timestamp: number; timeoutId: ReturnType<typeof setTimeout> }
+  >();
   private tempMessages: ChatMsg[] = [];
   private loadingOperations = 0;
 
@@ -96,8 +100,11 @@ export class ChatSessionService implements OnDestroy {
     this.subs.add(
       this.ws.isConnected$.subscribe((connected) => {
         if (connected && this.connectionLossDetected) {
-          console.log('[ChatSession] Connection restored, scheduling sync');
+          console.log(
+            '[ChatSession] Connection restored, scheduling sync and cleaning up stale messages'
+          );
           this.connectionLossDetected = false;
+          this.cleanupStalePendingMessages();
           this.scheduleReconnectSync();
         } else if (!connected) {
           console.log('[ChatSession] Connection lost, marking for sync');
@@ -114,6 +121,7 @@ export class ChatSessionService implements OnDestroy {
     this.ws.onMessageEdited(this.messageEditedCb);
     this.ws.onMessageDeleted(this.messageDeletedCb);
     this.ws.onMessageSent(this.messageSentCb);
+    this.ws.onMessageRead(this.messageReadCb);
   }
 
   /**
@@ -123,24 +131,31 @@ export class ChatSessionService implements OnDestroy {
     messageId,
     timestamp,
   }: AckPayload) => {
-    console.log('[ChatSession] Message sent ack received for:', messageId);
+    console.log(
+      '[ChatSession] Message sent ack received for:',
+      messageId,
+      'at timestamp:',
+      timestamp
+    );
 
     try {
-      // Handle loading state
-      if (this.loadingOperations > 0) {
-        console.log('[ChatSession] Still loading, updating vault only');
-        await this.updateVaultForSentMessage(messageId, timestamp);
-        return;
-      }
-
+      // Always try to update pending messages, even during loading
       const success = await this.updatePendingMessage(messageId, timestamp);
       if (!success) {
         console.warn(
-          '[ChatSession] Failed to update pending message, scheduling sync'
+          '[ChatSession] Failed to update pending message, scheduling sync. MessageId:',
+          messageId
         );
         this.scheduleFallbackSync();
+      } else {
+        console.log(
+          '[ChatSession] Successfully updated pending message to sent/delivered:',
+          messageId
+        );
       }
 
+      // Always update vault storage
+      await this.updateVaultForSentMessage(messageId, timestamp);
       this.markPreviousMessagesAsRead();
     } catch (error) {
       console.error('[ChatSession] Error processing message sent ack:', error);
@@ -149,16 +164,73 @@ export class ChatSessionService implements OnDestroy {
   };
 
   /**
-   * Update pending message with better error handling
+   * Handle read receipts from the recipient
+   */
+  private readonly messageReadCb = async ({ messageId }: ReadPayload) => {
+    console.log('[ChatSession] Message read receipt received for:', messageId);
+
+    try {
+      const messages = this.messages$.value;
+      const messageIndex = messages.findIndex((m) => m.id === messageId);
+
+      if (messageIndex === -1) {
+        console.warn(
+          '[ChatSession] Message not found for read receipt:',
+          messageId
+        );
+        return;
+      }
+
+      const message = messages[messageIndex];
+      if (message.sender !== 'You') {
+        // Only update status for our own messages
+        return;
+      }
+
+      // Update message status to read
+      const updatedMessage: ChatMsg = {
+        ...message,
+        status: 'read',
+        readAt: Date.now(),
+      };
+
+      const updatedMessages = [
+        ...messages.slice(0, messageIndex),
+        updatedMessage,
+        ...messages.slice(messageIndex + 1),
+      ];
+
+      this.messages$.next(updatedMessages);
+      console.log('[ChatSession] Updated message status to read:', messageId);
+    } catch (error) {
+      console.error('[ChatSession] Error processing read receipt:', error);
+    }
+  };
+
+  /**
+   * Update pending message with better error handling and proper message matching
    */
   private async updatePendingMessage(
     messageId: string,
     timestamp: string | number
   ): Promise<boolean> {
     const list = this.messages$.value;
-    const idx = list.findIndex((m) => m.status === 'pending' && !m.id);
+    const serverTimestamp = +new Date(timestamp);
 
-    if (idx === -1) {
+    // Find the pending message that best matches this acknowledgment
+    // Strategy: Find the oldest pending message (FIFO order)
+    let bestMatchIdx = -1;
+    let oldestPendingTime = Number.MAX_SAFE_INTEGER;
+
+    for (let i = 0; i < list.length; i++) {
+      const msg = list[i];
+      if (msg.status === 'pending' && !msg.id && msg.ts < oldestPendingTime) {
+        bestMatchIdx = i;
+        oldestPendingTime = msg.ts;
+      }
+    }
+
+    if (bestMatchIdx === -1) {
       console.warn(
         '[ChatSession] No pending message found for ack:',
         messageId
@@ -166,28 +238,39 @@ export class ChatSessionService implements OnDestroy {
       return false;
     }
 
+    const pendingMessage = list[bestMatchIdx];
+    const isUserOnline = this.ws.isUserOnline(this.roomId);
+    const newStatus = isUserOnline ? 'delivered' : 'sent';
+
     const patched: ChatMsg = {
-      ...list[idx],
+      ...pendingMessage,
       id: messageId,
-      ts: +new Date(timestamp),
-      status: 'sent',
+      ts: serverTimestamp,
+      status: newStatus,
     };
 
-    // Auto-mark as read if no unread messages from partner
-    const hasUnreadFromPartner = list.some(
-      (m) => m.sender !== 'You' && !m.readAt && m.id
-    );
-
-    if (!hasUnreadFromPartner) {
-      patched.status = 'read';
+    // Clean up the pending message timeout using the original timestamp
+    const pendingKey = `pending::${pendingMessage.ts}`;
+    const pendingInfo = this.pendingMessages.get(pendingKey);
+    if (pendingInfo) {
+      clearTimeout(pendingInfo.timeoutId);
+      this.pendingMessages.delete(pendingKey);
+      console.log(
+        '[ChatSession] Successfully acknowledged message, cleared timeout:',
+        messageId
+      );
     }
 
     // Update messages list
     this.messages$.next([
-      ...list.slice(0, idx),
+      ...list.slice(0, bestMatchIdx),
       patched,
-      ...list.slice(idx + 1),
+      ...list.slice(bestMatchIdx + 1),
     ]);
+
+    console.log(
+      `[ChatSession] Message updated successfully: ${messageId} -> status: ${newStatus}`
+    );
 
     // Update vault storage
     await this.updateVaultForSentMessage(messageId, timestamp, patched.text);
@@ -203,25 +286,42 @@ export class ChatSessionService implements OnDestroy {
     text?: string
   ): Promise<void> {
     try {
+      // If no text provided, try to find it from the pending message that was just acknowledged
+      if (!text) {
+        const messages = this.messages$.value;
+        const message = messages.find((m) => m.id === messageId);
+        if (message) {
+          text = message.text;
+        }
+      }
+
+      if (!text) {
+        console.warn(
+          `[ChatSession] No text found for message ${messageId}, skipping vault update`
+        );
+        return;
+      }
+
+      const serverTimestamp = +new Date(timestamp);
       const cacheEntry: SentCacheEntry = {
         id: messageId,
-        text: text || '', // Will be filled in if needed
-        ts: +new Date(timestamp),
+        text: text,
+        ts: serverTimestamp,
       };
 
-      await this.vault.set(this.key(messageId), cacheEntry);
+      console.log(
+        `[ChatSession] Storing vault entry for ${messageId} with text: "${text.substring(
+          0,
+          20
+        )}..."`
+      );
 
-      // Also store with server timestamp
-      const serverTimestamp = +new Date(timestamp);
+      // Store with multiple keys for better retrieval
+      await this.vault.set(this.key(messageId), cacheEntry);
       await this.vault.set(this.key(`server::${serverTimestamp}`), cacheEntry);
 
-      // Clean up temporary keys
-      const tempKey = this.key(`pending::${cacheEntry.ts}`);
-      await this.vault.set(tempKey, null);
-
       console.log(
-        '[ChatSession] Updated vault storage for message:',
-        messageId
+        `[ChatSession] Successfully updated vault storage for message: ${messageId}`
       );
     } catch (err) {
       console.error('[ChatSession] Error updating vault storage:', err);
@@ -320,13 +420,44 @@ export class ChatSessionService implements OnDestroy {
           for (const serverMsg of serverMessages) {
             const serverTimestamp = toEpoch(serverMsg.createdAt);
 
+            // Check if message already exists (by ID or by content+timestamp for pending messages)
+            const existingMsg = currentMessages.find(
+              (m) =>
+                m.id === serverMsg._id ||
+                (m.status === 'pending' &&
+                  Math.abs(m.ts - serverTimestamp) <= 5000)
+            );
+            if (existingMsg) {
+              // If existing message is pending and we got server confirmation, update it
+              if (existingMsg.status === 'pending' && !existingMsg.id) {
+                const msgIndex = currentMessages.indexOf(existingMsg);
+                if (msgIndex !== -1) {
+                  const fromMe = serverMsg.senderId.toString() === this.meId;
+                  currentMessages[msgIndex] = {
+                    ...existingMsg,
+                    id: serverMsg._id,
+                    ts: serverTimestamp,
+                    status: fromMe
+                      ? serverMsg.read
+                        ? 'read'
+                        : 'sent'
+                      : undefined,
+                    readAt: serverMsg.read
+                      ? toEpoch(serverMsg.createdAt)
+                      : undefined,
+                  };
+                  hasUpdates = true;
+                  console.log(
+                    '[ChatSession] Updated pending message with server data:',
+                    serverMsg._id
+                  );
+                }
+              }
+              continue;
+            }
+
             // Only process messages newer than our last known message
             if (serverTimestamp <= lastMessageTime) continue;
-
-            const existingMsg = currentMessages.find(
-              (m) => m.id === serverMsg._id
-            );
-            if (existingMsg) continue;
 
             // This is a new message we missed
             console.log('[ChatSession] Found missed message:', serverMsg._id);
@@ -603,8 +734,11 @@ export class ChatSessionService implements OnDestroy {
     }
 
     if (!this.ws.isConnected()) {
-      console.warn('[ChatSession] Cannot send - socket disconnected');
-      // Could queue message for later sending
+      console.warn(
+        '[ChatSession] Cannot send - socket disconnected, message will not be sent'
+      );
+      // Don't add message to UI if we can't send it
+      // This prevents showing messages that will never be delivered
       return;
     }
 
@@ -625,7 +759,20 @@ export class ChatSessionService implements OnDestroy {
       };
 
       const pendingKey = `pending::${ts}`;
-      this.pendingMessages.add(pendingKey);
+
+      // Add pending message with timeout tracking
+      const timeoutId = setTimeout(() => {
+        if (this.pendingMessages.has(pendingKey)) {
+          console.warn(
+            '[ChatSession] Message ack timeout after 30s, but keeping message visible'
+          );
+          // Don't remove the message from UI, just mark it as potentially failed
+          // The fallback sync will handle recovery
+          this.pendingMessages.delete(pendingKey);
+        }
+      }, 30000); // 30 second timeout (increased from 10s)
+
+      this.pendingMessages.set(pendingKey, { timestamp: ts, timeoutId });
       this.push(pendingMessage);
 
       // Encrypt and send
@@ -634,24 +781,64 @@ export class ChatSessionService implements OnDestroy {
         this.theirPubKey
       );
 
-      await this.vault.set(this.key(pendingKey), {
+      const pendingCacheEntry = {
         id: pendingKey,
         text: plain,
         ts,
-      });
+      };
+
+      await this.vault.set(this.key(pendingKey), pendingCacheEntry);
+      console.log(
+        `[ChatSession] Stored pending message in vault with key: ${this.key(
+          pendingKey
+        )}, text: "${plain}"`
+      );
 
       this.ws.sendMessage(this.roomId, ct, myAvatar);
-
-      // Schedule a fallback check in case the ack doesn't come
-      setTimeout(() => {
-        if (this.pendingMessages.has(pendingKey)) {
-          console.warn('[ChatSession] Message ack timeout, scheduling sync');
-          this.scheduleFallbackSync();
-        }
-      }, 10000); // 10 second timeout
     } catch (error) {
       console.error('[ChatSession] Error sending message:', error);
     }
+  }
+
+  /**
+   * Clean up stale pending messages that never received acknowledgment
+   * NOTE: This method is now more conservative and doesn't remove messages from UI
+   */
+  private cleanupStalePendingMessage(pendingKey: string): void {
+    // Only remove from tracking, don't remove from UI
+    // Let fallback sync handle message recovery instead
+    const pendingInfo = this.pendingMessages.get(pendingKey);
+    if (pendingInfo) {
+      clearTimeout(pendingInfo.timeoutId);
+      this.pendingMessages.delete(pendingKey);
+      console.log(
+        '[ChatSession] Removed pending message from tracking (message kept in UI)'
+      );
+    }
+  }
+
+  /**
+   * Clean up all stale pending messages when connection is restored
+   * NOTE: More conservative cleanup that preserves messages in UI
+   */
+  private cleanupStalePendingMessages(): void {
+    if (this.pendingMessages.size === 0) return;
+
+    console.log(
+      '[ChatSession] Cleaning up stale pending message tracking:',
+      this.pendingMessages.size
+    );
+
+    // Clear timeouts and tracking, but keep messages in UI
+    // Let fallback sync determine what actually needs to be done
+    this.pendingMessages.forEach((pendingInfo) => {
+      clearTimeout(pendingInfo.timeoutId);
+    });
+
+    this.pendingMessages.clear();
+    console.log(
+      '[ChatSession] Cleared pending message tracking (messages kept in UI)'
+    );
   }
 
   private startLoadingOperation(): void {
@@ -792,11 +979,31 @@ export class ChatSessionService implements OnDestroy {
     this.ws.sendDeleteMessage(id);
   }
 
+  // Track failed ciphertext to avoid repeated decryption attempts
+  private failedDecryptions = new Set<string>();
+
   private async tryDecrypt(ct: string): Promise<string> {
+    // Check if we've already failed to decrypt this ciphertext
+    if (this.failedDecryptions.has(ct)) {
+      return '🔒 Encrypted message (from partner)';
+    }
+
     try {
       return await this.crypto.decryptMessage(ct);
     } catch (error) {
-      console.warn('[ChatSession] Decryption failed:', error);
+      // Mark this ciphertext as failed to avoid retrying
+      this.failedDecryptions.add(ct);
+
+      // Clean up old failed entries periodically (keep last 100)
+      if (this.failedDecryptions.size > 100) {
+        const entries = Array.from(this.failedDecryptions);
+        this.failedDecryptions.clear();
+        // Keep the most recent 50 entries
+        entries
+          .slice(-50)
+          .forEach((entry) => this.failedDecryptions.add(entry));
+      }
+
       return '🔒 Encrypted message (from partner)';
     }
   }
@@ -834,6 +1041,10 @@ export class ChatSessionService implements OnDestroy {
     const messageId = m._id;
     const serverTimestamp = toEpoch(m.createdAt);
 
+    console.log(
+      `[ChatSession] Looking for cached text for message ${messageId}, server timestamp: ${serverTimestamp}`
+    );
+
     // Try various lookup strategies
     const strategies = [
       this.key(messageId),
@@ -843,20 +1054,37 @@ export class ChatSessionService implements OnDestroy {
 
     for (const key of strategies) {
       const cached = await this.vault.get<SentCacheEntry>(key);
-      if (cached) {
+      if (cached && cached.text) {
+        console.log(
+          `[ChatSession] Found cached text for ${messageId} with key: ${key}`
+        );
         return cached.text;
       }
     }
 
-    // Fuzzy match for pending messages
+    console.log(
+      `[ChatSession] No exact match found, trying fuzzy match for ${messageId}`
+    );
+
+    // Fuzzy match for pending messages with expanded time window
     const keys = await this.vault.keysStartingWith(this.key('pending::'));
+    console.log(
+      `[ChatSession] Found ${keys.length} pending keys for fuzzy matching`
+    );
+
     for (const key of keys) {
       const match = key.match(/pending::(\d+)$/);
       if (match) {
         const pendingTs = parseInt(match[1]);
-        if (Math.abs(pendingTs - serverTimestamp) <= 5000) {
+        const timeDiff = Math.abs(pendingTs - serverTimestamp);
+        if (timeDiff <= 10000) {
+          // Increased from 5 seconds to 10 seconds
           const cached = await this.vault.get<SentCacheEntry>(key);
-          if (cached) {
+          if (cached && cached.text) {
+            console.log(
+              `[ChatSession] Found fuzzy match for ${messageId} with pending key: ${key}, time diff: ${timeDiff}ms`
+            );
+            // Update vault with proper keys
             await this.vault.set(this.key(messageId), cached);
             await this.vault.set(key, null);
             return cached.text;
@@ -865,6 +1093,9 @@ export class ChatSessionService implements OnDestroy {
       }
     }
 
+    console.warn(
+      `[ChatSession] No cached text found for message ${messageId}, using fallback`
+    );
     return this.getTimeAgoMessage(serverTimestamp);
   }
 
@@ -905,12 +1136,20 @@ export class ChatSessionService implements OnDestroy {
     this.ws.offMessageEdited(this.messageEditedCb);
     this.ws.offReceiveMessage(this.incomingCb);
     this.ws.offMessageDeleted(this.messageDeletedCb);
+    this.ws.offMessageRead(this.messageReadCb);
     clearTimeout(this.typingDebounce);
 
     this.isInitialized = false;
     this.isInitializing = false;
+
+    // Clean up pending message timeouts
+    this.pendingMessages.forEach((pendingInfo) => {
+      clearTimeout(pendingInfo.timeoutId);
+    });
     this.pendingMessages.clear();
+
     this.loadingOperations = 0;
     this.tempMessages = [];
+    this.failedDecryptions.clear();
   }
 }

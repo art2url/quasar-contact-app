@@ -15,7 +15,7 @@ export interface ChatMsg {
   sender: 'You' | string; // "You" | partner alias
   text: string; // already-decrypted payload (or fallback)
   ts: number; // epoch-millis
-  status?: 'pending' | 'sent' | 'read';
+  status?: 'pending' | 'sent' | 'delivered' | 'read';
   avatarUrl?: string; // future-use
   ct?: string; // raw cipher – kept only for my own bubbles
   editedAt?: number; // epoch ms (undefined = never edited)

@@ -579,7 +579,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
   public onSearch(query: string): void {
     this.searchTerm = query;
 
-    if (!query || query.length < 2) {
+    if (!query || query.trim().length === 0) {
       this.searchResults = [];
       return;
     }
@@ -588,7 +588,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
       next: (users) => {
         this.searchResults = users.filter(
           (u) =>
-            u.username.toLowerCase().includes(query.toLowerCase()) &&
+            u.username.toLowerCase() === query.toLowerCase() &&
             u._id !== this.me
         );
       },
