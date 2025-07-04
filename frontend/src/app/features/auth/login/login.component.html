@@ -48,6 +48,19 @@
         </mat-form-field>
       </div>
 
+      <!-- Honeypot fields (hidden from users) -->
+      <div class="honeypot-fields" aria-hidden="true">
+        <input 
+          *ngFor="let field of honeypotFields | keyvalue"
+          type="text" 
+          [name]="field.key"
+          [(ngModel)]="honeypotFields[field.key]"
+          [style]="honeypotService.getHoneypotStyles()"
+          [tabindex]="-1"
+          autocomplete="off"
+          readonly />
+      </div>
+
       <!-- reCAPTCHA Widget -->
       <div class="form-group recaptcha-container">
         <div id="recaptcha-login" #recaptchaElement></div>
