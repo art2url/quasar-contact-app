@@ -14,9 +14,22 @@
     "copy:landing": "rm -rf dist && mkdir -p dist && if [ -d 'landing/dist' ]; then cp -r landing/dist/* dist/; else echo 'No landing dist found - building...'; cd landing && npm run build && cd .. && cp -r landing/dist/* dist/; fi",
     "full": "npm run clean && npm run build:landing && npm run build:frontend && npm run copy && npm run build:backend && npm start",
     "build:landing": "cd landing && npm run build && cd .. && mkdir -p public && cp -r landing/dist/* public/",
-    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install && cd ../landing && npm install",
     "clean": "rm -rf dist/ && rm -rf public/ && rm -rf frontend/dist/ && rm -rf backend/dist/ && rm -rf landing/dist/",
-    "test": "echo 'No tests specified'"
+    "test": "echo 'No tests specified'",
+    "lint": "npm run lint:frontend && npm run lint:backend && npm run lint:landing",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:landing": "cd landing && npm run lint",
+    "lint:fix": "npm run lint:fix:frontend && npm run lint:fix:backend && npm run lint:fix:landing",
+    "lint:fix:frontend": "cd frontend && npm run lint:fix",
+    "lint:fix:backend": "cd backend && npm run lint:fix",
+    "lint:fix:landing": "cd landing && npm run lint:fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "style": "npm run lint && npm run format:check",
+    "style:fix": "npm run lint:fix && npm run format",
+    "prepare": "husky"
   },
   "keywords": [
     "chat",
@@ -31,10 +44,38 @@
     "express": "^4.18.4"
   },
   "devDependencies": {
-    "typescript": "^5.4.3"
+    "typescript": "^5.4.3",
+    "@typescript-eslint/eslint-plugin": "^8.32.0",
+    "@typescript-eslint/parser": "^8.32.0",
+    "@angular-eslint/eslint-plugin": "^19.4.0",
+    "@angular-eslint/template-parser": "^19.4.0",
+    "eslint": "^9.26.0",
+    "eslint-plugin-astro": "^1.0.0",
+    "astro-eslint-parser": "^1.0.0",
+    "prettier": "^3.5.3",
+    "prettier-plugin-astro": "^0.14.1",
+    "stylelint": "^14.16.1",
+    "stylelint-config-standard": "^29.0.0",
+    "stylelint-config-recess-order": "^3.1.0",
+    "stylelint-config-prettier": "^9.0.5",
+    "stylelint-order": "^6.0.4",
+    "stylelint-scss": "^4.7.0",
+    "postcss-scss": "^4.0.9",
+    "postcss-html": "^1.7.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.10"
   },
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
+  },
+  "lint-staged": {
+    "*.{js,ts,json,md}": [
+      "prettier --write"
+    ],
+    "*.{css,scss}": [
+      "stylelint --fix",
+      "prettier --write"
+    ]
   }
 }

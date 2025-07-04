@@ -38,10 +38,7 @@ export class MessagesService {
       .pipe(
         tap(() => this.loadingSubject.next(false)),
         catchError((error: HttpErrorResponse) => {
-          console.error(
-            '[MessagesService] Failed to load message history:',
-            error
-          );
+          console.error('[MessagesService] Failed to load message history:', error);
           this.loadingSubject.next(false);
           this.errorSubject.next('Failed to load message history');
           return of({
@@ -62,17 +59,15 @@ export class MessagesService {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
 
-    return this.http
-      .get<MessageOverview[]>(getApiPath('messages/overview'))
-      .pipe(
-        tap(() => this.loadingSubject.next(false)),
-        catchError((error: HttpErrorResponse) => {
-          console.error('[MessagesService] Failed to load overviews:', error);
-          this.errorSubject.next('Failed to load message overviews');
-          this.loadingSubject.next(false);
-          return of([]);
-        })
-      );
+    return this.http.get<MessageOverview[]>(getApiPath('messages/overview')).pipe(
+      tap(() => this.loadingSubject.next(false)),
+      catchError((error: HttpErrorResponse) => {
+        console.error('[MessagesService] Failed to load overviews:', error);
+        this.errorSubject.next('Failed to load message overviews');
+        this.loadingSubject.next(false);
+        return of([]);
+      })
+    );
   }
 
   /** single last-message ping (used for notifications) */
@@ -87,10 +82,7 @@ export class MessagesService {
       .get<LastMessageResponse>(getApiPath(`messages/last/${withUserId}`))
       .pipe(
         catchError((error: HttpErrorResponse) => {
-          console.error(
-            '[MessagesService] Failed to load last message:',
-            error
-          );
+          console.error('[MessagesService] Failed to load last message:', error);
           return of({} as LastMessageResponse);
         })
       );

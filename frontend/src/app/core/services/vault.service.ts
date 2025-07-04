@@ -87,7 +87,7 @@ export class VaultService {
     await this.waitUntilReady();
     const tx = await this.safeTx('readonly');
     const req = tx.objectStore(STORE).get(objKey);
-    const rec = await new Promise<BlobRecord | undefined>((r) => {
+    const rec = await new Promise<BlobRecord | undefined>(r => {
       req.onsuccess = () => r(req.result as BlobRecord | undefined);
       req.onerror = () => r(undefined);
     });
@@ -107,10 +107,7 @@ export class VaultService {
       // Properly deserialize different data types
       return this.restoreFromSerialization(serializable) as T;
     } catch (err) {
-      console.warn(
-        '[Vault] decrypt failed – probably stale key, ignoring.',
-        err
-      );
+      console.warn('[Vault] decrypt failed – probably stale key, ignoring.', err);
       return undefined;
     }
   }
@@ -120,7 +117,7 @@ export class VaultService {
     const tx = await this.safeTx('readonly');
     const out: string[] = [];
     const cur = tx.objectStore(STORE).openKeyCursor();
-    return new Promise((res) => {
+    return new Promise(res => {
       cur.onsuccess = () => {
         const c = cur.result;
         if (!c) return res(out);
@@ -181,7 +178,7 @@ export class VaultService {
     });
 
     const keyReq = this.db.transaction(STORE).objectStore(STORE).get(KEY_ID);
-    const raw = await new Promise<number[] | undefined>((res) => {
+    const raw = await new Promise<number[] | undefined>(res => {
       keyReq.onsuccess = () => res(keyReq.result as number[] | undefined);
       keyReq.onerror = () => res(undefined);
     });
@@ -256,12 +253,10 @@ export class VaultService {
 
       console.log('[Vault Debug] Test ArrayBuffer storage:', {
         stored: testValue.byteLength,
-        retrieved:
-          retrieved instanceof ArrayBuffer ? retrieved.byteLength : 'FAILED',
+        retrieved: retrieved instanceof ArrayBuffer ? retrieved.byteLength : 'FAILED',
         match:
           retrieved instanceof ArrayBuffer &&
-          new Uint8Array(retrieved).toString() ===
-            new Uint8Array(testValue).toString(),
+          new Uint8Array(retrieved).toString() === new Uint8Array(testValue).toString(),
       });
 
       // Clean up test

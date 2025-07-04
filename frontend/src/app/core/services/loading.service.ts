@@ -20,10 +20,13 @@ export class LoadingService implements OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  constructor(private router: Router, private ngZone: NgZone) {
+  constructor(
+    private router: Router,
+    private ngZone: NgZone
+  ) {
     this.router.events
       .pipe(
-        filter((event) => event instanceof NavigationEnd),
+        filter(event => event instanceof NavigationEnd),
         takeUntil(this.destroy$)
       )
       .subscribe((event: NavigationEnd) => {

@@ -1,37 +1,23 @@
 <header class="header">
   <div class="header-container">
     <a href="/" class="logo">
+      <img src="assets/images/logo.svg" alt="Quasar Contact Logo Icon" class="logo-icon retina-image" />
       <img
-        src="assets/images/logo.svg"
-        alt="Quasar Contact Logo Icon"
-        class="logo-icon retina-image"
-      />
-      <img
-        [src]="
-          isDarkTheme()
-            ? 'assets/images/text-logo-white.svg'
-            : 'assets/images/text-logo-dark.svg'
-        "
+        [src]="isDarkTheme() ? 'assets/images/text-logo-white.svg' : 'assets/images/text-logo-dark.svg'"
         alt="Quasar Contact Logo Text"
-        class="logo-text retina-image"
-      />
+        class="logo-text retina-image" />
     </a>
 
     <!-- Mobile controls - status + theme toggle + hamburger button with notification badge -->
     <div
       class="mobile-controls"
-      *ngIf="
-        authService.isAuthenticated() ||
-        (!authService.isAuthenticated() && isAuthPage())
-      "
-    >
+      *ngIf="authService.isAuthenticated() || (!authService.isAuthenticated() && isAuthPage())">
       <!-- Connection status with text on mobile -->
       <div
         *ngIf="authService.isAuthenticated()"
         class="status mobile-status"
         [class.connected]="online"
-        [class.disconnected]="!online"
-      >
+        [class.disconnected]="!online">
         <span class="status-dot"></span>
         <span>{{ online ? 'Online' : 'Offline' }}</span>
       </div>
@@ -40,42 +26,27 @@
       <button
         class="theme-toggle"
         (click)="toggleTheme()"
-        [title]="
-          isDarkTheme() ? 'Switch to light theme' : 'Switch to dark theme'
-        "
-        aria-label="Toggle theme"
-      >
+        [title]="isDarkTheme() ? 'Switch to light theme' : 'Switch to dark theme'"
+        aria-label="Toggle theme">
         <mat-icon>{{ isDarkTheme() ? 'light_mode' : 'dark_mode' }}</mat-icon>
       </button>
 
       <button class="mobile-menu-button" (click)="toggleMenu()">
         <mat-icon>{{ menuOpen ? 'close' : 'menu' }}</mat-icon>
         <!-- Notification badge on mobile menu button -->
-        <span *ngIf="unreadTotal && !menuOpen" class="mobile-menu-badge">{{
-          unreadTotal
-        }}</span>
+        <span *ngIf="unreadTotal && !menuOpen" class="mobile-menu-badge">{{ unreadTotal }}</span>
       </button>
     </div>
 
     <div class="nav-links" [class.open]="menuOpen">
       <!-- Auth navigation buttons (only when not authenticated and on auth pages) -->
       <ng-container *ngIf="!authService.isAuthenticated() && isAuthPage()">
-        <button
-          *ngIf="router.url !== '/auth/register'"
-          mat-button
-          routerLink="/auth/register"
-          (click)="closeMenu()"
-        >
+        <button *ngIf="router.url !== '/auth/register'" mat-button routerLink="/auth/register" (click)="closeMenu()">
           <mat-icon>person_add</mat-icon>
           <span class="mobile-hidden">Create Account</span>
         </button>
 
-        <button
-          *ngIf="router.url !== '/auth/login'"
-          mat-button
-          routerLink="/auth/login"
-          (click)="closeMenu()"
-        >
+        <button *ngIf="router.url !== '/auth/login'" mat-button routerLink="/auth/login" (click)="closeMenu()">
           <mat-icon>login</mat-icon>
           <span class="mobile-hidden">Sign In</span>
         </button>
@@ -86,8 +57,7 @@
         *ngIf="authService.isAuthenticated()"
         class="status desktop-status"
         [class.connected]="online"
-        [class.disconnected]="!online"
-      >
+        [class.disconnected]="!online">
         <span class="status-dot"></span>
         <span>{{ online ? `Online` : `Offline` }}</span>
       </div>
@@ -97,8 +67,7 @@
         *ngIf="authService.isAuthenticated()"
         mat-button
         (click)="navigateToChats()"
-        [class.active]="router.url.startsWith('/chat')"
-      >
+        [class.active]="router.url.startsWith('/chat')">
         <mat-icon>chat</mat-icon>
         <span class="mobile-hidden">Chats</span>
         <span *ngIf="unreadTotal" class="badge">{{ unreadTotal }}</span>
@@ -110,8 +79,7 @@
         mat-button
         title="Settings"
         (click)="navigateToSettings()"
-        [class.active]="router.url.startsWith('/settings')"
-      >
+        [class.active]="router.url.startsWith('/settings')">
         <mat-icon>settings</mat-icon>
         <span class="mobile-hidden">Settings</span>
       </button>
@@ -120,16 +88,11 @@
       <button
         class="desktop-theme-toggle"
         (click)="toggleTheme()"
-        [title]="
-          isDarkTheme() ? 'Switch to light theme' : 'Switch to dark theme'
-        "
+        [title]="isDarkTheme() ? 'Switch to light theme' : 'Switch to dark theme'"
         aria-label="Toggle theme"
-        mat-button
-      >
+        mat-button>
         <mat-icon>{{ isDarkTheme() ? 'light_mode' : 'dark_mode' }}</mat-icon>
-        <span class="mobile-hidden">{{
-          isDarkTheme() ? 'Light' : 'Dark'
-        }}</span>
+        <span class="mobile-hidden">{{ isDarkTheme() ? 'Light' : 'Dark' }}</span>
       </button>
 
       <!-- Logout -->

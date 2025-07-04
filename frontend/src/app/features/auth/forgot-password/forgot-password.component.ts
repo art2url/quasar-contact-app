@@ -39,9 +39,7 @@ import { RecaptchaService } from '@services/recaptcha.service';
   templateUrl: './forgot-password.component.html',
   styleUrls: ['./forgot-password.component.css'],
 })
-export class ForgotPasswordComponent
-  implements OnInit, OnDestroy, AfterViewInit
-{
+export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('recaptchaElement', { static: false })
   recaptchaElement!: ElementRef;
 
@@ -85,8 +83,7 @@ export class ForgotPasswordComponent
         );
       } catch (error) {
         console.error('Failed to initialize reCAPTCHA:', error);
-        this.error =
-          'Failed to load security verification. Please refresh the page.';
+        this.error = 'Failed to load security verification. Please refresh the page.';
       }
     }, 500);
   }
@@ -95,11 +92,8 @@ export class ForgotPasswordComponent
     console.log('[ForgotPassword] Setting up theme subscription...');
     let isFirstEmission = true;
 
-    this.themeSubscription = this.themeService.theme$.subscribe((theme) => {
-      console.log(
-        '[ForgotPassword] Theme subscription triggered with theme:',
-        theme
-      );
+    this.themeSubscription = this.themeService.theme$.subscribe(theme => {
+      console.log('[ForgotPassword] Theme subscription triggered with theme:', theme);
 
       if (isFirstEmission) {
         isFirstEmission = false;
@@ -107,25 +101,17 @@ export class ForgotPasswordComponent
         return;
       }
 
-      console.log(
-        '[ForgotPassword] reCAPTCHA widget ID:',
-        this.recaptchaWidgetId
-      );
+      console.log('[ForgotPassword] reCAPTCHA widget ID:', this.recaptchaWidgetId);
 
       if (this.recaptchaWidgetId !== undefined) {
-        console.log(
-          '[ForgotPassword] Re-rendering reCAPTCHA for theme:',
-          theme
-        );
+        console.log('[ForgotPassword] Re-rendering reCAPTCHA for theme:', theme);
 
         // Reset the widget first
         this.recaptchaService.resetRecaptcha(this.recaptchaWidgetId);
         this.recaptchaToken = '';
 
         // Completely remove and recreate the DOM element
-        const recaptchaElement = document.getElementById(
-          'recaptcha-forgot-password'
-        );
+        const recaptchaElement = document.getElementById('recaptcha-forgot-password');
         if (recaptchaElement && recaptchaElement.parentNode) {
           const parent = recaptchaElement.parentNode;
           const newElement = document.createElement('div');
@@ -189,32 +175,27 @@ export class ForgotPasswordComponent
 
     this.isLoading = true;
 
-    this.authService
-      .requestPasswordReset(this.email, this.recaptchaToken)
-      .subscribe({
-        next: () => {
-          this.isLoading = false;
-          this.emailSent = true;
-          this.startResendCooldown();
-        },
-        error: (err) => {
-          this.isLoading = false;
-          this.resetRecaptcha(); // Reset reCAPTCHA on failed attempt
+    this.authService.requestPasswordReset(this.email, this.recaptchaToken).subscribe({
+      next: () => {
+        this.isLoading = false;
+        this.emailSent = true;
+        this.startResendCooldown();
+      },
+      error: err => {
+        this.isLoading = false;
+        this.resetRecaptcha(); // Reset reCAPTCHA on failed attempt
 
-          if (err.status === 404) {
-            this.error = 'No account found with this email address';
-          } else if (err.status === 429) {
-            this.error = 'Too many requests. Please try again later.';
-          } else if (
-            err.status === 400 &&
-            err.error?.message?.includes('recaptcha')
-          ) {
-            this.error = 'Security verification failed. Please try again.';
-          } else {
-            this.error = 'An error occurred. Please try again.';
-          }
-        },
-      });
+        if (err.status === 404) {
+          this.error = 'No account found with this email address';
+        } else if (err.status === 429) {
+          this.error = 'Too many requests. Please try again later.';
+        } else if (err.status === 400 && err.error?.message?.includes('recaptcha')) {
+          this.error = 'Security verification failed. Please try again.';
+        } else {
+          this.error = 'An error occurred. Please try again.';
+        }
+      },
+    });
   }
 
   resendEmail(): void {
@@ -225,21 +206,19 @@ export class ForgotPasswordComponent
       return;
     }
 
-    this.authService
-      .requestPasswordReset(this.email, this.recaptchaToken)
-      .subscribe({
-        next: () => {
-          this.startResendCooldown();
-        },
-        error: (err) => {
-          console.error('Failed to resend email:', err);
-          this.resetRecaptcha(); // Reset reCAPTCHA on failed attempt
+    this.authService.requestPasswordReset(this.email, this.recaptchaToken).subscribe({
+      next: () => {
+        this.startResendCooldown();
+      },
+      error: err => {
+        console.error('Failed to resend email:', err);
+        this.resetRecaptcha(); // Reset reCAPTCHA on failed attempt
 
-          if (err.status === 400 && err.error?.message?.includes('recaptcha')) {
-            this.error = 'Security verification failed. Please try again.';
-          }
-        },
-      });
+        if (err.status === 400 && err.error?.message?.includes('recaptcha')) {
+          this.error = 'Security verification failed. Please try again.';
+        }
+      },
+    });
   }
 
   private startResendCooldown(): void {

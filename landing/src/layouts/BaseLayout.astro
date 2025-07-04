@@ -64,92 +64,71 @@ const finalStructuredData = structuredData || defaultStructuredData;
 ---
 
 <!doctype html>
-<html lang='en'>
+<html lang="en">
   <head>
-    <meta charset='UTF-8' />
-    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- Primary Meta Tags -->
     <title>{title}</title>
-    <meta name='title' content={title} />
-    <meta name='description' content={description} />
-    <meta name='keywords' content={keywords} />
-    <meta name='author' content='Artem Turlenko' />
-    <meta
-      name='robots'
-      content={noIndex ? 'noindex, nofollow' : 'index, follow'}
-    />
+    <meta name="title" content={title} />
+    <meta name="description" content={description} />
+    <meta name="keywords" content={keywords} />
+    <meta name="author" content="Artem Turlenko" />
+    <meta name="robots" content={noIndex ? 'noindex, nofollow' : 'index, follow'} />
 
     <!-- Open Graph / Facebook -->
-    <meta property='og:type' content='website' />
-    <meta property='og:url' content={canonicalUrl} />
-    <meta property='og:title' content={title} />
-    <meta property='og:description' content={description} />
-    <meta property='og:image' content={ogImage} />
-    <meta property='og:image:width' content='1200' />
-    <meta property='og:image:height' content='630' />
-    <meta property='og:site_name' content='Quasar' />
-    <meta property='og:locale' content='en_US' />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Quasar" />
+    <meta property="og:locale" content="en_US" />
 
     <!-- Twitter -->
-    <meta name='twitter:card' content='summary_large_image' />
-    <meta name='twitter:url' content={canonicalUrl} />
-    <meta name='twitter:title' content={title} />
-    <meta name='twitter:description' content={description} />
-    <meta name='twitter:image' content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={canonicalUrl} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
 
     <!-- Canonical URL -->
-    <link rel='canonical' href={canonicalUrl} />
+    <link rel="canonical" href={canonicalUrl} />
 
     <!-- Favicon and Icons -->
-    <link rel='icon' type='image/x-icon' href='/assets/images/favicon.ico' />
-    <link
-      rel='apple-touch-icon'
-      sizes='180x180'
-      href='/assets/images/apple-touch-icon.png'
-    />
-    <link
-      rel='icon'
-      type='image/png'
-      sizes='32x32'
-      href='/assets/images/favicon-32x32.png'
-    />
-    <link
-      rel='icon'
-      type='image/png'
-      sizes='16x16'
-      href='/assets/images/favicon-16x16.png'
-    />
-    <link rel='manifest' href='/assets/images/site.webmanifest' />
+    <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png" />
+    <link rel="manifest" href="/assets/images/site.webmanifest" />
 
     <!-- DNS Prefetch -->
-    <link rel='dns-prefetch' href='//fonts.googleapis.com' />
-    <link rel='dns-prefetch' href='//fonts.gstatic.com' />
+    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="//fonts.gstatic.com" />
 
     <!-- Preconnect -->
-    <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
     <!-- Fonts -->
     <link
-      href='https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap'
-      rel='stylesheet'
+      href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
     />
 
     <!-- Schema.org structured data -->
-    <script
-      type='application/ld+json'
-      is:inline
-      set:html={JSON.stringify(finalStructuredData)}
-    />
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(finalStructuredData)} />
 
     <!-- Performance hints -->
-    <link rel='preload' href='/assets/images/logo.svg' as='image' />
+    <link rel="preload" href="/assets/images/logo.svg" as="image" />
 
     <!-- Cloudflare Web Analytics -->
     <script
       is:inline
       defer
-      src='https://static.cloudflareinsights.com/beacon.min.js'
+      src="https://static.cloudflareinsights.com/beacon.min.js"
       data-cf-beacon='{"token": "abbc680d9bdf4d34af843d4791b0f2a1"}'></script>
   </head>
 

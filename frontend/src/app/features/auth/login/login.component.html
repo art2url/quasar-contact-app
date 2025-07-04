@@ -17,12 +17,9 @@
             required
             [disabled]="isLoading"
             autocomplete="username"
-            placeholder="Enter your username or email"
-          />
+            placeholder="Enter your username or email" />
           <mat-icon matPrefix>person</mat-icon>
-          <mat-error *ngIf="!username && formSubmitted">
-            Username or email is required
-          </mat-error>
+          <mat-error *ngIf="!username && formSubmitted"> Username or email is required </mat-error>
         </mat-form-field>
       </div>
 
@@ -37,23 +34,17 @@
             required
             [disabled]="isLoading"
             autocomplete="current-password"
-            placeholder="Enter your password"
-          />
+            placeholder="Enter your password" />
           <mat-icon matPrefix>lock</mat-icon>
           <button
             mat-icon-button
             matSuffix
             type="button"
             (click)="hidePassword = !hidePassword"
-            [attr.aria-label]="'Hide password'"
-          >
-            <mat-icon>{{
-              hidePassword ? 'visibility_off' : 'visibility'
-            }}</mat-icon>
+            [attr.aria-label]="'Hide password'">
+            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
-          <mat-error *ngIf="!password && formSubmitted">
-            Password is required
-          </mat-error>
+          <mat-error *ngIf="!password && formSubmitted"> Password is required </mat-error>
         </mat-form-field>
       </div>
 
@@ -66,9 +57,7 @@
       </div>
 
       <div class="form-actions">
-        <a routerLink="/auth/forgot-password" class="forgot-link">
-          Forgot your password?
-        </a>
+        <a routerLink="/auth/forgot-password" class="forgot-link"> Forgot your password? </a>
       </div>
 
       <div *ngIf="error" class="error-alert">
@@ -76,19 +65,9 @@
         <span>{{ error }}</span>
       </div>
 
-      <button
-        mat-raised-button
-        color="primary"
-        type="submit"
-        class="submit-button full-width"
-        [disabled]="isLoading"
-      >
+      <button mat-raised-button color="primary" type="submit" class="submit-button full-width" [disabled]="isLoading">
         <span class="submit-button-content">
-          <mat-spinner
-            *ngIf="isLoading"
-            diameter="20"
-            class="button-spinner"
-          ></mat-spinner>
+          <mat-spinner *ngIf="isLoading" diameter="20" class="button-spinner"></mat-spinner>
           {{ isLoading ? 'Signing in...' : 'Sign In' }}
         </span>
       </button>

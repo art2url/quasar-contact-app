@@ -16,7 +16,7 @@ class CookieConsentManager {
       this.initializeApp();
     }
 
-    window.addEventListener('click', (event) => {
+    window.addEventListener('click', event => {
       const modal = document.getElementById('cookieModal');
       if (event.target === modal) this.closeCookieModal();
     });
@@ -123,7 +123,7 @@ class CookieConsentManager {
     this.sendEvent('page_view');
 
     // Setup click tracking
-    document.addEventListener('click', (e) => {
+    document.addEventListener('click', e => {
       if (!this.analyticsEnabled) return;
 
       if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
@@ -292,7 +292,7 @@ class CookieConsentManager {
         return null;
       }
       return parsed.preferences;
-    } catch (e) {
+    } catch {
       localStorage.removeItem('cookieConsent');
       document.documentElement.removeAttribute('data-cookies-accepted');
       return null;
