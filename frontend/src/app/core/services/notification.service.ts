@@ -204,11 +204,12 @@ export class NotificationService implements OnDestroy {
   public loadNotifications(): void {
     console.log('[NotificationService] Loading notifications from API');
 
-    // Check if we should load notifications
-    const token = localStorage.getItem('token');
-    if (!token) {
+    // Check if we should load notifications (JWT is now in HttpOnly cookies)
+    const username = localStorage.getItem('username');
+    const userId = localStorage.getItem('userId');
+    if (!username || !userId) {
       console.log(
-        '[NotificationService] No token found, skipping notification load'
+        '[NotificationService] No auth data found, skipping notification load'
       );
       return;
     }

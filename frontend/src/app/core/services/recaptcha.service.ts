@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { environment } from '@environments/environment';
+import { ThemeService } from './theme.service';
 
 declare const grecaptcha: {
   ready(callback: () => void): void;
@@ -14,6 +15,7 @@ interface RecaptchaOptions {
   callback: (token: string) => void;
   'expired-callback': () => void;
   'error-callback': () => void;
+  theme?: 'light' | 'dark';
 }
 
 @Injectable({
@@ -21,6 +23,8 @@ interface RecaptchaOptions {
 })
 export class RecaptchaService {
   private siteKey = environment.recaptchaSiteKey;
+
+  constructor(private themeService: ThemeService) {}
 
   getSiteKey(): string {
     return this.siteKey;
@@ -54,26 +58,39 @@ export class RecaptchaService {
       throw new Error('reCAPTCHA not loaded');
     }
 
-    return grecaptcha.render(elementId, {
-      sitekey: this.siteKey,
-      callback: callback,
-      'expired-callback': () => {
-        // Handle token expiration
-        console.log('reCAPTCHA token expired');
-      },
-      'error-callback': () => {
-        // Handle errors
-        console.error('reCAPTCHA error occurred');
-      },
-    });
+    const currentTheme = this.themeService.getCurrentTheme();
+    const recaptchaTheme = currentTheme === 'dark' ? 'dark' : 'light';
+
+    try {
+      return grecaptcha.render(elementId, {
+        sitekey: this.siteKey,
+        callback: callback,
+        theme: recaptchaTheme,
+        'expired-callback': () => {
+          console.log('reCAPTCHA token expired');
+        },
+        'error-callback': () => {
+          console.error('reCAPTCHA error occurred');
+          // Don't throw error, just log it to prevent app crashes
+        }
+      });
+    } catch (error) {
+      console.error('Failed to render reCAPTCHA:', error);
+      throw error;
+    }
   }
 
   resetRecaptcha(widgetId?: number): void {
     if (typeof grecaptcha !== 'undefined') {
-      if (widgetId !== undefined) {
-        grecaptcha.reset(widgetId);
-      } else {
-        grecaptcha.reset();
+      try {
+        if (widgetId !== undefined) {
+          grecaptcha.reset(widgetId);
+        } else {
+          grecaptcha.reset();
+        }
+      } catch (error) {
+        // Silently ignore reCAPTCHA reset errors during component destruction
+        console.debug('reCAPTCHA reset error (ignored):', error);
       }
     }
   }
@@ -88,5 +105,29 @@ export class RecaptchaService {
     } else {
       return grecaptcha.getResponse();
     }
+  }
+
+  /**
+   * Re-render reCAPTCHA with current theme when theme changes
+   */
+  reRenderWithTheme(
+    elementId: string, 
+    callback: (token: string) => void,
+    currentWidgetId?: number
+  ): Promise<number> {
+    return new Promise((resolve) => {
+      // Reset the current widget if it exists
+      if (currentWidgetId !== undefined) {
+        console.log('Resetting reCAPTCHA widget:', currentWidgetId);
+        this.resetRecaptcha(currentWidgetId);
+      }
+
+      // Wait a bit for the reset to complete before rendering new widget
+      setTimeout(() => {
+        console.log('Rendering new reCAPTCHA with theme');
+        const newWidgetId = this.renderRecaptcha(elementId, callback);
+        resolve(newWidgetId);
+      }, 150);
+    });
   }
 }

@@ -45,6 +45,10 @@ export class WebSocketService {
 
   // Message handlers tracking
   private messageHandlers: ((msg: IncomingSocketMessage) => void)[] = [];
+  private messageSentHandlers: ((ack: AckPayload) => void)[] = [];
+  private messageReadHandlers: ((payload: ReadPayload) => void)[] = [];
+  private messageEditedHandlers: ((event: MessageEditedEvent) => void)[] = [];
+  private messageDeletedHandlers: ((event: MessageDeletedEvent) => void)[] = [];
 
   // Enhanced presence streams
   public readonly userOnline$ = new Subject<string>();
@@ -87,10 +91,12 @@ export class WebSocketService {
     this.cleanupSocket();
     this.resetState();
 
-    // Create socket with enhanced configuration
+    // Create socket with enhanced configuration (using cookies for auth)
     this.socket = io(environment.wsUrl, {
       transports: ['websocket', 'polling'],
-      auth: { token },
+      // Remove auth.token as we now use cookies for authentication
+      // auth: { token },
+      withCredentials: true, // Include cookies in WebSocket handshake
       reconnection: false, // Handle reconnection manually
       timeout: 10000,
       forceNew: true,
@@ -171,6 +177,8 @@ export class WebSocketService {
       this.zone.run(() => {
         logWs('Message sent ack:', ack.messageId);
         this._messageSentSubject.next(ack);
+        // Also call registered callbacks
+        this.messageSentHandlers.forEach((handler) => handler(ack));
       });
     });
 
@@ -178,6 +186,13 @@ export class WebSocketService {
       this.zone.run(() => {
         logWs('Typing indicator received:', data);
         this._typingSubject.next(data);
+      });
+    });
+
+    this.socket.on('message-read', (payload) => {
+      this.zone.run(() => {
+        logWs('Message read receipt:', payload.messageId);
+        this.messageReadHandlers.forEach((handler) => handler(payload));
       });
     });
 
@@ -299,9 +314,11 @@ export class WebSocketService {
       clearTimeout(this.reconnectionTimer);
     }
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      logWs('No token available for reconnection');
+    // Check if user is authenticated (JWT is now in HttpOnly cookies)
+    const username = localStorage.getItem('username');
+    const userId = localStorage.getItem('userId');
+    if (!username || !userId) {
+      logWs('No auth data available for reconnection');
       return;
     }
 
@@ -332,7 +349,7 @@ export class WebSocketService {
       logWs(
         `Attempting reconnection (attempt ${this.connectionState.reconnectAttempts})`
       );
-      this.connect(token);
+      this.connect(''); // Empty token - will use cookies for auth
     }, backoffDelay);
   }
 
@@ -542,11 +559,14 @@ export class WebSocketService {
   }
 
   onMessageSent(cb: (ack: AckPayload) => void): void {
-    this.socket?.on('message-sent', (d) => this.zone.run(() => cb(d)));
+    this.messageSentHandlers.push(cb);
   }
 
   offMessageSent(cb: (ack: AckPayload) => void): void {
-    this.socket?.off('message-sent', cb);
+    const index = this.messageSentHandlers.indexOf(cb);
+    if (index > -1) {
+      this.messageSentHandlers.splice(index, 1);
+    }
   }
 
   // Read receipts
@@ -555,11 +575,14 @@ export class WebSocketService {
   }
 
   onMessageRead(cb: (data: ReadPayload) => void): void {
-    this.socket?.on('message-read', (d) => this.zone.run(() => cb(d)));
+    this.messageReadHandlers.push(cb);
   }
 
   offMessageRead(cb: (payload: ReadPayload) => void): void {
-    this.socket?.off('message-read', cb);
+    const index = this.messageReadHandlers.indexOf(cb);
+    if (index > -1) {
+      this.messageReadHandlers.splice(index, 1);
+    }
   }
 
   // Utility methods
@@ -621,8 +644,10 @@ export class WebSocketService {
    * Manual reconnect (for backwards compatibility)
    */
   reconnect(): void {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    // Check if user is authenticated (JWT is now in HttpOnly cookies)
+    const username = localStorage.getItem('username');
+    const userId = localStorage.getItem('userId');
+    if (!username || !userId) return;
 
     logWs('Manual reconnect requested');
     this.forceReconnect();
@@ -632,14 +657,16 @@ export class WebSocketService {
    * Force reconnection (for manual retry)
    */
   forceReconnect(): void {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    // Check if user is authenticated (JWT is now in HttpOnly cookies)
+    const username = localStorage.getItem('username');
+    const userId = localStorage.getItem('userId');
+    if (!username || !userId) return;
 
     logWs('Force reconnection requested');
     this.disconnect();
 
     setTimeout(() => {
-      this.connect(token);
+      this.connect(''); // Empty token - will use cookies for auth
     }, 1000);
   }
 }
