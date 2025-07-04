@@ -79,6 +79,8 @@ conversations remain completely private with zero data logging and client-side e
 - **Deployment**: Railway/Cloud platforms
 - **Build Tools**: TypeScript, Webpack
 - **Package Manager**: npm
+- **Code Quality**: ESLint, Prettier, Stylelint, Husky pre-commit hooks
+- **Linting**: Comprehensive linting for Angular, Node.js, and Astro
 
 ### Project Structure
 
@@ -121,6 +123,14 @@ quasar-contact-app/
 │   └── package.json
 ├── public/                 # Generated static files (from Astro)
 ├── dist/                   # Production build output
+├── docs/                   # Documentation
+│   ├── LINTING.md         # Code quality and linting guide
+│   └── COOKIE_STRATEGY.md # Cookie and analytics strategy
+├── .husky/                 # Git hooks
+├── eslint.config.js        # Root ESLint configuration
+├── .prettierrc.js          # Prettier configuration
+├── .stylelintrc.js         # Stylelint configuration
+├── .lintstagedrc.js        # lint-staged configuration
 ├── Dockerfile              # Container configuration
 ├── nixpacks.toml           # Nixpacks deployment config
 └── package.json            # Root package file
@@ -246,6 +256,8 @@ quasar-contact-app/
    ```
 
 ## 📝 API Documentation
+
+**Note**: All endpoints except authentication require valid JWT tokens and are rate-limited.
 
 ### Authentication Endpoints
 
