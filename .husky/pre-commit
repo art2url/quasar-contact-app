@@ -1,0 +1,10 @@
+# Run lint-staged for formatting and linting
+npx lint-staged
+
+# Run type checking for all projects
+echo "🔍 Running type checks..."
+cd frontend && npm run typecheck
+cd ../backend && npm run typecheck
+cd ../landing && npm run typecheck
+
+echo "✅ Pre-commit checks passed!"

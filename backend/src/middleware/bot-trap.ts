@@ -31,7 +31,7 @@ const getClientIP = (req: Request): string => {
 // ─── Bot Trap Middleware ───────────────────────────────────
 export const setupBotTraps = (app: any): void => {
   // Set up trap endpoints
-  TRAP_PATHS.forEach((trapPath) => {
+  TRAP_PATHS.forEach(trapPath => {
     app.get(trapPath, (req: Request, res: Response) => {
       const clientIP = getClientIP(req);
       trappedIPs.add(clientIP);
@@ -73,11 +73,7 @@ export const isIPTrapped = (ip: string): boolean => {
 };
 
 // ─── Trap Check Middleware ─────────────────────────────────
-export const checkTrappedIP = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
+export const checkTrappedIP = (req: Request, res: Response, next: NextFunction): void => {
   const clientIP = getClientIP(req);
 
   if (isIPTrapped(clientIP)) {

@@ -144,11 +144,9 @@ export class ResetPasswordComponent implements OnInit {
         // This tells the auth service to generate new keys on next login
         this.authService.markPostPasswordReset();
 
-        console.log(
-          '[ResetPassword] Password reset successful, marked post-reset state'
-        );
+        console.log('[ResetPassword] Password reset successful, marked post-reset state');
       },
-      error: (err) => {
+      error: err => {
         this.isLoading = false;
 
         if (err.status === 400 || err.status === 401) {

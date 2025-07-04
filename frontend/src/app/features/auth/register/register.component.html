@@ -18,15 +18,12 @@
             [disabled]="isLoading"
             autocomplete="username"
             placeholder="Choose a unique username"
-            #usernameInput
-          />
+            #usernameInput />
           <mat-icon matPrefix>person</mat-icon>
           <mat-hint *ngIf="username.length > 0 && username.length < 3">
             Username must be at least 3 characters
           </mat-hint>
-          <mat-error *ngIf="!username && formSubmitted">
-            Username is required
-          </mat-error>
+          <mat-error *ngIf="!username && formSubmitted"> Username is required </mat-error>
         </mat-form-field>
       </div>
       <div class="form-group">
@@ -41,20 +38,13 @@
             [disabled]="isLoading"
             autocomplete="email"
             placeholder="Enter your email address"
-            #emailInput
-          />
+            #emailInput />
           <mat-icon matPrefix>email</mat-icon>
           <mat-hint>
-            <span [class.hint-valid]="isValidEmail(email)">
-              Valid email address
-            </span>
+            <span [class.hint-valid]="isValidEmail(email)"> Valid email address </span>
           </mat-hint>
-          <mat-error *ngIf="!email && formSubmitted">
-            Email is required
-          </mat-error>
-          <mat-error *ngIf="email && !isValidEmail(email)">
-            Please enter a valid email address
-          </mat-error>
+          <mat-error *ngIf="!email && formSubmitted"> Email is required </mat-error>
+          <mat-error *ngIf="email && !isValidEmail(email)"> Please enter a valid email address </mat-error>
         </mat-form-field>
       </div>
 
@@ -70,28 +60,20 @@
             [disabled]="isLoading"
             autocomplete="new-password"
             placeholder="Create a strong password"
-            #passwordInput
-          />
+            #passwordInput />
           <mat-icon matPrefix>lock</mat-icon>
           <button
             mat-icon-button
             matSuffix
             type="button"
             (click)="hidePassword = !hidePassword"
-            [attr.aria-label]="'Hide password'"
-          >
-            <mat-icon>{{
-              hidePassword ? 'visibility_off' : 'visibility'
-            }}</mat-icon>
+            [attr.aria-label]="'Hide password'">
+            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
           <mat-hint>
-            <span [class.hint-valid]="password.length >= 6">
-              At least 6 characters
-            </span>
+            <span [class.hint-valid]="password.length >= 6"> At least 6 characters </span>
           </mat-hint>
-          <mat-error *ngIf="!password && formSubmitted">
-            Password is required
-          </mat-error>
+          <mat-error *ngIf="!password && formSubmitted"> Password is required </mat-error>
         </mat-form-field>
       </div>
 
@@ -103,8 +85,7 @@
             [class.weak]="getPasswordStrength() === 'weak'"
             [class.medium]="getPasswordStrength() === 'medium'"
             [class.strong]="getPasswordStrength() === 'strong'"
-            [style.width.%]="getPasswordStrengthPercent()"
-          ></div>
+            [style.width.%]="getPasswordStrengthPercent()"></div>
         </div>
         <div class="strength-text" [class]="getPasswordStrength()">
           {{ getPasswordStrengthText() }}
@@ -122,8 +103,7 @@
       <div class="form-info">
         <mat-icon>info</mat-icon>
         <p>
-          Your password encrypts your messages. If you forget it, you won't be
-          able to recover your message history.
+          Your password encrypts your messages. If you forget it, you won't be able to recover your message history.
         </p>
       </div>
 
@@ -137,14 +117,9 @@
         color="primary"
         type="submit"
         class="submit-button full-width"
-        [disabled]="isLoading || !isFormValid()"
-      >
+        [disabled]="isLoading || !isFormValid()">
         <span class="submit-button-content">
-          <mat-spinner
-            *ngIf="isLoading"
-            diameter="20"
-            class="button-spinner"
-          ></mat-spinner>
+          <mat-spinner *ngIf="isLoading" diameter="20" class="button-spinner"></mat-spinner>
           {{ isLoading ? 'Creating account...' : 'Create Account' }}
         </span>
       </button>

@@ -24,9 +24,7 @@ export class ThemeService {
       this.currentTheme = savedTheme;
     } else {
       // Check system preference
-      const prefersDark = window.matchMedia(
-        '(prefers-color-scheme: dark)'
-      ).matches;
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       this.currentTheme = prefersDark ? 'dark' : 'dark';
     }
 

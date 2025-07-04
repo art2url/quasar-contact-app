@@ -14,4 +14,4 @@ bootstrapApplication(AppComponent, {
     // Switch to using withInterceptors for functional interceptors
     provideHttpClient(withInterceptors([authInterceptor])),
   ],
-}).catch((err) => console.error(err));
+}).catch(err => console.error(err));

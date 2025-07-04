@@ -1,4 +1,4 @@
-import cors, {CorsOptions} from 'cors';
+import cors, { CorsOptions } from 'cors';
 import env from './env';
 
 // Explicitly set allowed origins for development and production

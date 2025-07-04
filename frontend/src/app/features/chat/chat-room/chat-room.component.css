@@ -167,7 +167,7 @@
 }
 
 .date-header::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   right: 0;
@@ -308,7 +308,7 @@
 
 /* Add typing animation dots */
 .typing-indicator::after {
-  content: '';
+  content: "";
   display: inline-block;
   width: 20px;
   text-align: left;
@@ -329,17 +329,17 @@
 @keyframes typingDots {
   0%,
   20% {
-    content: '';
+    content: "";
   }
   40% {
-    content: '.';
+    content: ".";
   }
   60% {
-    content: '..';
+    content: "..";
   }
   80%,
   100% {
-    content: '...';
+    content: "...";
   }
 }
 
@@ -648,18 +648,14 @@
 
 @media (max-width: 1024px) {
   .chat-wrapper {
-    height: calc(
-      100vh - var(--header-height) - var(--footer-height) - var(--spacing-xl)
-    );
+    height: calc(100vh - var(--header-height) - var(--footer-height) - var(--spacing-xl));
   }
 }
 
 @media (max-width: 768px) {
   .chat-wrapper {
     padding: 0 var(--spacing-md);
-    height: calc(
-      100vh - var(--header-height) - var(--footer-height) - var(--spacing-md)
-    );
+    height: calc(100vh - var(--header-height) - var(--footer-height) - var(--spacing-md));
   }
 }
 

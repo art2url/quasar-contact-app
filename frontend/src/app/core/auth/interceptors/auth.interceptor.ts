@@ -1,4 +1,4 @@
-import {inject} from '@angular/core';
+import { inject } from '@angular/core';
 import {
   HttpRequest,
   HttpHandlerFn,
@@ -6,9 +6,9 @@ import {
   HttpInterceptorFn,
   HttpEvent,
 } from '@angular/common/http';
-import {Router} from '@angular/router';
-import {catchError, throwError, timer, mergeMap, Observable} from 'rxjs';
-import {CsrfService} from '../../services/csrf.service';
+import { Router } from '@angular/router';
+import { catchError, throwError, timer, mergeMap, Observable } from 'rxjs';
+import { CsrfService } from '../../services/csrf.service';
 
 // Track rate limiting across the application using Record instead of index signature
 const rateLimitedUntil: Record<string, number> = {};
@@ -32,9 +32,7 @@ export const authInterceptor: HttpInterceptorFn = (
   if (limitUntil > now) {
     const waitTime = limitUntil - now;
     console.log(
-      `URL ${urlKey} is rate limited. Waiting ${Math.ceil(
-        waitTime / 1000
-      )} seconds...`
+      `URL ${urlKey} is rate limited. Waiting ${Math.ceil(waitTime / 1000)} seconds...`
     );
     return timer(waitTime).pipe(
       mergeMap(() => proceedWithRequest(req, next, router, urlKey, csrfService))
@@ -66,22 +64,25 @@ function proceedWithRequest(
   // Always include credentials (cookies) for all API requests
   request = request.clone({
     setHeaders: {},
-    withCredentials: true
+    withCredentials: true,
   });
 
   // Handle CSRF token for state-changing operations (POST, PUT, DELETE, PATCH)
   const needsCSRF = !['GET', 'HEAD', 'OPTIONS'].includes(request.method);
-  
+
   if (needsCSRF) {
     const csrfToken = csrfService.getToken();
     if (csrfToken) {
       console.log('[AuthInterceptor] Adding CSRF token to request:', request.url);
       request = request.clone({
         setHeaders: {
-          'X-CSRF-Token': csrfToken
-        }
+          'X-CSRF-Token': csrfToken,
+        },
       });
-    } else if (!request.url.includes('/api/auth/login') && !request.url.includes('/api/auth/register')) {
+    } else if (
+      !request.url.includes('/api/auth/login') &&
+      !request.url.includes('/api/auth/register')
+    ) {
       console.warn('[AuthInterceptor] No CSRF token found for state-changing request!');
     }
   }
@@ -91,11 +92,7 @@ function proceedWithRequest(
   // Forward the request with error handling
   return next(request).pipe(
     catchError((error: HttpErrorResponse) => {
-      console.error(
-        '[AuthInterceptor] Request error:',
-        error.status,
-        request.url
-      );
+      console.error('[AuthInterceptor] Request error:', error.status, request.url);
 
       if (error.status === 429) {
         return handleRateLimitError(error, urlKey);

@@ -14,7 +14,7 @@ export class CacheDebugUtil {
     console.log(
       `[CacheDebug] Found ${keys.length} cache keys for ${userId} -> ${roomId}:`
     );
-    keys.forEach((key) => {
+    keys.forEach(key => {
       console.log(`[CacheDebug]   - ${key}`);
     });
 
@@ -36,12 +36,10 @@ export class CacheDebugUtil {
   testTimestampParsing(timestamps: (string | number | Date | unknown)[]): void {
     console.log('[CacheDebug] Testing timestamp parsing:');
 
-    timestamps.forEach((ts) => {
+    timestamps.forEach(ts => {
       const result = this.parseTimestamp(ts);
       console.log(
-        `[CacheDebug]   ${ts} (${typeof ts}) -> ${result} ${
-          isNaN(result) ? '❌' : '✅'
-        }`
+        `[CacheDebug]   ${ts} (${typeof ts}) -> ${result} ${isNaN(result) ? '❌' : '✅'}`
       );
     });
   }

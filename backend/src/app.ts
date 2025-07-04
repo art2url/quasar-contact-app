@@ -121,14 +121,8 @@ const staticOptions = {
   redirect: true, // Enable redirects for proper directory access
 };
 
-app.use(
-  '/',
-  express.static(path.join(__dirname, '../../public'), staticOptions)
-);
-app.use(
-  '/app',
-  express.static(path.join(__dirname, '../../dist'), staticOptions)
-);
+app.use('/', express.static(path.join(__dirname, '../../public'), staticOptions));
+app.use('/app', express.static(path.join(__dirname, '../../dist'), staticOptions));
 app.use(express.static(path.join(__dirname, '../../dist'), staticOptions));
 
 // ─── SECURITY LAYER 6: Smart Rate Limiting ─────────────────
@@ -145,14 +139,14 @@ const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => {
+  skip: req => {
     // Only apply to sensitive endpoints
     const sensitiveEndpoints = [
       '/api/auth/login',
       '/api/auth/register',
       '/api/auth/forgot-password',
     ];
-    return !sensitiveEndpoints.some((endpoint) => req.path === endpoint);
+    return !sensitiveEndpoints.some(endpoint => req.path === endpoint);
   },
   handler: (req, res) => {
     console.log(`⚠️  Rate limit exceeded for ${req.ip} on ${req.path}`);
@@ -171,13 +165,11 @@ const apiLimiter = rateLimit({
     error: 'Too many requests',
     type: 'api_rate_limit',
   },
-  skip: (req) => {
+  skip: req => {
     // Skip rate limiting for static assets
-    return !!req.path.match(
-      /\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/
-    );
+    return !!req.path.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/);
   },
-  keyGenerator: (req) => {
+  keyGenerator: req => {
     // Use the real IP from X-Forwarded-For header
     return req.ip || 'unknown';
   },

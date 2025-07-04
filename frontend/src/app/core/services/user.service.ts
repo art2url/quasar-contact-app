@@ -20,10 +20,7 @@ export class UserService {
 
   /** List **all** users (admin / pick-contact screen) */
   listUsers(): Observable<UserSummary[]> {
-    console.log(
-      '[UserService] Fetching all users from:',
-      `${environment.apiUrl}/users`
-    );
+    console.log('[UserService] Fetching all users from:', `${environment.apiUrl}/users`);
 
     // Check if user is authenticated (JWT is now in HttpOnly cookies)
     const username = localStorage.getItem('username');
@@ -36,14 +33,11 @@ export class UserService {
     // Headers handled automatically by HTTP interceptor with cookies
 
     return this.http.get<UserSummary[]>(`${environment.apiUrl}/users`).pipe(
-      tap((users) => {
-        console.log(
-          '[UserService] Users response successful, count:',
-          users.length
-        );
+      tap(users => {
+        console.log('[UserService] Users response successful, count:', users.length);
         console.log('[UserService] First few users:', users.slice(0, 3));
       }),
-      catchError((error) => {
+      catchError(error => {
         console.error('[UserService] Error fetching users:', error);
 
         // Log more details about the error
@@ -92,22 +86,15 @@ export class UserService {
     }
 
     const apiUrl = `${environment.apiUrl}/users`;
-    console.log(
-      '[UserService] Searching users with query:',
-      query,
-      'URL:',
-      apiUrl
-    );
+    console.log('[UserService] Searching users with query:', query, 'URL:', apiUrl);
 
     return this.http
       .get<UserSummary[]>(apiUrl, {
         params: { query },
       })
       .pipe(
-        tap((users) =>
-          console.log('[UserService] User search results:', users)
-        ),
-        catchError((error) => {
+        tap(users => console.log('[UserService] User search results:', users)),
+        catchError(error => {
           console.error('[UserService] Error searching users:', error);
           return of([]);
         })
@@ -141,8 +128,8 @@ export class UserService {
     // Headers handled automatically by HTTP interceptor with cookies
 
     return this.http.get<UserSummary[]>(apiUrl).pipe(
-      tap((response) => console.log('[UserService] DM response:', response)),
-      catchError((error) => {
+      tap(response => console.log('[UserService] DM response:', response)),
+      catchError(error => {
         console.error('[UserService] DM list error:', error);
 
         // Try to extract more details about the error

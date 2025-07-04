@@ -37,13 +37,11 @@ export const env: EnvConfig = {
 
   // Email settings (optional)
   SMTP_HOST: process.env.SMTP_HOST,
-  SMTP_PORT: process.env.SMTP_PORT
-    ? parseInt(process.env.SMTP_PORT, 10)
-    : undefined,
+  SMTP_PORT: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : undefined,
   SMTP_SECURE: process.env.SMTP_SECURE === 'true',
   SMTP_USER: process.env.SMTP_USER,
   SMTP_PASS: process.env.SMTP_PASS,
-  SMTP_FROM: process.env.SMTP_FROM || `noreply@quasar.contact`,
+  SMTP_FROM: process.env.SMTP_FROM || 'noreply@quasar.contact',
 };
 
 // Validate required environment variables

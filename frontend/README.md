@@ -2,7 +2,8 @@
 
 Angular 18 application for the Quasar Contact secure chat client.
 
-Originally developed as a separate repository: [quasar-secure-chat](https://github.com/art2url/quasar-secure-chat)
+Originally developed as a separate repository:
+[quasar-secure-chat](https://github.com/art2url/quasar-secure-chat)
 
 ## Quick Start
 

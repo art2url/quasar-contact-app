@@ -43,7 +43,7 @@ const io = new Server(server, {
 });
 
 // Enhanced server monitoring and logging
-io.engine.on('connection_error', (err) => {
+io.engine.on('connection_error', err => {
   console.error('❌ Socket.IO connection error:', {
     req: err.req?.url,
     code: err.code,
@@ -53,10 +53,10 @@ io.engine.on('connection_error', (err) => {
 });
 
 // Monitor socket connections for debugging
-io.on('connection', (socket) => {
+io.on('connection', socket => {
   console.log(`🔌 New socket connection: ${socket.id}`);
 
-  socket.on('disconnect', (reason) => {
+  socket.on('disconnect', reason => {
     console.log(`❌ Socket ${socket.id} disconnected: ${reason}`);
   });
 });
@@ -81,7 +81,7 @@ mongoose
       console.log(`🏠 Landing: http://localhost:${env.PORT}/`);
       console.log(`💬 Chat App: http://localhost:${env.PORT}/app`);
       console.log(`🛠️  API: http://localhost:${env.PORT}/api`);
-      console.log(`📡 Socket.IO transports: websocket, polling`);
+      console.log('📡 Socket.IO transports: websocket, polling');
       console.log(`⏰ Ping interval: ${25000}ms, timeout: ${60000}ms`);
 
       if (process.env.NODE_ENV === 'development') {
@@ -89,13 +89,13 @@ mongoose
       }
     });
   })
-  .catch((err) => {
+  .catch(err => {
     console.error('❌ DB connection failed:', err);
     process.exit(1);
   });
 
 // Enhanced server error handling
-server.on('error', (err) => {
+server.on('error', err => {
   console.error('❌ Server error:', err);
 });
 
@@ -135,7 +135,7 @@ process.on('SIGINT', () => {
 });
 
 // Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
+process.on('uncaughtException', err => {
   console.error('❌ Uncaught Exception:', err);
   process.exit(1);
 });

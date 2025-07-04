@@ -1,5 +1,5 @@
 /* You can add global styles to this file, and also import other style files */
-@import '@angular/material/prebuilt-themes/indigo-pink.css';
+@import "@angular/material/prebuilt-themes/indigo-pink.css";
 
 /* Global Angular Material button hover override */
 .header button:hover,
@@ -53,7 +53,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: 'Raleway', sans-serif !important;
+  font-family: "Raleway", sans-serif !important;
   font-optical-sizing: auto;
   font-weight: 700;
   font-style: normal;
@@ -62,59 +62,57 @@ h6 {
 /* 2. Base elements use Jost */
 html,
 body {
-  font-family: 'Jost', sans-serif;
+  font-family: "Jost", sans-serif;
   font-optical-sizing: auto;
 }
 
 /* 3. All other elements use Jost, but exclude icons AND headers */
-*:not(.material-icons):not(.mat-icon):not([class*='icon']):not(
-    [data-mat-icon-type]
-  ):not(.mdi):not(.fa):not(.fas):not(.far):not(.fab):not(.fal):not(.fad):not(
-    .fass
-  ):not(.fasr):not(.fasl):not(.fasd):not(h1):not(h2):not(h3):not(h4):not(
-    h5
-  ):not(h6) {
-  font-family: 'Jost', sans-serif !important;
+*:not(.material-icons):not(.mat-icon):not([class*="icon"]):not([data-mat-icon-type]):not(.mdi):not(
+    .fa
+  ):not(.fas):not(.far):not(.fab):not(.fal):not(.fad):not(.fass):not(.fasr):not(.fasl):not(
+    .fasd
+  ):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
+  font-family: "Jost", sans-serif !important;
   font-optical-sizing: auto;
 }
 
 /* 4. Specific HTML elements (excluding icons) */
 p,
 span:not(.material-icons):not(.mat-icon),
-div:not([class*='icon']),
+div:not([class*="icon"]),
 button:not(.mat-icon-button) span:not(.material-icons),
 input,
-input[type='text'],
-input[type='email'],
-input[type='password'],
-input[type='file'],
-input[type='search'],
-input[type='tel'],
-input[type='url'],
-input[type='number'],
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="file"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+input[type="number"],
 textarea,
 select,
-label:not([class*='icon']),
-a:not([class*='icon']),
+label:not([class*="icon"]),
+a:not([class*="icon"]),
 li,
 td,
 th,
 caption {
-  font-family: 'Jost', sans-serif !important;
+  font-family: "Jost", sans-serif !important;
   font-optical-sizing: auto;
 }
 
 /* Additional specific override for all inputs */
 input:not(.material-icons):not(.mat-icon) {
-  font-family: 'Jost', sans-serif !important;
+  font-family: "Jost", sans-serif !important;
   font-optical-sizing: auto;
 }
 
 /* Override Angular generated input styles */
-input[class*='_ngcontent'],
+input[class*="_ngcontent"],
 input[_ngcontent],
 input[ng-reflect] {
-  font-family: 'Jost', sans-serif !important;
+  font-family: "Jost", sans-serif !important;
   font-optical-sizing: auto;
 }
 
@@ -144,7 +142,7 @@ input[ng-reflect] {
 .mat-dialog-content,
 .mat-snack-bar-container,
 .mat-tooltip {
-  font-family: 'Jost', sans-serif !important;
+  font-family: "Jost", sans-serif !important;
 }
 
 /* 6. Override Material Design Components (MDC) typography (excluding icons) */
@@ -180,7 +178,7 @@ input[ng-reflect] {
 .mat-mdc-dialog-content,
 .mat-mdc-snack-bar-container,
 .mat-mdc-tooltip {
-  font-family: 'Jost', sans-serif !important;
+  font-family: "Jost", sans-serif !important;
 }
 
 /* 7. Preserve icon fonts - explicitly keep their original font families */
@@ -197,8 +195,8 @@ input[ng-reflect] {
 .fasr,
 .fasl,
 .fasd,
-[class*='icon-']:before,
-[class*='icon-']:after,
+[class*="icon-"]:before,
+[class*="icon-"]:after,
 .mat-icon-button .mat-icon,
 .mat-form-field-suffix .mat-icon,
 .mat-form-field-prefix .mat-icon,
@@ -206,39 +204,39 @@ input[ng-reflect] {
 .mat-datepicker-toggle-default-icon,
 .mat-calendar-arrow,
 .mat-expansion-indicator::after {
-  font-family: 'Material Icons', 'Material Icons Outlined',
-    'Font Awesome 5 Free', 'Font Awesome 5 Pro', 'MDI' !important;
+  font-family:
+    "Material Icons", "Material Icons Outlined", "Font Awesome 5 Free", "Font Awesome 5 Pro", "MDI" !important;
 }
 
 /* 8. Override CSS custom properties for non-header typography */
 :root {
-  --mat-sys-typescale-display-large-font-family-name: 'Jost', sans-serif;
-  --mat-sys-typescale-display-medium-font-family-name: 'Jost', sans-serif;
-  --mat-sys-typescale-display-small-font-family-name: 'Jost', sans-serif;
-  --mat-sys-typescale-headline-large-font-family-name: 'Raleway', sans-serif;
-  --mat-sys-typescale-headline-medium-font-family-name: 'Raleway', sans-serif;
-  --mat-sys-typescale-headline-small-font-family-name: 'Raleway', sans-serif;
-  --mat-sys-typescale-title-large-font-family-name: 'Raleway', sans-serif;
-  --mat-sys-typescale-title-medium-font-family-name: 'Raleway', sans-serif;
-  --mat-sys-typescale-title-small-font-family-name: 'Raleway', sans-serif;
-  --mat-sys-typescale-label-large-font-family-name: 'Jost', sans-serif;
-  --mat-sys-typescale-label-medium-font-family-name: 'Jost', sans-serif;
-  --mat-sys-typescale-label-small-font-family-name: 'Jost', sans-serif;
-  --mat-sys-typescale-body-large-font-family-name: 'Jost', sans-serif;
-  --mat-sys-typescale-body-medium-font-family-name: 'Jost', sans-serif;
-  --mat-sys-typescale-body-small-font-family-name: 'Jost', sans-serif;
+  --mat-sys-typescale-display-large-font-family-name: "Jost", sans-serif;
+  --mat-sys-typescale-display-medium-font-family-name: "Jost", sans-serif;
+  --mat-sys-typescale-display-small-font-family-name: "Jost", sans-serif;
+  --mat-sys-typescale-headline-large-font-family-name: "Raleway", sans-serif;
+  --mat-sys-typescale-headline-medium-font-family-name: "Raleway", sans-serif;
+  --mat-sys-typescale-headline-small-font-family-name: "Raleway", sans-serif;
+  --mat-sys-typescale-title-large-font-family-name: "Raleway", sans-serif;
+  --mat-sys-typescale-title-medium-font-family-name: "Raleway", sans-serif;
+  --mat-sys-typescale-title-small-font-family-name: "Raleway", sans-serif;
+  --mat-sys-typescale-label-large-font-family-name: "Jost", sans-serif;
+  --mat-sys-typescale-label-medium-font-family-name: "Jost", sans-serif;
+  --mat-sys-typescale-label-small-font-family-name: "Jost", sans-serif;
+  --mat-sys-typescale-body-large-font-family-name: "Jost", sans-serif;
+  --mat-sys-typescale-body-medium-font-family-name: "Jost", sans-serif;
+  --mat-sys-typescale-body-small-font-family-name: "Jost", sans-serif;
 }
 
 /* 9. Ensure Material Icons stay intact */
 .mat-icon {
-  font-family: 'Material Icons' !important;
-  font-feature-settings: 'liga';
+  font-family: "Material Icons" !important;
+  font-feature-settings: "liga";
 }
 
 .material-icons {
-  font-family: 'Material Icons' !important;
-  font-feature-settings: 'liga';
-  -webkit-font-feature-settings: 'liga';
+  font-family: "Material Icons" !important;
+  font-feature-settings: "liga";
+  -webkit-font-feature-settings: "liga";
   -webkit-font-smoothing: antialiased;
 }
 
@@ -466,7 +464,7 @@ body {
 }
 
 .recaptcha-error::before {
-  content: '⚠️';
+  content: "⚠️";
   font-size: 0.875rem;
 }
 
@@ -490,7 +488,7 @@ body {
 }
 
 .recaptcha-loading::before {
-  content: '🔄';
+  content: "🔄";
   margin-right: 8px;
   animation: spin 1s linear infinite;
 }
@@ -528,7 +526,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .recaptcha-loading::before {
     animation: none;
-    content: '⏳';
+    content: "⏳";
   }
 }
 
@@ -622,15 +620,9 @@ select:focus {
 
 /* Override Material Design button hover effects for dark theme */
 .dark-theme .mat-mdc-button:not(:disabled):hover .mdc-button__ripple::before,
-.dark-theme
-  .mat-mdc-raised-button:not(:disabled):hover
-  .mdc-button__ripple::before,
-.dark-theme
-  .mat-mdc-outlined-button:not(:disabled):hover
-  .mdc-button__ripple::before,
-.dark-theme
-  .mat-mdc-unelevated-button:not(:disabled):hover
-  .mdc-button__ripple::before {
+.dark-theme .mat-mdc-raised-button:not(:disabled):hover .mdc-button__ripple::before,
+.dark-theme .mat-mdc-outlined-button:not(:disabled):hover .mdc-button__ripple::before,
+.dark-theme .mat-mdc-unelevated-button:not(:disabled):hover .mdc-button__ripple::before {
   opacity: 0 !important;
 }
 
@@ -657,12 +649,8 @@ select:focus {
   --mdc-circular-progress-active-indicator-color: var(--primary-color);
 }
 
-.dark-theme
-  .mat-mdc-progress-spinner
-  .mdc-circular-progress__determinate-circle,
-.dark-theme
-  .mat-mdc-progress-spinner
-  .mdc-circular-progress__indeterminate-circle-graphic,
+.dark-theme .mat-mdc-progress-spinner .mdc-circular-progress__determinate-circle,
+.dark-theme .mat-mdc-progress-spinner .mdc-circular-progress__indeterminate-circle-graphic,
 .dark-theme .mat-spinner .mdc-circular-progress__determinate-circle,
 .dark-theme .mat-spinner .mdc-circular-progress__indeterminate-circle-graphic {
   stroke: var(--primary-color) !important;
@@ -674,9 +662,7 @@ select:focus {
 }
 
 .dark-theme .button-spinner .mdc-circular-progress__determinate-circle,
-.dark-theme
-  .button-spinner
-  .mdc-circular-progress__indeterminate-circle-graphic {
+.dark-theme .button-spinner .mdc-circular-progress__indeterminate-circle-graphic {
   stroke: var(--button-text) !important;
 }
 
@@ -707,7 +693,7 @@ img.avatar,
 }
 
 .avatar-option::after {
-  content: '' !important;
+  content: "" !important;
   position: absolute !important;
   top: 50% !important;
   left: 50% !important;
@@ -721,7 +707,7 @@ img.avatar,
 }
 
 .avatar-option::before {
-  content: '' !important;
+  content: "" !important;
   position: absolute !important;
   top: 50% !important;
   left: 50% !important;
