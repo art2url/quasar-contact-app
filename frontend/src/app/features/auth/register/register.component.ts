@@ -65,7 +65,8 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
     private authService: AuthService,
     private router: Router,
     private loadingService: LoadingService,
-    private recaptchaService: RecaptchaService
+    private recaptchaService: RecaptchaService,
+    private themeService: ThemeService
   ) {}
 
   ngOnInit(): void {
@@ -75,6 +76,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngAfterViewInit(): void {
     this.initializeRecaptcha();
+    this.setupThemeSubscription();
   }
 
   private initializeRecaptcha(): void {
@@ -93,6 +95,65 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
           'Failed to load security verification. Please refresh the page.';
       }
     }, 500);
+  }
+
+  private setupThemeSubscription(): void {
+    console.log('[Register] Setting up theme subscription...');
+    let isFirstEmission = true;
+
+    this.themeSubscription = this.themeService.theme$.subscribe((theme) => {
+      console.log('[Register] Theme subscription triggered with theme:', theme);
+
+      if (isFirstEmission) {
+        isFirstEmission = false;
+        console.log('[Register] Skipping first emission');
+        return;
+      }
+
+      console.log('[Register] reCAPTCHA widget ID:', this.recaptchaWidgetId);
+
+      if (this.recaptchaWidgetId !== undefined) {
+        console.log('[Register] Re-rendering reCAPTCHA for theme:', theme);
+
+        // Reset the widget first
+        this.recaptchaService.resetRecaptcha(this.recaptchaWidgetId);
+        this.recaptchaToken = '';
+
+        // Completely remove and recreate the DOM element
+        const recaptchaElement = document.getElementById('recaptcha-register');
+        if (recaptchaElement && recaptchaElement.parentNode) {
+          const parent = recaptchaElement.parentNode;
+          const newElement = document.createElement('div');
+          newElement.id = 'recaptcha-register';
+          parent.replaceChild(newElement, recaptchaElement);
+          console.log('[Register] Recreated reCAPTCHA DOM element');
+        }
+
+        // Re-render with delay
+        setTimeout(() => {
+          try {
+            this.recaptchaWidgetId = this.recaptchaService.renderRecaptcha(
+              'recaptcha-register',
+              (token: string) => {
+                this.recaptchaToken = token;
+                this.error = '';
+              }
+            );
+            console.log(
+              '[Register] New reCAPTCHA widget ID:',
+              this.recaptchaWidgetId
+            );
+          } catch (error) {
+            console.error(
+              '[Register] Failed to re-render reCAPTCHA after theme change:',
+              error
+            );
+            // Don't show error to user for theme switching failures
+            // The form will still work, just without reCAPTCHA theme update
+          }
+        }, 300);
+      }
+    });
   }
 
   private resetRecaptcha(): void {
@@ -230,6 +291,11 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnDestroy(): void {
     if (this.recaptchaWidgetId !== undefined) {
       this.recaptchaService.resetRecaptcha(this.recaptchaWidgetId);
+    }
+
+    // Clean up theme subscription
+    if (this.themeSubscription) {
+      this.themeSubscription.unsubscribe();
     }
   }
 }

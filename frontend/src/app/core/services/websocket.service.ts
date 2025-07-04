@@ -45,6 +45,10 @@ export class WebSocketService {
 
   // Message handlers tracking
   private messageHandlers: ((msg: IncomingSocketMessage) => void)[] = [];
+  private messageSentHandlers: ((ack: AckPayload) => void)[] = [];
+  private messageReadHandlers: ((payload: ReadPayload) => void)[] = [];
+  private messageEditedHandlers: ((event: MessageEditedEvent) => void)[] = [];
+  private messageDeletedHandlers: ((event: MessageDeletedEvent) => void)[] = [];
 
   // Enhanced presence streams
   public readonly userOnline$ = new Subject<string>();
@@ -173,6 +177,8 @@ export class WebSocketService {
       this.zone.run(() => {
         logWs('Message sent ack:', ack.messageId);
         this._messageSentSubject.next(ack);
+        // Also call registered callbacks
+        this.messageSentHandlers.forEach((handler) => handler(ack));
       });
     });
 
@@ -180,6 +186,13 @@ export class WebSocketService {
       this.zone.run(() => {
         logWs('Typing indicator received:', data);
         this._typingSubject.next(data);
+      });
+    });
+
+    this.socket.on('message-read', (payload) => {
+      this.zone.run(() => {
+        logWs('Message read receipt:', payload.messageId);
+        this.messageReadHandlers.forEach((handler) => handler(payload));
       });
     });
 
@@ -546,11 +559,14 @@ export class WebSocketService {
   }
 
   onMessageSent(cb: (ack: AckPayload) => void): void {
-    this.socket?.on('message-sent', (d) => this.zone.run(() => cb(d)));
+    this.messageSentHandlers.push(cb);
   }
 
   offMessageSent(cb: (ack: AckPayload) => void): void {
-    this.socket?.off('message-sent', cb);
+    const index = this.messageSentHandlers.indexOf(cb);
+    if (index > -1) {
+      this.messageSentHandlers.splice(index, 1);
+    }
   }
 
   // Read receipts
@@ -559,11 +575,14 @@ export class WebSocketService {
   }
 
   onMessageRead(cb: (data: ReadPayload) => void): void {
-    this.socket?.on('message-read', (d) => this.zone.run(() => cb(d)));
+    this.messageReadHandlers.push(cb);
   }
 
   offMessageRead(cb: (payload: ReadPayload) => void): void {
-    this.socket?.off('message-read', cb);
+    const index = this.messageReadHandlers.indexOf(cb);
+    if (index > -1) {
+      this.messageReadHandlers.splice(index, 1);
+    }
   }
 
   // Utility methods

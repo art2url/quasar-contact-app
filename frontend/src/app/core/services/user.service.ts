@@ -35,33 +35,31 @@ export class UserService {
 
     // Headers handled automatically by HTTP interceptor with cookies
 
-    return this.http
-      .get<UserSummary[]>(`${environment.apiUrl}/users`)
-      .pipe(
-        tap((users) => {
-          console.log(
-            '[UserService] Users response successful, count:',
-            users.length
+    return this.http.get<UserSummary[]>(`${environment.apiUrl}/users`).pipe(
+      tap((users) => {
+        console.log(
+          '[UserService] Users response successful, count:',
+          users.length
+        );
+        console.log('[UserService] First few users:', users.slice(0, 3));
+      }),
+      catchError((error) => {
+        console.error('[UserService] Error fetching users:', error);
+
+        // Log more details about the error
+        if (error.status) {
+          console.error(
+            `[UserService] Status: ${error.status}, Message: ${error.message}`
           );
-          console.log('[UserService] First few users:', users.slice(0, 3));
-        }),
-        catchError((error) => {
-          console.error('[UserService] Error fetching users:', error);
+        }
 
-          // Log more details about the error
-          if (error.status) {
-            console.error(
-              `[UserService] Status: ${error.status}, Message: ${error.message}`
-            );
-          }
+        if (error.error) {
+          console.error('[UserService] Error details:', error.error);
+        }
 
-          if (error.error) {
-            console.error('[UserService] Error details:', error.error);
-          }
-
-          return of([]);
-        })
-      );
+        return of([]);
+      })
+    );
   }
 
   uploadPublicKey(publicKey: string): Observable<StandardResponse> {
@@ -88,8 +86,8 @@ export class UserService {
 
   /** Search users by name */
   searchUsers(query: string): Observable<UserSummary[]> {
-    if (!query || query.length < 2) {
-      console.log('[UserService] Search query too short:', query);
+    if (!query || query.trim().length === 0) {
+      console.log('[UserService] Search query is empty:', query);
       return of([]);
     }
 
