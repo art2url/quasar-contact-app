@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Button click effects
   const buttons = document.querySelectorAll('.cta-button, .header-button');
 
-  buttons.forEach((button) => {
+  buttons.forEach(button => {
     button.addEventListener('click', function (e) {
       // Create ripple effect
       const ripple = document.createElement('span');
@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function () {
   };
 
   const observer = new IntersectionObserver(function (entries) {
-    entries.forEach((entry) => {
+    entries.forEach(entry => {
       if (entry.isIntersecting) {
         entry.target.classList.add('animate-in');
       }
@@ -181,12 +181,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Observe elements for animation
   const animateElements = document.querySelectorAll('.fade-in-up');
-  animateElements.forEach((el) => {
+  animateElements.forEach(el => {
     observer.observe(el);
   });
 
   // Smooth scroll for anchor links
-  document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
       e.preventDefault();
       const target = document.querySelector(this.getAttribute('href'));
@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Feature hover effects
   const features = document.querySelectorAll('.feature');
-  features.forEach((feature) => {
+  features.forEach(feature => {
     feature.addEventListener('mouseenter', function () {
       this.style.transform = 'translateY(-10px) scale(1.02)';
     });
@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.body.classList.add('touch-device');
 
     // Enhanced touch feedback for buttons
-    buttons.forEach((button) => {
+    buttons.forEach(button => {
       button.addEventListener('touchstart', function () {
         this.style.transform = 'scale(0.95)';
       });
@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Preload critical images
   const criticalImages = ['/assets/images/logo.svg'];
 
-  criticalImages.forEach((src) => {
+  criticalImages.forEach(src => {
     const img = new Image();
     img.src = src;
   });

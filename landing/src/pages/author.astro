@@ -3,94 +3,82 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout
-  title='About Author - Quasar Contact'
-  description='Learn about Artem Turlenko, the creator of Quasar Contact secure messaging platform.'
+  title="About Author - Quasar Contact"
+  description="Learn about Artem Turlenko, the creator of Quasar Contact secure messaging platform."
 >
-  <div class='main-content page-content'>
-    <div class='container inner'>
-      <div class='page-header'>
+  <div class="main-content page-content">
+    <div class="container inner">
+      <div class="page-header">
         <h2>About the Author</h2>
-        <p class='page-subtitle'>Meet the creator behind Quasar Contact</p>
+        <p class="page-subtitle">Meet the creator behind Quasar Contact</p>
       </div>
 
-      <div class='author-content'>
-        <div class='author-intro'>
-          <div class='author-avatar'>
+      <div class="author-content">
+        <div class="author-intro">
+          <div class="author-avatar">
             <img
-              src='/assets/images/author-photo.jpg'
-              alt='Artem Turlenko - Software Developer'
-              class='author-photo'
+              src="/assets/images/author-photo.jpg"
+              alt="Artem Turlenko - Software Developer"
+              class="author-photo"
               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
             />
-            <div class='avatar-placeholder' style='display: none;'>
+            <div class="avatar-placeholder" style="display: none;">
               <svg
-                width='80'
-                height='80'
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                stroke-width='1.5'
+                width="80"
+                height="80"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
               >
-                <path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'></path>
-                <circle cx='12' cy='7' r='4'></circle>
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
               </svg>
             </div>
           </div>
-          <div class='author-info'>
+          <div class="author-info">
             <h2>Artem Turlenko</h2>
-            <p class='author-title-full'>
-              Software Developer | Full-Stack & UI/UX
-            </p>
-            <p class='author-title-short'>Software Full-Stack Developer</p>
-            <p class='author-location'>
+            <p class="author-title-full">Software Developer | Full-Stack & UI/UX</p>
+            <p class="author-title-short">Software Full-Stack Developer</p>
+            <p class="author-location">
               <svg
-                width='16'
-                height='16'
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                stroke-width='1.5'
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
               >
-                <path d='M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z'></path>
-                <circle cx='12' cy='10' r='3'></circle>
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
               </svg>
               Germany, North Rhine-Westphalia
             </p>
-            <div class='author-social'>
+            <div class="author-social">
               <a
-                href='https://github.com/art2url'
-                target='_blank'
-                rel='noopener noreferrer'
-                class='author-social-link'
-                aria-label='GitHub Profile'
+                href="https://github.com/art2url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="author-social-link"
+                aria-label="GitHub Profile"
               >
-                <svg
-                  width='20'
-                  height='20'
-                  viewBox='0 0 24 24'
-                  fill='currentColor'
-                >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                   <path
-                    d='M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z'
+                    d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
                   ></path>
                 </svg>
                 GitHub
               </a>
               <a
-                href='https://www.linkedin.com/in/artem-turlenko'
-                target='_blank'
-                rel='noopener noreferrer'
-                class='author-social-link'
-                aria-label='LinkedIn Profile'
+                href="https://www.linkedin.com/in/artem-turlenko"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="author-social-link"
+                aria-label="LinkedIn Profile"
               >
-                <svg
-                  width='20'
-                  height='20'
-                  viewBox='0 0 24 24'
-                  fill='currentColor'
-                >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                   <path
-                    d='M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z'
+                    d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"
                   ></path>
                 </svg>
                 LinkedIn
@@ -99,33 +87,30 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
         </div>
 
-        <div class='content-section'>
+        <div class="content-section">
           <h3>My Background</h3>
           <p>
-            With extensive experience in modern web technologies including
-            Angular, Node.js, and real-time communication systems, I've
-            dedicated my career to building secure, user-friendly applications.
-            My expertise spans frontend development, backend architecture,
-            encryption implementation, and database design.
+            With extensive experience in modern web technologies including Angular, Node.js, and
+            real-time communication systems, I've dedicated my career to building secure,
+            user-friendly applications. My expertise spans frontend development, backend
+            architecture, encryption implementation, and database design.
           </p>
         </div>
 
-        <div class='content-section'>
+        <div class="content-section">
           <h3>Why Quasar Contact?</h3>
           <p>
-            In today's digital landscape, privacy is becoming increasingly rare.
-            I built Quasar Contact to address this challenge - creating a
-            messaging platform that puts user privacy first, implements true
-            end-to-end encryption, and maintains a zero-knowledge architecture.
-            Every technical decision is made with user privacy and security in
-            mind.
+            In today's digital landscape, privacy is becoming increasingly rare. I built Quasar
+            Contact to address this challenge - creating a messaging platform that puts user privacy
+            first, implements true end-to-end encryption, and maintains a zero-knowledge
+            architecture. Every technical decision is made with user privacy and security in mind.
           </p>
         </div>
 
-        <div class='content-section'>
+        <div class="content-section">
           <h3>Technical Expertise</h3>
-          <div class='skills-grid'>
-            <div class='skill-category'>
+          <div class="skills-grid">
+            <div class="skill-category">
               <h4>Frontend</h4>
               <ul>
                 <li>Angular 18+</li>
@@ -135,7 +120,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 <li>Web Crypto API</li>
               </ul>
             </div>
-            <div class='skill-category'>
+            <div class="skill-category">
               <h4>Backend</h4>
               <ul>
                 <li>Node.js</li>
@@ -145,7 +130,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 <li>JWT Authentication</li>
               </ul>
             </div>
-            <div class='skill-category'>
+            <div class="skill-category">
               <h4>Security</h4>
               <ul>
                 <li>End-to-End Encryption</li>
@@ -158,100 +143,91 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
         </div>
 
-        <div class='content-section'>
+        <div class="content-section">
           <h3>Philosophy</h3>
           <p>I believe that:</p>
           <ul>
             <li>
-              <strong>Privacy is a fundamental right</strong> - Not a luxury or optional
-              feature
+              <strong>Privacy is a fundamental right</strong> - Not a luxury or optional feature
             </li>
             <li>
-              <strong>Security should be transparent</strong> - Users should understand
-              how their data is protected
+              <strong>Security should be transparent</strong> - Users should understand how their data
+              is protected
             </li>
             <li>
-              <strong>Technology should empower users</strong> - Not exploit or surveillance
-              them
+              <strong>Technology should empower users</strong> - Not exploit or surveillance them
             </li>
             <li>
-              <strong>Open communication fosters innovation</strong> - Feedback and
-              collaboration improve everything
+              <strong>Open communication fosters innovation</strong> - Feedback and collaboration improve
+              everything
             </li>
           </ul>
         </div>
 
-        <div class='content-section'>
+        <div class="content-section">
           <h3>Future Vision</h3>
           <p>
-            My goal is to continuously improve Quasar Contact based on user
-            feedback and evolving security needs. I'm committed to maintaining
-            the highest standards of privacy and security while making the
-            platform accessible to users of all technical backgrounds.
+            My goal is to continuously improve Quasar Contact based on user feedback and evolving
+            security needs. I'm committed to maintaining the highest standards of privacy and
+            security while making the platform accessible to users of all technical backgrounds.
           </p>
         </div>
 
-        <div class='contact-section'>
+        <div class="contact-section">
           <h3>Get in Touch</h3>
           <p>
-            I'm always open to feedback, suggestions, and discussions about
-            privacy, security, or technology in general.
+            I'm always open to feedback, suggestions, and discussions about privacy, security, or
+            technology in general.
           </p>
 
-          <div class='contact-links'>
-            <a href='mailto:artem.turlenko@quasar.contact' class='contact-link'>
+          <div class="contact-links">
+            <a href="mailto:artem.turlenko@quasar.contact" class="contact-link">
               <svg
-                width='20'
-                height='20'
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                stroke-width='2'
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
               >
-                <path d='m4 4 7.07 17 2.51-7.39 7.39-2.51L4 4z'></path>
+                <path d="m4 4 7.07 17 2.51-7.39 7.39-2.51L4 4z"></path>
               </svg>
               artem.turlenko@quasar.contact
             </a>
-            <a href='https://github.com/art2url' class='contact-link'>
-              <svg
-                width='20'
-                height='20'
-                viewBox='0 0 24 24'
-                fill='currentColor'
-              >
+            <a href="https://github.com/art2url" class="contact-link">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path
-                  d='M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z'
+                  d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
                 ></path>
               </svg>
               GitHub Profile
             </a>
           </div>
 
-          <div class='security-contact'>
+          <div class="security-contact">
             <svg
-              width='1024'
-              height='1024'
-              viewBox='0 0 1024 1024'
-              fill='none'
-              xmlns='http://www.w3.org/2000/svg'
+              width="1024"
+              height="1024"
+              viewBox="0 0 1024 1024"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
             >
               <path
-                d='M263.734 368.04L263.706 317.728C263.704 303.016 263.332 288.262 264.95 273.612C274.314 188.788 350.552 120.613 435.582 119.076C438.176 118.686 440.854 118.6 443.476 118.574C524.384 117.774 602.008 182.498 615.562 262.398C618.572 280.142 618.276 298.544 618.284 316.488L618.268 368.04C690.164 367.798 716.492 388.082 716.218 462.114L716.18 502.452C700.594 496.394 679.668 497.512 663.91 502.452C664.652 492.672 663.952 482.316 663.944 472.486C663.898 414.346 661.38 420.35 609.346 420.388L249.778 420.39C211.756 420.646 219.242 444.398 219.232 475.642L219.24 605.308C219.252 641.508 217.726 675.536 243.602 704.376C253.426 715.324 267.452 723.216 279.552 731.464L338.732 771.16C356.786 781.95 412.996 824.006 429.136 828.422C455.91 835.746 469.952 816.552 490.714 804.6C495.358 822.64 505.56 837.104 517.334 851.12C496.806 869.06 472.292 883.094 444.514 883.378C415.256 883.678 401.066 875.398 377.706 859.844L248.808 773.412C235.214 764.544 221.754 756.752 210.07 745.246C179.202 714.848 166.828 672.506 166.683 630.252L166.664 460.214C166.674 431.476 167.131 409.854 189.073 388.038C210.906 366.332 235.536 367.992 263.734 368.04ZM432.388 172.004C397.566 175.183 365.588 191.391 343.206 218.414C316.644 250.484 316.536 278.186 316.528 316.958L316.544 368.04H452.352H565.942L565.964 314.918C565.954 284.032 566.908 261.874 550.256 234.028C527.262 195.581 477.896 166.074 432.388 172.004Z'
-                fill='#68B684'></path>
+                d="M263.734 368.04L263.706 317.728C263.704 303.016 263.332 288.262 264.95 273.612C274.314 188.788 350.552 120.613 435.582 119.076C438.176 118.686 440.854 118.6 443.476 118.574C524.384 117.774 602.008 182.498 615.562 262.398C618.572 280.142 618.276 298.544 618.284 316.488L618.268 368.04C690.164 367.798 716.492 388.082 716.218 462.114L716.18 502.452C700.594 496.394 679.668 497.512 663.91 502.452C664.652 492.672 663.952 482.316 663.944 472.486C663.898 414.346 661.38 420.35 609.346 420.388L249.778 420.39C211.756 420.646 219.242 444.398 219.232 475.642L219.24 605.308C219.252 641.508 217.726 675.536 243.602 704.376C253.426 715.324 267.452 723.216 279.552 731.464L338.732 771.16C356.786 781.95 412.996 824.006 429.136 828.422C455.91 835.746 469.952 816.552 490.714 804.6C495.358 822.64 505.56 837.104 517.334 851.12C496.806 869.06 472.292 883.094 444.514 883.378C415.256 883.678 401.066 875.398 377.706 859.844L248.808 773.412C235.214 764.544 221.754 756.752 210.07 745.246C179.202 714.848 166.828 672.506 166.683 630.252L166.664 460.214C166.674 431.476 167.131 409.854 189.073 388.038C210.906 366.332 235.536 367.992 263.734 368.04ZM432.388 172.004C397.566 175.183 365.588 191.391 343.206 218.414C316.644 250.484 316.536 278.186 316.528 316.958L316.544 368.04H452.352H565.942L565.964 314.918C565.954 284.032 566.908 261.874 550.256 234.028C527.262 195.581 477.896 166.074 432.388 172.004Z"
+                fill="#68B684"></path>
               <path
-                d='M415.675 627.31C334.143 594.376 351.623 485.276 432.387 475.694C520.923 465.95 553.495 594.312 467.547 627.31L467.571 669.206C467.579 688.188 470.591 709.68 447.863 716.812C414.465 722.418 415.593 694.034 415.641 670.94L415.675 627.31ZM438.547 528.502C424.653 529.558 414.235 541.662 415.259 555.558C416.283 569.454 428.363 579.9 442.263 578.908C456.207 577.914 466.695 565.786 465.667 551.842C464.639 537.9 452.487 527.44 438.547 528.502Z'
-                fill='#68B684'></path>
+                d="M415.675 627.31C334.143 594.376 351.623 485.276 432.387 475.694C520.923 465.95 553.495 594.312 467.547 627.31L467.571 669.206C467.579 688.188 470.591 709.68 447.863 716.812C414.465 722.418 415.593 694.034 415.641 670.94L415.675 627.31ZM438.547 528.502C424.653 529.558 414.235 541.662 415.259 555.558C416.283 569.454 428.363 579.9 442.263 578.908C456.207 577.914 466.695 565.786 465.667 551.842C464.639 537.9 452.487 527.44 438.547 528.502Z"
+                fill="#68B684"></path>
               <path
-                d='M703.287 883.474C612.135 890.602 532.473 822.464 525.387 731.31C518.301 640.154 586.475 560.524 677.635 553.48C768.733 546.442 848.299 614.562 855.379 705.656C862.461 796.752 794.379 876.348 703.287 883.474ZM689.223 624.586C675.827 627.312 668.615 634.612 667.117 648C665.779 659.964 665.885 710.608 667.871 719.474C671.045 733.644 684.595 739.198 697.899 738.424C709.227 735.706 716.945 726.514 718.419 715.23C719.619 706.036 719.533 651.038 717.373 643.648C713.583 630.692 702.169 624.042 689.223 624.586ZM689.083 757.634C675.395 760.406 666.503 773.694 669.161 787.406C671.819 801.116 684.167 810.12 697.899 807.576C711.795 805.004 721.795 791.598 719.105 777.724C716.417 763.85 702.933 754.828 689.083 757.634Z'
-                fill='#68B684'></path>
+                d="M703.287 883.474C612.135 890.602 532.473 822.464 525.387 731.31C518.301 640.154 586.475 560.524 677.635 553.48C768.733 546.442 848.299 614.562 855.379 705.656C862.461 796.752 794.379 876.348 703.287 883.474ZM689.223 624.586C675.827 627.312 668.615 634.612 667.117 648C665.779 659.964 665.885 710.608 667.871 719.474C671.045 733.644 684.595 739.198 697.899 738.424C709.227 735.706 716.945 726.514 718.419 715.23C719.619 706.036 719.533 651.038 717.373 643.648C713.583 630.692 702.169 624.042 689.223 624.586ZM689.083 757.634C675.395 760.406 666.503 773.694 669.161 787.406C671.819 801.116 684.167 810.12 697.899 807.576C711.795 805.004 721.795 791.598 719.105 777.724C716.417 763.85 702.933 754.828 689.083 757.634Z"
+                fill="#68B684"></path>
             </svg>
 
-            <div class='security-contact-content'>
+            <div class="security-contact-content">
               <h4>Security Issues</h4>
               <p>For security vulnerabilities or concerns, please contact:</p>
-              <a
-                href='mailto:artem.turlenko@quasar.contact'
-                class='security-email'>artem.turlenko@quasar.contact</a
+              <a href="mailto:artem.turlenko@quasar.contact" class="security-email"
+                >artem.turlenko@quasar.contact</a
               >
             </div>
           </div>

@@ -1,6 +1,7 @@
 # Linting and Code Quality Setup
 
-This project uses a comprehensive linting and formatting setup across all technologies: Angular, Node.js, Astro, TypeScript, CSS, and HTML.
+This project uses a comprehensive linting and formatting setup across all technologies: Angular,
+Node.js, Astro, TypeScript, CSS, and HTML.
 
 ## Tools Used
 
@@ -14,24 +15,25 @@ This project uses a comprehensive linting and formatting setup across all techno
 ## Project Structure
 
 ```
-├── .eslintrc.js          # Root ESLint config
-├── .prettierrc.js        # Prettier config
+├── eslint.config.js      # Root ESLint config (flat config)
+├── .prettierrc.js        # Prettier config with Astro plugin
 ├── .prettierignore       # Prettier ignore patterns
 ├── .stylelintrc.js       # Stylelint config
 ├── .lintstagedrc.js      # lint-staged config
 ├── .husky/
 │   └── pre-commit        # Pre-commit hooks
 ├── frontend/
-│   └── eslint.config.js  # Angular-specific ESLint
+│   └── eslint.config.js  # Angular-specific ESLint (flat config)
 ├── backend/
-│   └── .eslintrc.js      # Node.js-specific ESLint
+│   └── eslint.config.js  # Node.js-specific ESLint (flat config)
 └── landing/
-    └── .eslintrc.js      # Astro-specific ESLint
+    └── eslint.config.js  # Astro-specific ESLint (flat config)
 ```
 
 ## Available Scripts
 
 ### Root Level
+
 ```bash
 # Lint all projects
 npm run lint
@@ -53,9 +55,11 @@ npm run style:fix
 ```
 
 ### Per Project
+
 Each project (frontend, backend, landing) has its own linting scripts:
 
 #### Frontend (Angular)
+
 ```bash
 cd frontend
 npm run lint           # ESLint for TS/HTML
@@ -69,6 +73,7 @@ npm run style:fix      # Fix all issues
 ```
 
 #### Backend (Node.js)
+
 ```bash
 cd backend
 npm run lint           # ESLint for TypeScript
@@ -80,6 +85,7 @@ npm run style:fix      # Fix all issues
 ```
 
 #### Landing (Astro)
+
 ```bash
 cd landing
 npm run lint           # ESLint for Astro/TS/JS
@@ -94,6 +100,7 @@ npm run style:fix      # Fix all issues
 ## IDE Integration
 
 ### VS Code
+
 Install these extensions for the best experience:
 
 ```json
@@ -109,6 +116,7 @@ Install these extensions for the best experience:
 ```
 
 Add to your VS Code settings.json:
+
 ```json
 {
   "editor.formatOnSave": true,
@@ -128,6 +136,7 @@ The project uses Husky to run linting and formatting checks before each commit:
 3. **Format checking**: Ensures all code is properly formatted
 
 To bypass pre-commit hooks (not recommended):
+
 ```bash
 git commit --no-verify
 ```
@@ -135,19 +144,25 @@ git commit --no-verify
 ## Configuration Details
 
 ### ESLint Rules
-- **Root**: Basic JavaScript/TypeScript rules
+
+- **Modern Flat Config**: All projects use ESLint's new flat configuration format
+  (`eslint.config.js`)
+- **Root**: Basic JavaScript/TypeScript rules with ignores for project directories
 - **Frontend**: Angular-specific rules + TypeScript strict mode
-- **Backend**: Node.js specific rules + security rules
-- **Landing**: Astro-specific rules + TypeScript
+- **Backend**: Node.js specific rules + security rules + unused variable handling
+- **Landing**: Astro-specific rules + TypeScript with declaration file exclusions
 
 ### Prettier Configuration
+
 - Single quotes for strings
 - 2-space indentation
 - Trailing commas where valid
 - 80-character line width (varies by file type)
-- Different rules for JSON, Markdown, HTML, CSS
+- Different rules for JSON, Markdown, HTML, CSS, Astro
+- **Astro Support**: Includes `prettier-plugin-astro` for .astro file formatting
 
 ### Stylelint Rules
+
 - Standard CSS rules
 - Property ordering (Recess order)
 - SCSS support
@@ -157,16 +172,28 @@ git commit --no-verify
 ## Setup for New Contributors
 
 1. **Install dependencies**:
+
    ```bash
    npm run install:all
    ```
 
-2. **Initialize Husky** (if not already done):
+   If you encounter dependency conflicts, use:
+
    ```bash
-   npx husky install
+   npm install --legacy-peer-deps
+   cd frontend && npm install --legacy-peer-deps
+   cd ../backend && npm install --legacy-peer-deps
+   cd ../landing && npm install --legacy-peer-deps
+   cd ..
    ```
 
+2. **Husky Setup** (Automatic): The `prepare` script automatically sets up Husky pre-commit hooks
+   when you run `npm install`. No manual initialization required with modern Husky v9+.
+
+   ~~Old way (deprecated): `npx husky install`~~
+
 3. **Run initial formatting**:
+
    ```bash
    npm run style:fix
    ```
@@ -184,8 +211,12 @@ git commit --no-verify
 2. **Prettier conflicts**: Disable other formatting extensions
 3. **Pre-commit hooks failing**: Run `npm run style:fix` before committing
 4. **TypeScript errors**: Check tsconfig.json files in each project
+5. **ESLint flat config issues**: Ensure you're using `eslint.config.js` (not `.eslintrc.js`)
+6. **Astro parser errors**: Verify `prettier-plugin-astro` is installed in the landing project
+7. **Dependency version conflicts**: Use `--legacy-peer-deps` flag during installation
 
 ### Disable Rules Temporarily
+
 ```javascript
 // ESLint
 /* eslint-disable rule-name */
@@ -210,6 +241,8 @@ code here
 4. **Automated Quality**: Pre-commit hooks ensure quality before commits
 5. **IDE Integration**: Real-time feedback while coding
 6. **Multi-technology Support**: Works across Angular, Node.js, and Astro
+7. **Modern Configuration**: Uses ESLint flat config format for better performance
+8. **Fork-Ready**: All files maintain proper formatting for repository forking
 
 ## Maintenance
 
@@ -217,3 +250,4 @@ code here
 - Review and adjust rules based on team feedback
 - Keep configuration files in sync across projects
 - Monitor performance impact of linting rules
+- Test linting setup after dependency updates: `npm run style:fix`

@@ -2,7 +2,8 @@
 
 Node.js/Express server with Socket.IO for real-time messaging.
 
-Originally developed as a separate repository: [quasar-chat-backend](https://github.com/art2url/quasar-chat-backend)
+Originally developed as a separate repository:
+[quasar-chat-backend](https://github.com/art2url/quasar-chat-backend)
 
 ## Quick Start
 

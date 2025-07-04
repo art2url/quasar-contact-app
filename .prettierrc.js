@@ -4,19 +4,22 @@ module.exports = {
   singleQuote: true,
   tabWidth: 2,
   useTabs: false,
-  
+
   // Line formatting
   printWidth: 80,
   endOfLine: 'lf',
-  
+
   // Object/Array formatting
   trailingComma: 'es5',
   bracketSpacing: true,
   bracketSameLine: false,
-  
+
   // Arrow function parentheses
   arrowParens: 'avoid',
-  
+
+  // Plugins
+  plugins: ['prettier-plugin-astro'],
+
   // Overrides for different file types
   overrides: [
     {

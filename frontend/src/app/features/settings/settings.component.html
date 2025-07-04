@@ -9,13 +9,10 @@
   <section class="settings-section">
     <h3>Back up my private key</h3>
     <p>
-      Download a copy of your <strong>private key</strong>. Keep it somewhere
-      safe — if you lose it, you'll never be able to decrypt old messages.
+      Download a copy of your <strong>private key</strong>. Keep it somewhere safe — if you lose it, you'll never be
+      able to decrypt old messages.
     </p>
-    <button
-      class="custom-action-button download-button"
-      (click)="downloadKey()"
-    >
+    <button class="custom-action-button download-button" (click)="downloadKey()">
       <mat-icon>download</mat-icon>
       <span>Download .pem</span>
     </button>
@@ -24,26 +21,13 @@
   <section class="settings-section">
     <h3>Restore private key</h3>
     <div class="file-upload-container">
-      <input
-        type="file"
-        accept=".pem,.txt"
-        (change)="onFileSelected($event)"
-        #fileInput
-        style="display: none"
-      />
-      <button
-        class="custom-action-button upload-button"
-        (click)="fileInput.click()"
-      >
+      <input type="file" accept=".pem,.txt" (change)="onFileSelected($event)" #fileInput style="display: none" />
+      <button class="custom-action-button upload-button" (click)="fileInput.click()">
         <mat-icon>upload_file</mat-icon>
         <span>Choose File</span>
       </button>
-      <span class="file-name" *ngIf="selectedFileName">{{
-        selectedFileName
-      }}</span>
-      <span class="file-name placeholder" *ngIf="!selectedFileName"
-        >No file chosen</span
-      >
+      <span class="file-name" *ngIf="selectedFileName">{{ selectedFileName }}</span>
+      <span class="file-name placeholder" *ngIf="!selectedFileName">No file chosen</span>
     </div>
     <small class="hint">Accepts PKCS8 text files (.pem or .txt)</small><br />
     <small class="error" *ngIf="importError">{{ importError }}</small>
@@ -52,12 +36,7 @@
   <section class="settings-section">
     <h3>Profile picture</h3>
     <div class="avatar-grid">
-      <button
-        *ngFor="let a of avatars"
-        class="avatar-option"
-        [class.active]="a === selected"
-        (click)="chooseAvatar(a)"
-      >
+      <button *ngFor="let a of avatars" class="avatar-option" [class.active]="a === selected" (click)="chooseAvatar(a)">
         <img [src]="a" [alt]="a" />
       </button>
     </div>

@@ -1,7 +1,7 @@
 // Simple ESLint config for Astro project
 export default [
   {
-    ignores: ['dist/', 'node_modules/', '.astro/'],
+    ignores: ['dist/', 'node_modules/', '.astro/', 'src/env.d.ts'],
   },
   {
     files: ['src/**/*.{js,ts,mjs}'],

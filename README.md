@@ -8,7 +8,9 @@
 
 ## 🔐 Overview
 
-Quasar Contact is a privacy-focused, real-time messaging application that implements military-grade end-to-end encryption. Built with Angular 18, Node.js, and Socket.IO, it ensures that your conversations remain completely private with zero data logging and client-side encryption.
+Quasar Contact is a privacy-focused, real-time messaging application that implements military-grade
+end-to-end encryption. Built with Angular 18, Node.js, and Socket.IO, it ensures that your
+conversations remain completely private with zero data logging and client-side encryption.
 
 **🚧 Current Status: Alpha Stage**
 
@@ -16,10 +18,12 @@ Quasar Contact is a privacy-focused, real-time messaging application that implem
 
 ### 🛡️ Security & Privacy
 
-- **End-to-End Encryption**: All messages are encrypted using Web Crypto API (AES-GCM) before leaving your device
+- **End-to-End Encryption**: All messages are encrypted using Web Crypto API (AES-GCM) before
+  leaving your device
 - **Zero Knowledge Architecture**: Server never has access to decryption keys or plaintext messages
 - **Client-Side Key Generation**: RSA-OAEP key pairs generated and stored locally
-- **No Data Logging**: Messages are stored encrypted and can only be decrypted by intended recipients
+- **No Data Logging**: Messages are stored encrypted and can only be decrypted by intended
+  recipients
 
 ### 💬 Messaging Features
 
@@ -211,7 +215,6 @@ quasar-contact-app/
    ```
 
    This will:
-
    - Build Astro landing pages
    - Build Angular application
    - Copy all assets to public directory
@@ -316,13 +319,11 @@ socket.emit('send-message', {
 ### Encryption Flow
 
 1. **Key Generation** (on user registration)
-
    - Generate RSA-OAEP key pair
    - Store private key in browser's IndexedDB
    - Upload public key to server
 
 2. **Sending Messages**
-
    - Generate AES-GCM session key
    - Encrypt message with AES-GCM
    - Encrypt session key with recipient's RSA public key
@@ -345,7 +346,8 @@ socket.emit('send-message', {
 
 ## 🧪 Testing
 
-Currently, the project doesn't include automated tests. Testing implementation is planned for future releases.
+Currently, the project doesn't include automated tests. Testing implementation is planned for future
+releases.
 
 ### Manual Testing Checklist
 
@@ -415,7 +417,8 @@ When contributing to this project, please note:
 
 ## 📄 License
 
-This project is licensed under the **GNU General Public License v3.0** - see the LICENSE file for details.
+This project is licensed under the **GNU General Public License v3.0** - see the LICENSE file for
+details.
 
 ### What this means:
 
@@ -445,4 +448,6 @@ For issues and feature requests, please use the GitHub Issues page.
 
 ---
 
-**Note**: This is an alpha release. Use in production at your own risk. The encryption implementation should be audited by security professionals before deploying in sensitive environments.
+**Note**: This is an alpha release. Use in production at your own risk. The encryption
+implementation should be audited by security professionals before deploying in sensitive
+environments.

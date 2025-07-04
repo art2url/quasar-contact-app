@@ -15,15 +15,15 @@ module.exports = {
     'no-debugger': 'error',
     'no-unused-vars': 'error',
     'no-undef': 'error',
-    
+
     // Style consistency
-    'semi': ['error', 'always'],
-    'quotes': ['error', 'single'],
-    'indent': ['error', 2],
+    semi: ['error', 'always'],
+    quotes: ['error', 'single'],
+    indent: ['error', 2],
     'comma-dangle': ['error', 'always-multiline'],
-    
+
     // Best practices
-    'eqeqeq': 'error',
+    eqeqeq: 'error',
     'no-eval': 'error',
     'no-implied-eval': 'error',
     'prefer-const': 'error',
@@ -64,10 +64,7 @@ module.exports = {
     // Backend TypeScript files
     {
       files: ['backend/**/*.ts'],
-      extends: [
-        'eslint:recommended',
-        '@typescript-eslint/recommended',
-      ],
+      extends: ['eslint:recommended', '@typescript-eslint/recommended'],
       parser: '@typescript-eslint/parser',
       parserOptions: {
         project: './backend/tsconfig.json',
@@ -106,10 +103,7 @@ module.exports = {
     // Landing TypeScript files
     {
       files: ['landing/**/*.ts'],
-      extends: [
-        'eslint:recommended',
-        '@typescript-eslint/recommended',
-      ],
+      extends: ['eslint:recommended', '@typescript-eslint/recommended'],
       parser: '@typescript-eslint/parser',
       parserOptions: {
         ecmaVersion: 2022,

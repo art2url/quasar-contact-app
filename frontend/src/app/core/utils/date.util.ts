@@ -5,9 +5,7 @@
 export function toEpoch(v: string | number | Date | undefined): number {
   // Handle null/undefined
   if (v == null || v === undefined) {
-    console.warn(
-      '[DateUtil] toEpoch received null/undefined, using current time'
-    );
+    console.warn('[DateUtil] toEpoch received null/undefined, using current time');
     return Date.now();
   }
 
