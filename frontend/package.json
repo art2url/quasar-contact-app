@@ -7,7 +7,15 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "lint:fix": "ng lint --fix",
+    "format": "prettier --write src/**/*.{ts,html,css,scss}",
+    "format:check": "prettier --check src/**/*.{ts,html,css,scss}",
+    "style:css": "stylelint src/**/*.{css,scss}",
+    "style:css:fix": "stylelint src/**/*.{css,scss} --fix",
+    "typecheck": "ng build --configuration development --build-optimizer=false --aot=true --source-map=false --output-path=tmp --delete-output-path=true",
+    "style": "npm run lint && npm run format:check && npm run style:css",
+    "style:fix": "npm run lint:fix && npm run format && npm run style:css:fix"
   },
   "private": true,
   "dependencies": {
