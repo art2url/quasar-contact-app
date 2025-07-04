@@ -17,11 +17,12 @@ import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { HttpClient } from '@angular/common/http';
-import { catchError, firstValueFrom, timeout, TimeoutError } from 'rxjs';
+import { catchError, firstValueFrom, timeout, TimeoutError, Subscription, skip } from 'rxjs';
 
 import { AuthService } from '@services/auth.service';
 import { LoadingService } from '@services/loading.service';
 import { RecaptchaService } from '@services/recaptcha.service';
+import { ThemeService } from '@services/theme.service';
 import { environment } from '@environments/environment';
 
 @Component({
@@ -53,13 +54,15 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
   formSubmitted = false;
   recaptchaToken = '';
   recaptchaWidgetId: number | undefined;
+  private themeSubscription?: Subscription;
 
   constructor(
     private auth: AuthService,
     private router: Router,
     private loadingService: LoadingService,
     private http: HttpClient,
-    private recaptchaService: RecaptchaService
+    private recaptchaService: RecaptchaService,
+    private themeService: ThemeService
   ) {}
 
   ngOnInit(): void {
@@ -72,10 +75,68 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
+    console.log('ngAfterViewInit called');
+    this.setupThemeSubscription();
     this.initializeRecaptcha();
   }
 
-  private initializeRecaptcha(): void {
+  private setupThemeSubscription(): void {
+    console.log('Setting up theme subscription...');
+    let isFirstEmission = true;
+    
+    this.themeSubscription = this.themeService.theme$.subscribe((theme) => {
+      console.log('Theme subscription triggered with theme:', theme);
+      
+      if (isFirstEmission) {
+        isFirstEmission = false;
+        console.log('Skipping first emission');
+        return;
+      }
+      
+      console.log('reCAPTCHA widget ID:', this.recaptchaWidgetId);
+      
+      if (this.recaptchaWidgetId !== undefined) {
+        console.log('Re-rendering reCAPTCHA for theme:', theme);
+        
+        // Reset the widget first
+        this.recaptchaService.resetRecaptcha(this.recaptchaWidgetId);
+        this.recaptchaToken = '';
+        
+        // Completely remove and recreate the DOM element
+        const recaptchaElement = document.getElementById('recaptcha-login');
+        if (recaptchaElement && recaptchaElement.parentNode) {
+          const parent = recaptchaElement.parentNode;
+          const newElement = document.createElement('div');
+          newElement.id = 'recaptcha-login';
+          parent.replaceChild(newElement, recaptchaElement);
+          console.log('Recreated reCAPTCHA DOM element');
+        }
+        
+        // Re-render with delay
+        setTimeout(() => {
+          try {
+            this.recaptchaWidgetId = this.recaptchaService.renderRecaptcha(
+              'recaptcha-login',
+              (token: string) => {
+                this.recaptchaToken = token;
+                this.error = '';
+              }
+            );
+            console.log('New reCAPTCHA widget ID:', this.recaptchaWidgetId);
+          } catch (error) {
+            console.error('Failed to re-render reCAPTCHA after theme change:', error);
+            // Don't show error to user for theme switching failures
+            // The form will still work, just without reCAPTCHA theme update
+          }
+        }, 300);
+      }
+    });
+  }
+
+  private initializeRecaptcha(retryCount = 0): void {
+    const maxRetries = 3;
+    const baseDelay = 500;
+    
     setTimeout(() => {
       try {
         this.recaptchaWidgetId = this.recaptchaService.renderRecaptcha(
@@ -85,12 +146,21 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
             this.error = ''; // Clear any reCAPTCHA-related errors
           }
         );
+        console.log('reCAPTCHA initialized successfully with widget ID:', this.recaptchaWidgetId);
       } catch (error) {
-        console.error('Failed to initialize reCAPTCHA:', error);
-        this.error =
-          'Failed to load security verification. Please refresh the page.';
+        console.error('Failed to initialize reCAPTCHA (attempt', retryCount + 1, '):', error);
+        
+        if (retryCount < maxRetries) {
+          console.log('Retrying reCAPTCHA initialization in', (retryCount + 1) * 1000, 'ms');
+          setTimeout(() => {
+            this.initializeRecaptcha(retryCount + 1);
+          }, (retryCount + 1) * 1000); // Exponential backoff: 1s, 2s, 3s
+        } else {
+          console.error('Max retries reached. reCAPTCHA initialization failed.');
+          this.error = 'Failed to load security verification. Please refresh the page.';
+        }
       }
-    }, 500);
+    }, baseDelay);
   }
 
   private resetRecaptcha(): void {
@@ -180,5 +250,6 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.recaptchaWidgetId !== undefined) {
       this.recaptchaService.resetRecaptcha(this.recaptchaWidgetId);
     }
+    this.themeSubscription?.unsubscribe();
   }
 }

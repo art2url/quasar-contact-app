@@ -20,7 +20,7 @@
         [(ngModel)]="searchTerm"
         (input)="onSearch(searchTerm)"
         autocomplete="off"
-        placeholder="Type at least 2 characters"
+        placeholder="Type the exact username to find user"
       />
       <button
         *ngIf="searchTerm"
@@ -52,10 +52,10 @@
 
   <!-- No results message -->
   <p
-    *ngIf="searchTerm && searchTerm.length >= 2 && !searchResults.length"
+    *ngIf="searchTerm && searchTerm.trim().length > 0 && !searchResults.length"
     class="empty-hint"
   >
-    No users found matching "{{ searchTerm }}"
+    No user found with exact username "{{ searchTerm }}"
   </p>
 
   <!-- Empty state (only shown when loading is finished) -->
@@ -99,14 +99,14 @@
 
         <div class="chat-info">
           <div class="chat-top">
-            <h4 class="chat-name">{{ chat.name || "Unknown User" }}</h4>
+            <h4 class="chat-name">{{ chat.name || 'Unknown User' }}</h4>
             <!-- Use enhanced time formatting -->
             <span *ngIf="chat.lastTs" class="time">
               {{ formatChatTime(chat.lastTs) }}
             </span>
           </div>
           <p class="last-message">
-            {{ chat.lastMessage || "— no messages yet —" }}
+            {{ chat.lastMessage || '— no messages yet —' }}
             <span *ngIf="chat.unread" class="badge">{{ chat.unread }}</span>
           </p>
         </div>

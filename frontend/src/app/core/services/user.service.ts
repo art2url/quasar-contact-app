@@ -25,46 +25,41 @@ export class UserService {
       `${environment.apiUrl}/users`
     );
 
-    // Ensure we have the token for authorization
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.error('[UserService] No token available for authentication');
+    // Check if user is authenticated (JWT is now in HttpOnly cookies)
+    const username = localStorage.getItem('username');
+    const userId = localStorage.getItem('userId');
+    if (!username || !userId) {
+      console.error('[UserService] No auth data available');
       return of([]);
     }
 
-    // Set explicit headers to make sure the request is authenticated
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    };
+    // Headers handled automatically by HTTP interceptor with cookies
 
-    return this.http
-      .get<UserSummary[]>(`${environment.apiUrl}/users`, { headers })
-      .pipe(
-        tap((users) => {
-          console.log(
-            '[UserService] Users response successful, count:',
-            users.length
+    return this.http.get<UserSummary[]>(`${environment.apiUrl}/users`).pipe(
+      tap((users) => {
+        console.log(
+          '[UserService] Users response successful, count:',
+          users.length
+        );
+        console.log('[UserService] First few users:', users.slice(0, 3));
+      }),
+      catchError((error) => {
+        console.error('[UserService] Error fetching users:', error);
+
+        // Log more details about the error
+        if (error.status) {
+          console.error(
+            `[UserService] Status: ${error.status}, Message: ${error.message}`
           );
-          console.log('[UserService] First few users:', users.slice(0, 3));
-        }),
-        catchError((error) => {
-          console.error('[UserService] Error fetching users:', error);
+        }
 
-          // Log more details about the error
-          if (error.status) {
-            console.error(
-              `[UserService] Status: ${error.status}, Message: ${error.message}`
-            );
-          }
+        if (error.error) {
+          console.error('[UserService] Error details:', error.error);
+        }
 
-          if (error.error) {
-            console.error('[UserService] Error details:', error.error);
-          }
-
-          return of([]);
-        })
-      );
+        return of([]);
+      })
+    );
   }
 
   uploadPublicKey(publicKey: string): Observable<StandardResponse> {
@@ -91,8 +86,8 @@ export class UserService {
 
   /** Search users by name */
   searchUsers(query: string): Observable<UserSummary[]> {
-    if (!query || query.length < 2) {
-      console.log('[UserService] Search query too short:', query);
+    if (!query || query.trim().length === 0) {
+      console.log('[UserService] Search query is empty:', query);
       return of([]);
     }
 
@@ -129,20 +124,23 @@ export class UserService {
   /** List only the users I already have DMs with */
   listMyDms(): Observable<UserSummary[]> {
     const apiUrl = `${environment.apiUrl}/rooms/my-dms`;
-    const token = localStorage.getItem('token');
+    // Check if user is authenticated (JWT is now in HttpOnly cookies)
+    const username = localStorage.getItem('username');
+    const userId = localStorage.getItem('userId');
 
     console.log('[UserService] Requesting DMs with:', {
       apiUrl,
-      hasToken: !!token,
+      hasAuth: !!(username && userId),
     });
 
-    // Add authorization header explicitly
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      'x-access-token': token || '',
-    };
+    if (!username || !userId) {
+      console.error('[UserService] No auth data available for DMs');
+      return of([]);
+    }
 
-    return this.http.get<UserSummary[]>(apiUrl, { headers }).pipe(
+    // Headers handled automatically by HTTP interceptor with cookies
+
+    return this.http.get<UserSummary[]>(apiUrl).pipe(
       tap((response) => console.log('[UserService] DM response:', response)),
       catchError((error) => {
         console.error('[UserService] DM list error:', error);

@@ -4,13 +4,13 @@
   left: 0;
   width: 100%;
   height: var(--header-height);
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: var(--header-background);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-sm);
   z-index: 100;
   transition: all 0.3s ease;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .header-container {
@@ -79,6 +79,41 @@
 .nav-links button:hover {
   color: var(--primary-color);
   transform: translateY(-1px);
+  background: transparent !important;
+}
+
+/* Remove focus and active states in dark theme for header buttons */
+.dark-theme .nav-links button:focus,
+.dark-theme .nav-links button:focus-visible,
+.dark-theme .nav-links button:active,
+.dark-theme .theme-toggle:focus,
+.dark-theme .theme-toggle:focus-visible,
+.dark-theme .theme-toggle:active,
+.dark-theme .theme-toggle-btn:focus,
+.dark-theme .theme-toggle-btn:focus-visible,
+.dark-theme .theme-toggle-btn:active,
+.dark-theme .mobile-menu-button:focus,
+.dark-theme .mobile-menu-button:focus-visible,
+.dark-theme .mobile-menu-button:active,
+.dark-theme .header button:focus,
+.dark-theme .header button:focus-visible,
+.dark-theme .header button:active,
+.dark-theme .header .mat-mdc-button:focus,
+.dark-theme .header .mat-mdc-button:focus-visible,
+.dark-theme .header .mat-mdc-button:active,
+.dark-theme .header .mat-mdc-icon-button:focus,
+.dark-theme .header .mat-mdc-icon-button:focus-visible,
+.dark-theme .header .mat-mdc-icon-button:active {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+/* Remove Material Design ripple effects in dark theme header */
+.dark-theme .header .mat-mdc-button .mdc-button__ripple,
+.dark-theme .header .mat-mdc-icon-button .mdc-icon-button__ripple {
+  display: none !important;
 }
 
 .nav-links button:active {
@@ -106,7 +141,7 @@
 .mobile-controls {
   display: none;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-md);
 }
 
 .desktop-status {
@@ -115,8 +150,8 @@
 
 .mobile-status {
   display: none;
-  padding: 4px;
-  margin: 0;
+  padding: 2px 6px;
+  margin: 0 8px;
   background-color: transparent;
   border: none;
 }
@@ -184,13 +219,26 @@
   color: white;
   font-size: 0.65rem;
   font-weight: 600;
-  border-radius: 10px;
+  border-radius: 14px;
   padding: 2px 6px;
   margin-left: 4px;
   min-width: 18px;
+  min-height: 18px;
   text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   box-shadow: 0 1px 3px rgba(244, 67, 54, 0.3);
   animation: subtle-bounce 0.3s ease-out;
+}
+
+/* For very small counts, make badges nearly circular */
+.badge.single-digit {
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  font-size: 0.6rem;
 }
 
 @keyframes subtle-bounce {
@@ -209,6 +257,14 @@
   .header-container {
     padding: 0 var(--spacing-md);
   }
+
+  .nav-links {
+    gap: var(--spacing-sm);
+  }
+
+  .nav-links button {
+    font-size: 0.75rem;
+  }
 }
 
 @media (max-width: 599px) {
@@ -224,6 +280,14 @@
     display: none;
   }
 
+  .desktop-theme-toggle {
+    display: none !important;
+  }
+
+  .nav-links.open .desktop-theme-toggle {
+    display: none !important;
+  }
+
   .nav-links {
     display: none;
   }
@@ -234,7 +298,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: white;
+    background-color: var(--background-color);
     display: flex;
     flex-direction: column;
     padding: var(--spacing-lg);
@@ -257,8 +321,8 @@
     justify-content: flex-start;
     padding: var(--spacing-md);
     border: none;
-    background-color: white;
-    border: 1px solid #e0e0e0;
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     font-size: 1rem;
     font-weight: 500;
@@ -268,14 +332,41 @@
     min-height: 56px;
     width: 100%;
     color: var(--text-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-sm);
   }
 
   .nav-links.open button:hover {
-    background-color: #f8f9fa;
+    background-color: var(--nav-hover);
     border-color: var(--primary-color);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Fix mobile menu button borders in dark theme - remove double borders */
+  .dark-theme .nav-links.open button {
+    border: 1px solid var(--border-color) !important;
+  }
+
+  .dark-theme .nav-links.open button:hover {
+    background-color: var(--nav-hover) !important;
+    border-color: var(--primary-color) !important;
+  }
+
+  /* Remove focus states for mobile menu buttons in dark theme */
+  .dark-theme .nav-links.open button:focus {
+    outline: none !important;
+    box-shadow: var(--shadow-sm) !important;
+  }
+
+  /* Active page highlighting in mobile menu */
+  .nav-links.open button.active {
+    background-color: var(--nav-hover) !important;
+    border-color: var(--primary-color) !important;
+    color: var(--primary-color) !important;
+  }
+
+  .nav-links.open button.active mat-icon {
+    color: var(--primary-color) !important;
   }
 
   .nav-links.open button:active {
@@ -295,7 +386,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: none;
+    background: transparent;
     border: none;
     padding: var(--spacing-sm);
     cursor: pointer;
@@ -303,17 +394,24 @@
     min-width: 44px;
     border-radius: 12px;
     transition: all 0.2s ease;
-    color: var(--primary-color);
+    color: var(--text-color);
     position: relative;
   }
 
   .mobile-menu-button:hover {
-    background-color: rgba(0, 119, 204, 0.08);
+    color: var(--primary-color);
     transform: scale(1.05);
   }
 
   .mobile-menu-button:active {
     transform: scale(0.95);
+  }
+
+  /* Prevent mobile menu button from staying active/focused */
+  .mobile-menu-button:focus,
+  .mobile-menu-button:focus-visible {
+    outline: none !important;
+    background-color: transparent !important;
   }
 
   .mobile-menu-badge {
@@ -324,7 +422,7 @@
     color: white;
     font-size: 0.6rem;
     font-weight: 600;
-    border-radius: 10px;
+    border-radius: 14px;
     padding: 2px 5px;
     min-width: 16px;
     height: 16px;
@@ -334,6 +432,15 @@
     box-shadow: 0 1px 3px rgba(244, 67, 54, 0.4);
     animation: subtle-bounce 0.3s ease-out;
     z-index: 1;
+  }
+
+  /* For very small counts, make mobile badges nearly circular */
+  .mobile-menu-badge.single-digit {
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    font-size: 0.55rem;
   }
 
   /* Badge pulse animation for new messages */
@@ -355,6 +462,50 @@
       opacity: 1;
     }
   }
+}
+
+/* Mobile theme toggle (in mobile-controls) - separate styling */
+.mobile-controls .theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: var(--spacing-sm);
+  cursor: pointer;
+  min-height: 40px;
+  min-width: 40px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  color: var(--text-color);
+  position: relative;
+}
+
+.mobile-controls .theme-toggle:hover {
+  background: transparent !important;
+  transform: scale(1.05);
+}
+
+.mobile-controls .theme-toggle:active {
+  transform: scale(0.95);
+}
+
+.mobile-controls .theme-toggle:focus,
+.mobile-controls .theme-toggle.active {
+  background: transparent !important;
+  transform: scale(1.05) !important;
+}
+
+.mobile-controls .theme-toggle mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  transition: transform 0.3s ease;
+}
+
+/* Theme toggle animation for mobile */
+.mobile-controls .theme-toggle:hover mat-icon {
+  transform: rotate(15deg);
 }
 
 /* Fade-in animation for mobile menu */
