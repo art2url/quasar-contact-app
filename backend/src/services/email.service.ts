@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import path from 'path';
 import env from '../config/env';
 
 interface EmailOptions {
@@ -6,6 +7,11 @@ interface EmailOptions {
   subject: string;
   html: string;
   text?: string;
+  attachments?: Array<{
+    filename: string;
+    path: string;
+    cid: string;
+  }>;
 }
 
 class EmailService {
@@ -20,7 +26,7 @@ class EmailService {
     // Check if email configuration is available
     if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) {
       console.warn(
-        '[EmailService] SMTP configuration not complete. Email features will be disabled.'
+        '[EmailService] SMTP configuration not complete. Email features will be disabled.',
       );
       return;
     }
@@ -81,6 +87,7 @@ class EmailService {
       subject: options.subject,
       html: options.html,
       text: options.text,
+      attachments: options.attachments,
     };
 
     try {
@@ -93,7 +100,7 @@ class EmailService {
     } catch (error) {
       console.error('[EmailService] Failed to send email:', error);
       throw new Error(
-        `Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
   }
@@ -152,31 +159,10 @@ class EmailService {
             margin: 0 auto;
             background-color: #000000;
             border: 2px solid #95E06C;
-            border-radius: 16px;
+            border-radius: 0 0 16px 16px;
             overflow: hidden;
           }
           
-          .header {
-            background-color: #001011;
-            padding: 40px 30px;
-            text-align: center;
-            border-bottom: 3px solid #95E06C;
-          }
-          
-          .app-name {
-            font-size: 28px;
-            font-weight: 700;
-            color: #95E06C;
-            margin-bottom: 15px;
-            text-decoration: none;
-          }
-          
-          .header-title {
-            font-size: 22px;
-            color: #ffffff;
-            font-weight: 600;
-            margin: 0;
-          }
           
           .content {
             padding: 40px 30px;
@@ -288,7 +274,7 @@ class EmailService {
           @media only screen and (max-width: 600px) {
             .email-container {
               margin: 0 10px;
-              border-radius: 12px;
+              border-radius: 0 0 12px 12px;
             }
             
             .header, .content, .footer {
@@ -314,13 +300,8 @@ class EmailService {
         <table role="presentation" class="email-wrapper" cellpadding="0" cellspacing="0">
           <tr>
             <td>
+              <img src="cid:pass_request" alt="Password Reset Request" style="width: 600px; height: 176px; display: block; margin: 0 auto; border-radius: 16px 16px 0 0;">
               <table role="presentation" class="email-container" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td class="header">
-                    <div class="app-name">${env.APP_NAME}</div>
-                    <h1 class="header-title">🔐 Password Reset Request</h1>
-                  </td>
-                </tr>
                 <tr>
                   <td class="content">
                     <p>Hello,</p>
@@ -389,6 +370,13 @@ class EmailService {
       subject,
       html,
       text,
+      attachments: [
+        {
+          filename: 'pass_request.png',
+          path: path.join(__dirname, '../../assets/images/pass_request.png'),
+          cid: 'pass_request',
+        },
+      ],
     });
   }
 
@@ -444,7 +432,7 @@ class EmailService {
             margin: 0 auto;
             background-color: #000000;
             border: 2px solid #68b684;
-            border-radius: 16px;
+            border-radius: 0 0 16px 16px;
             overflow: hidden;
           }
           
@@ -455,20 +443,6 @@ class EmailService {
             border-bottom: 3px solid #95E06C;
           }
           
-          .app-name {
-            font-size: 28px;
-            font-weight: 700;
-            color: #95E06C;
-            margin-bottom: 15px;
-            text-decoration: none;
-          }
-          
-          .header-title {
-            font-size: 22px;
-            color: #ffffff;
-            font-weight: 600;
-            margin: 0;
-          }
           
           .content {
             padding: 40px 30px;
@@ -570,7 +544,7 @@ class EmailService {
           @media only screen and (max-width: 600px) {
             .email-container {
               margin: 0 10px;
-              border-radius: 12px;
+              border-radius: 0 0 12px 12px;
             }
             
             .header, .content, .footer {
@@ -591,13 +565,8 @@ class EmailService {
         <table role="presentation" class="email-wrapper" cellpadding="0" cellspacing="0">
           <tr>
             <td>
+              <img src="cid:pass_success" alt="Password Reset Successful" style="width: 600px; height: 176px; display: block; margin: 0 auto; border-radius: 16px 16px 0 0;">
               <table role="presentation" class="email-container" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td class="header">
-                    <div class="app-name">${env.APP_NAME}</div>
-                    <h1 class="header-title">✅ Password Reset Successful</h1>
-                  </td>
-                </tr>
                 <tr>
                   <td class="content">
                     <p>Hello,</p>
@@ -670,6 +639,13 @@ class EmailService {
       subject,
       html,
       text,
+      attachments: [
+        {
+          filename: 'pass_success.png',
+          path: path.join(__dirname, '../../assets/images/pass_success.png'),
+          cid: 'pass_success',
+        },
+      ],
     });
   }
 
