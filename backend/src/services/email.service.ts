@@ -1,5 +1,4 @@
 import nodemailer from 'nodemailer';
-import path from 'path';
 import env from '../config/env';
 
 interface EmailOptions {
@@ -7,11 +6,6 @@ interface EmailOptions {
   subject: string;
   html: string;
   text?: string;
-  attachments?: Array<{
-    filename: string;
-    path: string;
-    cid: string;
-  }>;
 }
 
 class EmailService {
@@ -87,7 +81,6 @@ class EmailService {
       subject: options.subject,
       html: options.html,
       text: options.text,
-      attachments: options.attachments,
     };
 
     try {
@@ -95,7 +88,7 @@ class EmailService {
       console.log('[EmailService] Email sent successfully:', {
         to: options.to,
         subject: options.subject,
-        messageId: result.messageId,
+        messageId: result?.messageId || 'unknown',
       });
     } catch (error) {
       console.error('[EmailService] Failed to send email:', error);
@@ -299,8 +292,14 @@ class EmailService {
       <body>
         <table role="presentation" class="email-wrapper" cellpadding="0" cellspacing="0">
           <tr>
-            <td>
-              <img src="cid:pass_request" alt="Password Reset Request" style="width: 600px; height: 176px; display: block; margin: 0 auto; border-radius: 16px 16px 0 0;">
+            <td align="center" style="padding: 0;">
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                <tr>
+                  <td align="center" style="padding: 0;">
+                    <img src="${env.LANDING_URL}/assets/images/pass_request.png" alt="Password Reset Request" style="width: 600px; height: 176px; display: block; border-radius: 16px 16px 0 0; border: 0; outline: none; text-decoration: none;">
+                  </td>
+                </tr>
+              </table>
               <table role="presentation" class="email-container" cellpadding="0" cellspacing="0">
                 <tr>
                   <td class="content">
@@ -370,13 +369,6 @@ class EmailService {
       subject,
       html,
       text,
-      attachments: [
-        {
-          filename: 'pass_request.png',
-          path: path.join(__dirname, '../../assets/images/pass_request.png'),
-          cid: 'pass_request',
-        },
-      ],
     });
   }
 
@@ -564,8 +556,14 @@ class EmailService {
       <body>
         <table role="presentation" class="email-wrapper" cellpadding="0" cellspacing="0">
           <tr>
-            <td>
-              <img src="cid:pass_success" alt="Password Reset Successful" style="width: 600px; height: 176px; display: block; margin: 0 auto; border-radius: 16px 16px 0 0;">
+            <td align="center" style="padding: 0;">
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                <tr>
+                  <td align="center" style="padding: 0;">
+                    <img src="${env.LANDING_URL}/assets/images/pass_success.png" alt="Password Reset Successful" style="width: 600px; height: 176px; display: block; border-radius: 16px 16px 0 0; border: 0; outline: none; text-decoration: none;">
+                  </td>
+                </tr>
+              </table>
               <table role="presentation" class="email-container" cellpadding="0" cellspacing="0">
                 <tr>
                   <td class="content">
@@ -639,13 +637,6 @@ class EmailService {
       subject,
       html,
       text,
-      attachments: [
-        {
-          filename: 'pass_success.png',
-          path: path.join(__dirname, '../../assets/images/pass_success.png'),
-          cid: 'pass_success',
-        },
-      ],
     });
   }
 
