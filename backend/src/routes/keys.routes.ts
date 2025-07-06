@@ -22,7 +22,7 @@ router.post('/upload', authenticateToken, async (req: AuthRequest, res) => {
     const updated = await User.findByIdAndUpdate(
       user.userId,
       { publicKeyBundle },
-      { new: true }
+      { new: true },
     );
 
     if (!updated) {
@@ -36,21 +36,23 @@ router.post('/upload', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
-// GET /api/keys/:userId
+// GET /api/keys/:userId - Get user's public key bundle
 router.get('/:userId', async (req, res) => {
   const { userId } = req.params;
 
   try {
     const user = await User.findById(userId).select('publicKeyBundle username avatarUrl');
 
-    if (!user || !user.publicKeyBundle) {
-      return res.status(404).json({ message: 'Public key not found for user.' });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
     }
 
+    // Always return user info, even if no public key
     res.status(200).json({
       username: user.username,
       avatarUrl: user.avatarUrl,
-      publicKeyBundle: user.publicKeyBundle,
+      publicKeyBundle: user.publicKeyBundle || null,
+      hasPublicKey: !!user.publicKeyBundle,
     });
   } catch (error) {
     console.error('[Key Fetch Error]', error);

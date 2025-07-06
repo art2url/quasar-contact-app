@@ -444,7 +444,7 @@ export class ChatSessionService implements OnDestroy {
             hasUpdates = true;
 
             const fromMe = serverMsg.senderId.toString() === this.meId;
-            const sender = fromMe ? 'You' : this.theirUsername$.value;
+            const sender = fromMe ? 'You' : (this.theirUsername$.value || 'Unknown User');
 
             let text: string;
             if (serverMsg.deleted) {
@@ -520,8 +520,6 @@ export class ChatSessionService implements OnDestroy {
   /* ═════ existing methods enhanced ═══════════════════ */
 
   async editMessage(id: string, newText: string) {
-    if (!this.theirPubKey) return;
-
     // Optimistic update
     const list = this.messages$.value;
     const idx = list.findIndex(m => m.id === id);
@@ -542,7 +540,13 @@ export class ChatSessionService implements OnDestroy {
 
     // Send to server
     try {
-      const ct = await this.crypto.encryptWithPublicKey(newText, this.theirPubKey);
+      let ct: string;
+      if (this.theirPubKey && this.theirPubKey.trim()) {
+        ct = await this.crypto.encryptWithPublicKey(newText, this.theirPubKey);
+      } else {
+        console.warn('[ChatSession] Editing unencrypted message - partner has no public key');
+        ct = newText;
+      }
       this.ws.sendEditMessage(id, ct, localStorage.getItem('myAvatar') ?? undefined);
     } catch (error) {
       console.error('[ChatSession] Failed to send edit message:', error);
@@ -593,20 +597,33 @@ export class ChatSessionService implements OnDestroy {
 
       // Get partner's public key
       this.users.getPublicKey(roomId).subscribe({
-        next: ({ publicKeyBundle, username, avatarUrl }) => {
-          console.log('[ChatSession] Received partner public key for:', username);
-          this.theirPubKey = publicKeyBundle;
+        next: ({ publicKeyBundle, username, avatarUrl, hasPublicKey }) => {
+          console.log('[ChatSession] Received partner data for:', username);
+          
+          // Always set username and avatar, regardless of public key status
           this.theirUsername$.next(username);
-
           const partnerAvatar =
             avatarUrl && avatarUrl.trim() ? avatarUrl : 'assets/images/avatars/01.svg';
-
           this.theirAvatar$.next(partnerAvatar);
           this.partnerAvatar = partnerAvatar;
-          this.keyLoading$.next(false);
+          
+          // Only set public key if user has one
+          if (hasPublicKey && publicKeyBundle) {
+            console.log('[ChatSession] Partner has public key, encryption enabled');
+            this.theirPubKey = publicKeyBundle;
+            this.keyLoading$.next(false);
+            this.keyMissing$.next(false);
+          } else {
+            console.log('[ChatSession] Partner has no public key, encryption disabled');
+            this.theirPubKey = null;
+            this.keyLoading$.next(false);
+            this.keyMissing$.next(true);
+          }
         },
         error: err => {
-          console.error('[ChatSession] Failed to get partner public key:', err);
+          console.error('[ChatSession] Failed to get partner data:', err);
+          // Set generic fallback username if API call fails completely
+          this.theirUsername$.next('Unknown User');
           this.keyMissing$.next(true);
           this.keyLoading$.next(false);
         },
@@ -636,7 +653,7 @@ export class ChatSessionService implements OnDestroy {
 
         for (const m of res.messages) {
           const fromMe = m.senderId.toString() === this.meId;
-          const sender = fromMe ? 'You' : this.theirUsername$.value;
+          const sender = fromMe ? 'You' : (this.theirUsername$.value || 'Unknown User');
 
           let status: 'pending' | 'sent' | 'read' | undefined = undefined;
           if (fromMe) {
@@ -683,7 +700,7 @@ export class ChatSessionService implements OnDestroy {
    * Enhanced send method with better error handling
    */
   async send(_: string, plain: string): Promise<void> {
-    if (!plain?.trim() || !this.roomId || !this.theirPubKey) {
+    if (!plain?.trim() || !this.roomId) {
       console.log('[ChatSession] Invalid send parameters');
       return;
     }
@@ -729,8 +746,15 @@ export class ChatSessionService implements OnDestroy {
       this.pendingMessages.set(pendingKey, { timestamp: ts, timeoutId });
       this.push(pendingMessage);
 
-      // Encrypt and send
-      const ct = await this.crypto.encryptWithPublicKey(plain, this.theirPubKey);
+      // Encrypt and send (if partner has public key)
+      let ct: string;
+      if (this.theirPubKey && this.theirPubKey.trim()) {
+        ct = await this.crypto.encryptWithPublicKey(plain, this.theirPubKey);
+      } else {
+        // Send as plain text if no encryption available
+        console.warn('[ChatSession] Sending unencrypted message - partner has no public key');
+        ct = plain;
+      }
 
       const pendingCacheEntry = {
         id: pendingKey,
