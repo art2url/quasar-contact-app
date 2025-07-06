@@ -22,6 +22,7 @@ import { AuthService } from '@services/auth.service';
 import { LoadingService } from '@services/loading.service';
 import { RecaptchaService } from '@services/recaptcha.service';
 import { ThemeService } from '@services/theme.service';
+import { HoneypotService } from '@services/honeypot.service';
 import { defaultAvatarFor } from '@utils/avatar.util';
 
 interface ValidationError {
@@ -60,18 +61,27 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
   recaptchaToken = '';
   recaptchaWidgetId: number | undefined;
   private themeSubscription?: Subscription;
+  
+  // Honeypot fields
+  honeypotFields: Record<string, string> = {};
+  formStartTime = 0;
 
   constructor(
     private authService: AuthService,
     private router: Router,
     private loadingService: LoadingService,
     private recaptchaService: RecaptchaService,
-    private themeService: ThemeService
+    private themeService: ThemeService,
+    public honeypotService: HoneypotService
   ) {}
 
   ngOnInit(): void {
     // Initialize form validation and reCAPTCHA when component loads
     console.log('[Register] Component initialized');
+    
+    // Initialize honeypot fields
+    this.honeypotFields = this.honeypotService.createHoneypotData();
+    this.formStartTime = this.honeypotService.addFormStartTime();
   }
 
   ngAfterViewInit(): void {
@@ -220,14 +230,30 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
+    // Client-side honeypot validation
+    if (!this.honeypotService.validateHoneypotFields(this.honeypotFields)) {
+      console.warn('[Register] Honeypot validation failed on client side');
+      this.error = 'Please try again.';
+      return;
+    }
+
     this.isLoading = true;
     this.loadingService.showForAuth('register');
 
     // Generate a deterministic avatar based on the chosen username
     const avatarUrl = defaultAvatarFor(this.username);
 
+    // Prepare form data with honeypot fields
+    const formData = this.honeypotService.prepareFormDataWithHoneypot({
+      username: this.username,
+      email: this.email,
+      password: this.password,
+      avatarUrl: avatarUrl,
+      recaptchaToken: this.recaptchaToken
+    }, this.formStartTime);
+
     this.authService
-      .register(this.username, this.email, this.password, avatarUrl, this.recaptchaToken)
+      .registerWithHoneypot(formData)
       .subscribe({
         next: () => {
           console.log('[Register] Registration successful');

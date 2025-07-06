@@ -23,6 +23,7 @@ import { AuthService } from '@services/auth.service';
 import { LoadingService } from '@services/loading.service';
 import { RecaptchaService } from '@services/recaptcha.service';
 import { ThemeService } from '@services/theme.service';
+import { HoneypotService } from '@services/honeypot.service';
 import { environment } from '@environments/environment';
 
 @Component({
@@ -55,6 +56,10 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
   recaptchaToken = '';
   recaptchaWidgetId: number | undefined;
   private themeSubscription?: Subscription;
+  
+  // Honeypot fields
+  honeypotFields: Record<string, string> = {};
+  formStartTime = 0;
 
   constructor(
     private auth: AuthService,
@@ -62,7 +67,8 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
     private loadingService: LoadingService,
     private http: HttpClient,
     private recaptchaService: RecaptchaService,
-    private themeService: ThemeService
+    private themeService: ThemeService,
+    public honeypotService: HoneypotService
   ) {}
 
   ngOnInit(): void {
@@ -72,6 +78,10 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
     if (state?.message) {
       console.log('Registration success:', state.message);
     }
+    
+    // Initialize honeypot fields
+    this.honeypotFields = this.honeypotService.createHoneypotData();
+    this.formStartTime = this.honeypotService.addFormStartTime();
   }
 
   ngAfterViewInit(): void {
@@ -198,6 +208,13 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
+    // Client-side honeypot validation
+    if (!this.honeypotService.validateHoneypotFields(this.honeypotFields)) {
+      console.warn('[Login] Honeypot validation failed on client side');
+      this.error = 'Please try again.';
+      return;
+    }
+
     this.error = '';
     this.isLoading = true;
 
@@ -207,8 +224,15 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
       await this.checkBackendAvailability();
       console.log('[Login] Authenticating with server...');
 
+      // Prepare form data with honeypot fields
+      const formData = this.honeypotService.prepareFormDataWithHoneypot({
+        username: this.username,
+        password: this.password,
+        recaptchaToken: this.recaptchaToken
+      }, this.formStartTime);
+
       await firstValueFrom(
-        this.auth.login(this.username, this.password, this.recaptchaToken)
+        this.auth.loginWithHoneypot(formData)
       );
       console.log('[Login] Login successful! Navigating...');
 

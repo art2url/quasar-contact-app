@@ -20,6 +20,7 @@ import {
   setCSRFCookie,
 } from '../utils/cookie.utils';
 import { validateCSRF } from '../middleware/csrf.middleware';
+import { validateHoneypot } from '../middleware/honeypot-captcha';
 
 const router = Router();
 
@@ -82,6 +83,7 @@ router.post(
     body('recaptchaToken').optional().isString().withMessage('Invalid reCAPTCHA token.'),
   ],
   authLimiter,
+  validateHoneypot(),
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -140,6 +142,7 @@ router.post(
     body('recaptchaToken').optional().isString().withMessage('Invalid reCAPTCHA token.'),
   ],
   authLimiter,
+  validateHoneypot(),
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -220,6 +223,7 @@ router.post(
     body('recaptchaToken').optional().isString().withMessage('Invalid reCAPTCHA token.'),
   ],
   authLimiter,
+  validateHoneypot(),
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
