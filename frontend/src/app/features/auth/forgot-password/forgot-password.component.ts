@@ -74,8 +74,10 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
   private initializeRecaptcha(): void {
     setTimeout(() => {
       try {
+        // Use different element ID based on email sent state
+        const elementId = this.emailSent ? 'recaptcha-forgot-password-resend' : 'recaptcha-forgot-password';
         this.recaptchaWidgetId = this.recaptchaService.renderRecaptcha(
-          'recaptcha-forgot-password',
+          elementId,
           (token: string) => {
             this.recaptchaToken = token;
             this.error = ''; // Clear any reCAPTCHA-related errors
