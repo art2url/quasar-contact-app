@@ -10,6 +10,7 @@ interface EnvConfig {
   APP_NAME: string;
   JWT_SECRET: string;
   CLIENT_ORIGIN: string;
+  LANDING_URL: string;
   RL_GLOBAL_MAX: number;
   RL_AUTH_MAX: number;
   OFFLINE_DELAY_MS: number;
@@ -31,6 +32,7 @@ export const env: EnvConfig = {
   APP_NAME: process.env.APP_NAME || 'Quasar Contact',
   JWT_SECRET: process.env.JWT_SECRET || '',
   CLIENT_ORIGIN: process.env.CLIENT_ORIGIN || 'http://localhost:4200',
+  LANDING_URL: process.env.LANDING_URL || 'https://quasar.contact',
   RL_GLOBAL_MAX: parseInt(process.env.RL_GLOBAL_MAX || '300', 10),
   RL_AUTH_MAX: parseInt(process.env.RL_AUTH_MAX || '5', 10),
   OFFLINE_DELAY_MS: parseInt(process.env.OFFLINE_DELAY_MS || '7000', 10),
@@ -56,17 +58,17 @@ const validateEnv = () => {
 
   if (env.JWT_SECRET.length < 32) {
     console.warn(
-      'WARNING: JWT_SECRET should be at least 32 characters long for security'
+      'WARNING: JWT_SECRET should be at least 32 characters long for security',
     );
   }
 
   // Warn if email settings are not configured
   if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) {
     console.warn(
-      'WARNING: email settings not configured. Password reset emails will not be sent.'
+      'WARNING: email settings not configured. Password reset emails will not be sent.',
     );
     console.warn(
-      'To enable email functionality, set SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS in your .env file.'
+      'To enable email functionality, set SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS in your .env file.',
     );
     console.warn(
       'Example settings:\n' +
@@ -74,11 +76,11 @@ const validateEnv = () => {
         '  SMTP_PORT=587\n' +
         '  SMTP_SECURE=false\n' +
         '  SMTP_USER=noreply@yourdomain.com\n' +
-        '  SMTP_PASS=your-email-password'
+        '  SMTP_PASS=your-email-password',
     );
   } else {
     console.log(
-      `[EmailService] email configured: ${env.SMTP_USER}@${env.SMTP_HOST}:${env.SMTP_PORT}`
+      `[EmailService] email configured: ${env.SMTP_USER}@${env.SMTP_HOST}:${env.SMTP_PORT}`,
     );
   }
 
