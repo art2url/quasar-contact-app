@@ -81,7 +81,9 @@ function proceedWithRequest(
       });
     } else if (
       !request.url.includes('/api/auth/login') &&
-      !request.url.includes('/api/auth/register')
+      !request.url.includes('/api/auth/register') &&
+      !request.url.includes('/api/auth/forgot-password') &&
+      !request.url.includes('/api/auth/reset-password')
     ) {
       console.warn('[AuthInterceptor] No CSRF token found for state-changing request!');
     }
