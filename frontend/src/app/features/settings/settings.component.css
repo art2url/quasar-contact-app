@@ -75,7 +75,7 @@
   padding: var(--spacing-sm) var(--spacing-md);
   border: none;
   border-radius: var(--border-radius);
-  font-family: 'Jost', sans-serif !important;
+  font-family: "Jost", sans-serif !important;
   font-optical-sizing: auto;
   font-size: 0.9rem;
   font-weight: 500;
@@ -130,7 +130,7 @@
 }
 
 .file-name {
-  font-family: 'Jost', sans-serif !important;
+  font-family: "Jost", sans-serif !important;
   font-optical-sizing: auto;
   font-size: 0.9rem;
   color: var(--text-color);
@@ -160,7 +160,9 @@
   border-radius: 8px;
   padding: 0;
   cursor: pointer;
-  transition: transform 0.2s, border-color 0.2s;
+  transition:
+    transform 0.2s,
+    border-color 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -189,14 +191,14 @@
   margin-top: var(--spacing-sm);
   font-size: 0.8rem;
   color: var(--text-secondary);
-  font-family: 'Jost', sans-serif !important;
+  font-family: "Jost", sans-serif !important;
 }
 
 .error {
   color: var(--danger-color);
   font-size: 0.9rem;
   margin-top: var(--spacing-sm);
-  font-family: 'Jost', sans-serif !important;
+  font-family: "Jost", sans-serif !important;
 }
 
 @media (max-width: 768px) {

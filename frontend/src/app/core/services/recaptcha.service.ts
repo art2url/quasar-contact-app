@@ -50,10 +50,7 @@ export class RecaptchaService {
     });
   }
 
-  renderRecaptcha(
-    elementId: string,
-    callback: (token: string) => void
-  ): number {
+  renderRecaptcha(elementId: string, callback: (token: string) => void): number {
     if (typeof grecaptcha === 'undefined') {
       throw new Error('reCAPTCHA not loaded');
     }
@@ -72,7 +69,7 @@ export class RecaptchaService {
         'error-callback': () => {
           console.error('reCAPTCHA error occurred');
           // Don't throw error, just log it to prevent app crashes
-        }
+        },
       });
     } catch (error) {
       console.error('Failed to render reCAPTCHA:', error);
@@ -111,11 +108,11 @@ export class RecaptchaService {
    * Re-render reCAPTCHA with current theme when theme changes
    */
   reRenderWithTheme(
-    elementId: string, 
+    elementId: string,
     callback: (token: string) => void,
     currentWidgetId?: number
   ): Promise<number> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       // Reset the current widget if it exists
       if (currentWidgetId !== undefined) {
         console.log('Resetting reCAPTCHA widget:', currentWidgetId);

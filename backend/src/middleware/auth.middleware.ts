@@ -1,9 +1,9 @@
-import {Request, Response, NextFunction} from 'express';
+import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import env from '../config/env';
 
 export interface AuthRequest extends Request {
-  user?: {userId: string; username: string};
+  user?: { userId: string; username: string };
 }
 
 export const authenticateToken = (
@@ -13,7 +13,7 @@ export const authenticateToken = (
 ) => {
   // First check for token in cookies (preferred method)
   let token = req.cookies?.auth_token;
-  
+
   // Fallback to Authorization header for backward compatibility
   if (!token) {
     const authHeader = req.headers.authorization;
@@ -21,7 +21,7 @@ export const authenticateToken = (
   }
 
   if (!token) {
-    return res.status(401).json({message: 'Access denied. Token missing.'});
+    return res.status(401).json({ message: 'Access denied. Token missing.' });
   }
 
   try {
@@ -30,9 +30,9 @@ export const authenticateToken = (
       username: string;
     };
 
-    req.user = {userId: payload.userId, username: payload.username};
+    req.user = { userId: payload.userId, username: payload.username };
     next();
   } catch (err) {
-    return res.status(403).json({message: 'Invalid or expired token.'});
+    return res.status(403).json({ message: 'Invalid or expired token.' });
   }
 };

@@ -76,7 +76,7 @@ export class WebSocketService {
   /**
    * Enhanced connection with better error handling and stability
    */
-  connect(token: string): void {
+  connect(): void {
     if (this.connectionState.connected || this.connectionState.connecting) {
       logWs('Already connected or connecting, skipping');
       return;
@@ -126,14 +126,14 @@ export class WebSocketService {
       });
     });
 
-    this.socket.on('disconnect', (reason) => {
+    this.socket.on('disconnect', reason => {
       this.zone.run(() => {
         logWs('Disconnected, reason:', reason);
         this.onDisconnection(reason);
       });
     });
 
-    this.socket.on('connect_error', (err) => {
+    this.socket.on('connect_error', err => {
       this.zone.run(() => {
         logWs('Connection error:', err.message);
         this.onConnectionError(err);
@@ -141,14 +141,14 @@ export class WebSocketService {
     });
 
     // Enhanced reconnection handling
-    this.socket.on('reconnect', (attemptNumber) => {
+    this.socket.on('reconnect', attemptNumber => {
       this.zone.run(() => {
         logWs('Reconnected after', attemptNumber, 'attempts');
         this.onReconnectionSuccess();
       });
     });
 
-    this.socket.on('reconnect_error', (err) => {
+    this.socket.on('reconnect_error', err => {
       this.zone.run(() => {
         logWs('Reconnection error:', err.message);
         this.connectionState.consecutiveFailures++;
@@ -166,38 +166,38 @@ export class WebSocketService {
     });
 
     // Message events
-    this.socket.on('receive-message', (message) => {
+    this.socket.on('receive-message', message => {
       this.zone.run(() => {
         logWs('Message received:', message.fromUserId);
-        this.messageHandlers.forEach((handler) => handler(message));
+        this.messageHandlers.forEach(handler => handler(message));
       });
     });
 
-    this.socket.on('message-sent', (ack) => {
+    this.socket.on('message-sent', ack => {
       this.zone.run(() => {
         logWs('Message sent ack:', ack.messageId);
         this._messageSentSubject.next(ack);
         // Also call registered callbacks
-        this.messageSentHandlers.forEach((handler) => handler(ack));
+        this.messageSentHandlers.forEach(handler => handler(ack));
       });
     });
 
-    this.socket.on('typing', (data) => {
+    this.socket.on('typing', data => {
       this.zone.run(() => {
         logWs('Typing indicator received:', data);
         this._typingSubject.next(data);
       });
     });
 
-    this.socket.on('message-read', (payload) => {
+    this.socket.on('message-read', payload => {
       this.zone.run(() => {
         logWs('Message read receipt:', payload.messageId);
-        this.messageReadHandlers.forEach((handler) => handler(payload));
+        this.messageReadHandlers.forEach(handler => handler(payload));
       });
     });
 
     // Enhanced presence events with better logging
-    this.socket.on('online-users', (data) => {
+    this.socket.on('online-users', data => {
       this.zone.run(() => {
         logWs('Online users received:', data);
         const userList = Array.isArray(data) ? data : data?.userIds || [];
@@ -205,7 +205,7 @@ export class WebSocketService {
       });
     });
 
-    this.socket.on('user-online', (data) => {
+    this.socket.on('user-online', data => {
       this.zone.run(() => {
         logWs('User came online:', data.userId, data.username || '');
         if (!this.onlineUsersList.has(data.userId)) {
@@ -219,7 +219,7 @@ export class WebSocketService {
       });
     });
 
-    this.socket.on('user-offline', (data) => {
+    this.socket.on('user-offline', data => {
       this.zone.run(() => {
         logWs('User went offline:', data.userId);
         if (this.onlineUsersList.has(data.userId)) {
@@ -234,7 +234,7 @@ export class WebSocketService {
     });
 
     // Error handling events
-    this.socket.on('message-error', (error) => {
+    this.socket.on('message-error', error => {
       this.zone.run(() => {
         console.error('[WebSocket] Message error:', error);
         // Could emit to an error subject for UI handling
@@ -349,7 +349,7 @@ export class WebSocketService {
       logWs(
         `Attempting reconnection (attempt ${this.connectionState.reconnectAttempts})`
       );
-      this.connect(''); // Empty token - will use cookies for auth
+      this.connect(); // Uses cookies for auth
     }, backoffDelay);
   }
 
@@ -410,16 +410,11 @@ export class WebSocketService {
    * Enhanced user presence management with immediate update
    */
   private updateOnlineUsers(userList: string[]): void {
-    logWs(
-      'Updating online users list from:',
-      [...this.onlineUsersList],
-      'to:',
-      userList
-    );
+    logWs('Updating online users list from:', [...this.onlineUsersList], 'to:', userList);
 
     // Clear and rebuild the set
     this.onlineUsersList.clear();
-    userList.forEach((userId) => this.onlineUsersList.add(userId));
+    userList.forEach(userId => this.onlineUsersList.add(userId));
 
     // Immediately update the observable
     this.onlineUsers$.next([...this.onlineUsersList]);
@@ -543,7 +538,7 @@ export class WebSocketService {
 
   // Event handlers for edit/delete
   onMessageEdited(cb: (p: MessageEditedEvent) => void): void {
-    this.socket?.on('message-edited', (d) => this.zone.run(() => cb(d)));
+    this.socket?.on('message-edited', d => this.zone.run(() => cb(d)));
   }
 
   offMessageEdited(cb: (p: MessageEditedEvent) => void): void {
@@ -551,7 +546,7 @@ export class WebSocketService {
   }
 
   onMessageDeleted(cb: (d: MessageDeletedEvent) => void): void {
-    this.socket?.on('message-deleted', (d) => this.zone.run(() => cb(d)));
+    this.socket?.on('message-deleted', d => this.zone.run(() => cb(d)));
   }
 
   offMessageDeleted(cb: (d: MessageDeletedEvent) => void): void {
@@ -633,9 +628,7 @@ export class WebSocketService {
    * @deprecated - Reconnection is now handled automatically
    */
   setupReconnection(): void {
-    console.log(
-      '[WebSocket] setupReconnection called - now handled automatically'
-    );
+    console.log('[WebSocket] setupReconnection called - now handled automatically');
     // This method is kept for backwards compatibility but does nothing
     // since reconnection is now handled automatically in the enhanced service
   }
@@ -666,7 +659,7 @@ export class WebSocketService {
     this.disconnect();
 
     setTimeout(() => {
-      this.connect(''); // Empty token - will use cookies for auth
+      this.connect(); // Uses cookies for auth
     }, 1000);
   }
 }

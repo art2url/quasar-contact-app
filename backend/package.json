@@ -6,8 +6,13 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "lint": "eslint . --ext .ts",
-    "format": "prettier --write ."
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write src/**/*.ts",
+    "format:check": "prettier --check src/**/*.ts",
+    "typecheck": "tsc --noEmit",
+    "style": "npm run lint && npm run format:check && npm run typecheck",
+    "style:fix": "npm run lint:fix && npm run format"
   },
   "keywords": [],
   "type": "commonjs",

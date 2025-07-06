@@ -20,7 +20,7 @@ class EmailService {
     // Check if email configuration is available
     if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) {
       console.warn(
-        '[EmailService] SMTP configuration not complete. Email features will be disabled.'
+        '[EmailService] SMTP configuration not complete. Email features will be disabled.',
       );
       return;
     }
@@ -65,10 +65,7 @@ class EmailService {
       await this.transporter.verify();
       console.log('[EmailService] SMTP connection verified successfully');
     } catch (error) {
-      console.error(
-        '[EmailService] SMTP connection verification failed:',
-        error
-      );
+      console.error('[EmailService] SMTP connection verification failed:', error);
       this.isConfigured = false;
     }
   }
@@ -79,7 +76,7 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: env.SMTP_FROM || env.SMTP_USER,
+      from: `"Quasar Contact" <${env.SMTP_FROM || env.SMTP_USER}>`,
       to: options.to,
       subject: options.subject,
       html: options.html,
@@ -91,20 +88,17 @@ class EmailService {
       console.log('[EmailService] Email sent successfully:', {
         to: options.to,
         subject: options.subject,
-        messageId: result.messageId,
+        messageId: result?.messageId || 'unknown',
       });
     } catch (error) {
       console.error('[EmailService] Failed to send email:', error);
       throw new Error(
-        `Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
   }
   // Send password reset email with reset link
-  async sendPasswordResetEmail(
-    email: string,
-    resetToken: string
-  ): Promise<void> {
+  async sendPasswordResetEmail(email: string, resetToken: string): Promise<void> {
     // Ensure we use the correct app path
     const baseUrl = env.CLIENT_ORIGIN || 'http://localhost:3000';
     const resetUrl = `${baseUrl}/app/auth/reset-password?token=${resetToken}`;
@@ -116,6 +110,10 @@ class EmailService {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="format-detection" content="telephone=no">
+        <meta name="x-apple-disable-message-reformatting">
+        <meta name="supported-color-schemes" content="light dark">
+        <meta name="color-scheme" content="light dark">
         <title>Password Reset - ${env.APP_NAME}</title>
         <style>
           /* Reset styles */
@@ -137,7 +135,7 @@ class EmailService {
             height: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
-            background-color: #000000 !important;
+            background-color: transparent !important;
             color: #ffffff;
             line-height: 1.6;
           }
@@ -149,7 +147,7 @@ class EmailService {
           
           .email-wrapper {
             width: 100%;
-            background-color: #ffffff;
+            background-color: transparent;
             padding: 20px 0;
           }
           
@@ -157,32 +155,10 @@ class EmailService {
             max-width: 600px;
             margin: 0 auto;
             background-color: #000000;
-            border: 2px solid #95E06C;
             border-radius: 16px;
             overflow: hidden;
           }
           
-          .header {
-            background-color: #001011;
-            padding: 40px 30px;
-            text-align: center;
-            border-bottom: 3px solid #95E06C;
-          }
-          
-          .app-name {
-            font-size: 28px;
-            font-weight: 700;
-            color: #95E06C;
-            margin-bottom: 15px;
-            text-decoration: none;
-          }
-          
-          .header-title {
-            font-size: 22px;
-            color: #ffffff;
-            font-weight: 600;
-            margin: 0;
-          }
           
           .content {
             padding: 40px 30px;
@@ -273,8 +249,7 @@ class EmailService {
           .footer {
             background-color: #000000;
             padding: 25px 30px;
-            text-align: center;
-            border-top: 2px solid #95E06C;
+            text-align: left;
           }
           
           .footer p {
@@ -294,7 +269,7 @@ class EmailService {
           @media only screen and (max-width: 600px) {
             .email-container {
               margin: 0 10px;
-              border-radius: 12px;
+              border-radius: 0 0 12px 12px;
             }
             
             .header, .content, .footer {
@@ -317,14 +292,14 @@ class EmailService {
         </style>
       </head>
       <body>
+        <div style="display: none; max-height: 0; overflow: hidden;">Secure password reset for your ${env.APP_NAME} account</div>
         <table role="presentation" class="email-wrapper" cellpadding="0" cellspacing="0">
           <tr>
-            <td>
+            <td align="center" style="padding: 0;">
               <table role="presentation" class="email-container" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td class="header">
-                    <div class="app-name">${env.APP_NAME}</div>
-                    <h1 class="header-title">🔐 Password Reset Request</h1>
+                  <td align="center" style="padding: 0; text-align: center;">
+                    <img src="${env.LANDING_URL}/assets/images/pass_request.png" alt="Password Reset Request" width="600" height="176" style="display: block; width: 600px; height: auto; border-radius: 16px 16px 0 0; border: 0; outline: none; text-decoration: none; max-width: 100%; margin: 0 auto;">
                   </td>
                 </tr>
                 <tr>
@@ -408,6 +383,10 @@ class EmailService {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="format-detection" content="telephone=no">
+        <meta name="x-apple-disable-message-reformatting">
+        <meta name="supported-color-schemes" content="light dark">
+        <meta name="color-scheme" content="light dark">
         <title>Password Reset Confirmation - ${env.APP_NAME}</title>
         <style>
           /* Reset styles */
@@ -429,7 +408,7 @@ class EmailService {
             height: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
-            background-color: #000000 !important;
+            background-color: transparent !important;
             color: #ffffff;
             line-height: 1.6;
           }
@@ -441,7 +420,7 @@ class EmailService {
           
           .email-wrapper {
             width: 100%;
-            background-color: #ffffff;
+            background-color: transparent;
             padding: 20px 0;
           }
           
@@ -449,7 +428,6 @@ class EmailService {
             max-width: 600px;
             margin: 0 auto;
             background-color: #000000;
-            border: 2px solid #68b684;
             border-radius: 16px;
             overflow: hidden;
           }
@@ -461,20 +439,6 @@ class EmailService {
             border-bottom: 3px solid #95E06C;
           }
           
-          .app-name {
-            font-size: 28px;
-            font-weight: 700;
-            color: #95E06C;
-            margin-bottom: 15px;
-            text-decoration: none;
-          }
-          
-          .header-title {
-            font-size: 22px;
-            color: #ffffff;
-            font-weight: 600;
-            margin: 0;
-          }
           
           .content {
             padding: 40px 30px;
@@ -555,8 +519,7 @@ class EmailService {
           .footer {
             background-color: #000000;
             padding: 25px 30px;
-            text-align: center;
-            border-top: 2px solid #95E06C;
+            text-align: left;
           }
           
           .footer p {
@@ -576,7 +539,7 @@ class EmailService {
           @media only screen and (max-width: 600px) {
             .email-container {
               margin: 0 10px;
-              border-radius: 12px;
+              border-radius: 0 0 12px 12px;
             }
             
             .header, .content, .footer {
@@ -594,14 +557,14 @@ class EmailService {
         </style>
       </head>
       <body>
+        <div style="display: none; max-height: 0; overflow: hidden;">Secure password reset for your ${env.APP_NAME} account</div>
         <table role="presentation" class="email-wrapper" cellpadding="0" cellspacing="0">
           <tr>
-            <td>
+            <td align="center" style="padding: 0;">
               <table role="presentation" class="email-container" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td class="header">
-                    <div class="app-name">${env.APP_NAME}</div>
-                    <h1 class="header-title">✅ Password Reset Successful</h1>
+                  <td align="center" style="padding: 0; text-align: center;">
+                    <img src="${env.LANDING_URL}/assets/images/pass_success.png" alt="Password Reset Successful" width="600" height="176" style="display: block; width: 600px; height: auto; border-radius: 16px 16px 0 0; border: 0; outline: none; text-decoration: none; max-width: 100%; margin: 0 auto;">
                   </td>
                 </tr>
                 <tr>

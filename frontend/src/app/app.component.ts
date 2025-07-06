@@ -63,7 +63,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
     // Subscribe to authentication changes
     this.subs.add(
-      this.authService.isAuthenticated$.subscribe((isAuthenticated) => {
+      this.authService.isAuthenticated$.subscribe(isAuthenticated => {
         console.log('[App] Auth state changed:', isAuthenticated);
 
         // Use longer setTimeout to prevent change detection errors
@@ -75,13 +75,11 @@ export class AppComponent implements OnInit, OnDestroy {
             const userId = localStorage.getItem('userId');
             if (username && userId && !this.ws.isConnected()) {
               console.log('[App] Connecting WebSocket for authenticated user');
-              this.ws.connect(''); // Empty token - will use cookies for auth
+              this.ws.connect(); // Uses cookies for auth
               // Reconnection is now handled automatically by enhanced WebSocketService
             }
           } else {
-            console.log(
-              '[App] Disconnecting WebSocket for unauthenticated user'
-            );
+            console.log('[App] Disconnecting WebSocket for unauthenticated user');
             this.ws.disconnect();
 
             if (!this.router.url.includes('/auth/')) {
@@ -95,13 +93,10 @@ export class AppComponent implements OnInit, OnDestroy {
 
     // Simple navigation loading
     this.subs.add(
-      this.router.events.subscribe((event) => {
+      this.router.events.subscribe(event => {
         if (event instanceof NavigationStart) {
           // Only show for authenticated users or auth pages
-          if (
-            this.authService.isAuthenticated() ||
-            event.url.includes('/auth/')
-          ) {
+          if (this.authService.isAuthenticated() || event.url.includes('/auth/')) {
             // Delay loading service call
             setTimeout(() => {
               this.loadingService.showForNavigation(`nav:${event.url}`);
@@ -166,9 +161,7 @@ export class AppComponent implements OnInit, OnDestroy {
         return; // Already loaded
       }
 
-      const stored = await this.vault.get<ArrayBuffer | string>(
-        VAULT_KEYS.PRIVATE_KEY
-      );
+      const stored = await this.vault.get<ArrayBuffer | string>(VAULT_KEYS.PRIVATE_KEY);
       if (stored) {
         await this.crypto.importPrivateKey(stored);
         console.log('[App] Successfully preloaded private key');
