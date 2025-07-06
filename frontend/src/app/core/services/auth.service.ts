@@ -245,6 +245,75 @@ export class AuthService {
     return this.http.post<RegisterResponse>(getApiPath('auth/register'), registerData);
   }
 
+  // Register method with honeypot support
+  registerWithHoneypot(formData: Record<string, unknown>): Observable<RegisterResponse> {
+    return this.http.post<RegisterResponse>(getApiPath('auth/register'), formData);
+  }
+
+  // Login method with honeypot support
+  loginWithHoneypot(formData: Record<string, unknown>): Observable<LoginResponse> {
+    return this.http
+      .post<LoginResponse>(getApiPath('auth/login'), formData)
+      .pipe(
+        switchMap(async response => {
+          // Store CSRF token from response
+          if (response.csrfToken) {
+            this.csrfService.setToken(response.csrfToken);
+          }
+
+          // Store user auth data (JWT token is now in HttpOnly cookies)
+          localStorage.setItem('username', formData['username'] as string);
+
+          const userId = response.user?.id;
+          if (!userId) {
+            throw new Error('No userId available in response');
+          }
+          localStorage.setItem('userId', userId);
+
+          if (response.user?.avatarUrl) {
+            localStorage.setItem('myAvatar', response.user.avatarUrl);
+          }
+
+          // Setup vault and keys
+          console.log('[Auth] Setting up vault for user:', userId);
+          await this.vault.setCurrentUser(userId);
+          await this.vault.waitUntilReady();
+          console.log('[Auth] Vault is ready');
+
+          // Smart key management - only generate new keys when needed
+          await this.ensurePrivateKey(userId);
+
+          console.log('[Auth] Connecting WebSocket');
+          // WebSocket will use cookies for authentication now
+          this.wsService.connect(); // Uses cookies for authentication
+
+          return response;
+        }),
+        tap(() => {
+          console.log('[Auth] Login complete, updating auth state');
+          this.authenticatedSubject.next(true);
+          // Reset the post-password-reset flag
+          this.isPostPasswordReset = false;
+        }),
+        catchError((err: HttpErrorResponse) => {
+          console.error('[Auth] Login failed:', err);
+          this.clearAuthData();
+
+          if (err.status === 401) {
+            return throwError(() => new Error('Invalid username or password'));
+          } else if (err.status === 400 && err.error?.message?.includes('recaptcha')) {
+            return throwError(
+              () => new Error('Security verification failed. Please try again.')
+            );
+          } else if (err.status === 0) {
+            return throwError(() => new Error('Cannot connect to server'));
+          } else {
+            return throwError(() => new Error(err.error?.message || 'Login failed'));
+          }
+        })
+      );
+  }
+
   logout(): void {
     console.log('[Auth] Logging out');
 
