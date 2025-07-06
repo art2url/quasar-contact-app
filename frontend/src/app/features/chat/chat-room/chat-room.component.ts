@@ -37,11 +37,7 @@ import { NotificationService } from '@services/notification.service';
 import { CacheInfoBannerComponent } from '@shared/components/cache-info-banner/cache-info-banner.component';
 
 // Import updated date utilities
-import {
-  formatMessageTime,
-  formatDateHeader,
-  getStartOfDay,
-} from '@utils/date.util';
+import { formatMessageTime, formatDateHeader, getStartOfDay } from '@utils/date.util';
 
 // Interface for grouped messages
 interface MessageGroup {
@@ -82,7 +78,7 @@ export class MyHammerConfig extends HammerGestureConfig {
   ],
   templateUrl: './chat-room.component.html',
   styleUrls: ['./chat-room.component.css'],
-  encapsulation: ViewEncapsulation.None
+  encapsulation: ViewEncapsulation.None,
 })
 export class ChatRoomComponent
   implements OnInit, AfterViewChecked, AfterViewInit, OnDestroy
@@ -196,10 +192,7 @@ export class ChatRoomComponent
    * Emit event when entering chat room for immediate header updates
    */
   private emitChatRoomEnteredEvent(): void {
-    console.log(
-      '[ChatRoom] Emitting chat room entered event for room:',
-      this.receiverId
-    );
+    console.log('[ChatRoom] Emitting chat room entered event for room:', this.receiverId);
 
     // Directly call NotificationService to ensure badge is cleared immediately
     console.log(
@@ -255,15 +248,13 @@ export class ChatRoomComponent
 
       // Subscribe to loading state first
       this.subs.add(
-        this.chat.messagesLoading$.subscribe((loading) => {
+        this.chat.messagesLoading$.subscribe(loading => {
           console.log('[ChatRoom] Messages loading state:', loading);
           this.isLoadingMessages = loading;
 
           // Only allow autoscroll after initial loading is complete
           if (!loading && !this.hasInitiallyScrolled) {
-            console.log(
-              '[ChatRoom] Initial loading complete, enabling autoscroll'
-            );
+            console.log('[ChatRoom] Initial loading complete, enabling autoscroll');
             this.hasInitiallyScrolled = true;
             this.shouldAutoScroll = true;
 
@@ -277,7 +268,7 @@ export class ChatRoomComponent
 
       // Subscribe to message updates ONCE
       this.subs.add(
-        this.chat.messages$.subscribe((messages) => {
+        this.chat.messages$.subscribe(messages => {
           console.log('[ChatRoom] Messages updated, count:', messages.length);
 
           // Check if we should show the cache info banner
@@ -298,7 +289,7 @@ export class ChatRoomComponent
 
       // Set up connection status subscription ONCE
       this.subs.add(
-        this.ws.isConnected$.subscribe((connected) => {
+        this.ws.isConnected$.subscribe(connected => {
           console.log('[ChatRoom] WebSocket connection status:', connected);
         })
       );
@@ -308,7 +299,7 @@ export class ChatRoomComponent
 
       // Get partner's avatar ONCE
       this.subs.add(
-        this.chat.theirAvatar$.subscribe((avatar) => {
+        this.chat.theirAvatar$.subscribe(avatar => {
           console.log('[ChatRoom] Partner avatar updated:', avatar);
           this.partnerAvatar = avatar;
         })
@@ -317,16 +308,12 @@ export class ChatRoomComponent
       /* Enhanced auto-mark messages as read and update header counter */
       this.subs.add(
         this.chat.messages$.subscribe({
-          next: (msgs) => {
+          next: msgs => {
             // Only process read receipts if not loading
             if (!this.isLoadingMessages) {
               // Mark unread messages from partner as read
               const unreadFromPartner = msgs.filter(
-                (m) =>
-                  m.sender !== 'You' &&
-                  !m.readAt &&
-                  m.id &&
-                  !this.reported.has(m.id)
+                m => m.sender !== 'You' && !m.readAt && m.id && !this.reported.has(m.id)
               );
 
               if (unreadFromPartner.length > 0) {
@@ -336,7 +323,7 @@ export class ChatRoomComponent
                   'messages as read'
                 );
 
-                unreadFromPartner.forEach((m) => {
+                unreadFromPartner.forEach(m => {
                   this.ws.markMessageRead(m.id!);
                   this.reported.add(m.id!);
                 });
@@ -383,7 +370,7 @@ export class ChatRoomComponent
               }
             }
           },
-          error: (err) => console.error('Error in messages subscription:', err),
+          error: err => console.error('Error in messages subscription:', err),
         })
       );
 
@@ -401,7 +388,7 @@ export class ChatRoomComponent
     const groups: MessageGroup[] = [];
     let currentGroup: MessageGroup | null = null;
 
-    messages.forEach((message) => {
+    messages.forEach(message => {
       const messageTimestamp = message.ts;
       const dayStart = getStartOfDay(messageTimestamp);
 
@@ -420,11 +407,7 @@ export class ChatRoomComponent
     });
 
     this.messageGroups = groups;
-    console.log(
-      '[ChatRoom] Grouped messages into',
-      groups.length,
-      'date groups'
-    );
+    console.log('[ChatRoom] Grouped messages into', groups.length, 'date groups');
   }
 
   /**
@@ -432,9 +415,7 @@ export class ChatRoomComponent
    */
   private handleMessagesUpdate(messages: ChatMsg[]): void {
     if (this.isLoadingMessages) {
-      console.log(
-        '[ChatRoom] Skipping message update handling - still loading'
-      );
+      console.log('[ChatRoom] Skipping message update handling - still loading');
       return;
     }
 
@@ -449,10 +430,7 @@ export class ChatRoomComponent
         this.newMessagesCount += newMessageCount;
         // REMOVED: this.showScrollToBottomButton = true;
         // Let handleScroll method control button visibility based on scroll position
-        console.log(
-          '[ChatRoom] New messages while scrolled up:',
-          newMessageCount
-        );
+        console.log('[ChatRoom] New messages while scrolled up:', newMessageCount);
       } else {
         // User is at bottom, reset counter and auto-scroll
         this.newMessagesCount = 0;
@@ -475,7 +453,7 @@ export class ChatRoomComponent
 
     // Subscribe to main online users list
     this.subs.add(
-      this.ws.onlineUsers$.subscribe((onlineUsers) => {
+      this.ws.onlineUsers$.subscribe(onlineUsers => {
         const wasOnline = this.isPartnerOnline;
         this.isPartnerOnline = Array.isArray(onlineUsers)
           ? onlineUsers.includes(this.receiverId)
@@ -491,7 +469,7 @@ export class ChatRoomComponent
 
     // Subscribe to individual user online events
     this.subs.add(
-      this.ws.userOnline$.subscribe((userId) => {
+      this.ws.userOnline$.subscribe(userId => {
         if (userId === this.receiverId) {
           console.log(`[ChatRoom] Partner ${this.receiverId} came online`);
           this.isPartnerOnline = true;
@@ -501,7 +479,7 @@ export class ChatRoomComponent
 
     // Subscribe to individual user offline events
     this.subs.add(
-      this.ws.userOffline$.subscribe((userId) => {
+      this.ws.userOffline$.subscribe(userId => {
         if (userId === this.receiverId) {
           console.log(`[ChatRoom] Partner ${this.receiverId} went offline`);
           this.isPartnerOnline = false;
@@ -511,11 +489,9 @@ export class ChatRoomComponent
 
     // Handle WebSocket disconnection
     this.subs.add(
-      this.ws.isConnected$.subscribe((connected) => {
+      this.ws.isConnected$.subscribe(connected => {
         if (!connected) {
-          console.log(
-            '[ChatRoom] WebSocket disconnected, marking partner as offline'
-          );
+          console.log('[ChatRoom] WebSocket disconnected, marking partner as offline');
           this.isPartnerOnline = false;
         } else {
           // When reconnected, check current status
@@ -540,16 +516,13 @@ export class ChatRoomComponent
     console.log('[ChatRoom] Setting up typing indicator subscription');
 
     this.subs.add(
-      this.chat.partnerTyping$.subscribe((isTyping) => {
+      this.chat.partnerTyping$.subscribe(isTyping => {
         console.log('[ChatRoom] Partner typing status changed:', isTyping);
 
         // Use NgZone to ensure Angular detects the change
         this.ngZone.run(() => {
           this.isPartnerTyping = isTyping;
-          console.log(
-            '[ChatRoom] Updated isPartnerTyping to:',
-            this.isPartnerTyping
-          );
+          console.log('[ChatRoom] Updated isPartnerTyping to:', this.isPartnerTyping);
         });
       })
     );
@@ -586,9 +559,7 @@ export class ChatRoomComponent
     // Set up input event listeners for typing detection
     setTimeout(() => {
       if (this.messageInput?.nativeElement) {
-        console.log(
-          '[ChatRoom] Setting up input listeners for typing detection'
-        );
+        console.log('[ChatRoom] Setting up input listeners for typing detection');
 
         // Use more reliable input events to detect typing
         this.messageInput.nativeElement.addEventListener(
@@ -643,8 +614,7 @@ export class ChatRoomComponent
     const isNearBottom = distanceFromBottom <= 50; // Within 50px of bottom
 
     // FIXED: Show button ONLY when user scrolls up significantly
-    const shouldShowButton =
-      scrollDirection === 'up' && distanceFromBottom > 150;
+    const shouldShowButton = scrollDirection === 'up' && distanceFromBottom > 150;
 
     // Update user position
     this.isUserAtBottom = isNearBottom;
@@ -687,11 +657,7 @@ export class ChatRoomComponent
   // Only auto-scroll after initial loading is complete
   ngAfterViewChecked() {
     // Only auto-scroll if conditions are met and not loading
-    if (
-      this.shouldAutoScroll &&
-      this.isUserAtBottom &&
-      !this.isLoadingMessages
-    ) {
+    if (this.shouldAutoScroll && this.isUserAtBottom && !this.isLoadingMessages) {
       this.scrollToBottom(false);
       this.shouldAutoScroll = false;
     }
@@ -783,7 +749,7 @@ export class ChatRoomComponent
         // Scroll to bottom after sending
         setTimeout(() => this.scrollToBottom(true), 0);
       })
-      .catch((error) => {
+      .catch(error => {
         console.error('[ChatRoom] Error sending message:', error);
 
         // Handle send failure - potentially restore the message
@@ -841,15 +807,11 @@ export class ChatRoomComponent
   getMessageAvatar(message: ChatMsg): string {
     // For messages sent by me, use my avatar
     if (message.sender === 'You') {
-      return (
-        message.avatarUrl || this.myAvatar || 'assets/images/avatars/01.svg'
-      );
+      return message.avatarUrl || this.myAvatar || 'assets/images/avatars/01.svg';
     }
 
     // For messages from partner, use their avatar
-    return (
-      message.avatarUrl || this.partnerAvatar || 'assets/images/avatars/01.svg'
-    );
+    return message.avatarUrl || this.partnerAvatar || 'assets/images/avatars/01.svg';
   }
 
   /**
@@ -894,16 +856,13 @@ export class ChatRoomComponent
 
     // Check if there are any messages sent by me that show cache-related text
     const hasUnreadableSentMessages = messages.some(
-      (m) =>
+      m =>
         m.sender === 'You' &&
-        (m.text.includes('💬 Message sent') ||
-          m.text.includes('🔒 Encrypted message'))
+        (m.text.includes('💬 Message sent') || m.text.includes('🔒 Encrypted message'))
     );
 
     if (hasUnreadableSentMessages && !this.showCacheInfoBanner) {
-      console.log(
-        '[ChatRoom] Detected unreadable sent messages, showing info banner'
-      );
+      console.log('[ChatRoom] Detected unreadable sent messages, showing info banner');
       this.showCacheInfoBanner = true;
     }
   }
@@ -922,7 +881,7 @@ export class ChatRoomComponent
 
   /**
    * Check if a message is encrypted (from partner)
-   * 
+   *
    * NOTE: This uses text matching which can have false positives if users
    * type the exact encrypted message text. For 100% accuracy, backend should
    * provide explicit encryption status flags.
@@ -933,9 +892,9 @@ export class ChatRoomComponent
     // Check for exact encrypted message text
     // Most users won't type this exact system message, so risk is minimal
     const isEncryptedText = message.text === '🔒 Encrypted message (from partner)';
-    
+
     return isEncryptedText;
-    
+
     // TODO: Replace with proper backend flag when available:
     // return message.decryptionFailed === true;
   }
@@ -945,9 +904,7 @@ export class ChatRoomComponent
    */
   canEditMessage(message: ChatMsg): boolean {
     return (
-      message.sender === 'You' &&
-      !message.deletedAt &&
-      !this.isMessageUnreadable(message)
+      message.sender === 'You' && !message.deletedAt && !this.isMessageUnreadable(message)
     );
   }
 
@@ -988,7 +945,7 @@ export class ChatRoomComponent
           console.log('Successfully navigated to chat list');
           this.loadingService.hide('navigation');
         })
-        .catch((err) => {
+        .catch(err => {
           console.error('Navigation to chat list failed:', err);
           this.loadingService.hide('navigation');
 
@@ -1070,9 +1027,7 @@ export class ChatRoomComponent
     // Check if message can be deleted
     if (!this.canEditMessage(m)) {
       console.log('[ChatRoom] Cannot delete unreadable message');
-      alert(
-        'Cannot delete this message - original text is no longer available.'
-      );
+      alert('Cannot delete this message - original text is no longer available.');
       return;
     }
 
@@ -1089,14 +1044,8 @@ export class ChatRoomComponent
 
     // Remove event listeners from input element
     if (this.messageInput?.nativeElement) {
-      this.messageInput.nativeElement.removeEventListener(
-        'input',
-        this.handleTyping
-      );
-      this.messageInput.nativeElement.removeEventListener(
-        'keydown',
-        this.handleKeydown
-      );
+      this.messageInput.nativeElement.removeEventListener('input', this.handleTyping);
+      this.messageInput.nativeElement.removeEventListener('keydown', this.handleKeydown);
     }
 
     // Remove scroll listener

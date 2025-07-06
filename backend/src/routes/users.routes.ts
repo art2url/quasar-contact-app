@@ -1,6 +1,6 @@
-import {Router} from 'express';
+import { Router } from 'express';
 import User from '../models/User';
-import {authenticateToken, AuthRequest} from '../middleware/auth.middleware';
+import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
 
@@ -15,7 +15,7 @@ router.get('/', authenticateToken, async (_req, res) => {
     res.json(users);
   } catch (err) {
     console.error('[Users Fetch Error]', err);
-    res.status(500).json({message: 'Server error while fetching users.'});
+    res.status(500).json({ message: 'Server error while fetching users.' });
   }
 });
 
@@ -24,11 +24,11 @@ router.get('/', authenticateToken, async (_req, res) => {
  * Body: { avatarUrl: string }
  */
 router.put('/me/avatar', authenticateToken, async (req: AuthRequest, res) => {
-  const {avatarUrl} = req.body;
-  if (!avatarUrl) return res.status(400).json({message: 'avatarUrl required'});
+  const { avatarUrl } = req.body;
+  if (!avatarUrl) return res.status(400).json({ message: 'avatarUrl required' });
 
   if (!req.user) return res.sendStatus(401); // safety check
-  await User.findByIdAndUpdate(req.user.userId, {avatarUrl});
+  await User.findByIdAndUpdate(req.user.userId, { avatarUrl });
 
   res.sendStatus(204);
 });

@@ -13,8 +13,14 @@ import PasswordReset from '../models/PasswordReset';
 import { authLimiter } from '../config/ratelimits';
 import env from '../config/env';
 import emailService from '../services/email.service';
-import { setAuthCookie, clearAuthCookie, generateCSRFToken, setCSRFCookie } from '../utils/cookie.utils';
+import {
+  setAuthCookie,
+  clearAuthCookie,
+  generateCSRFToken,
+  setCSRFCookie,
+} from '../utils/cookie.utils';
 import { validateCSRF } from '../middleware/csrf.middleware';
+import { validateHoneypot } from '../middleware/honeypot-captcha';
 
 const router = Router();
 
@@ -45,7 +51,7 @@ async function verifyRecaptcha(recaptchaToken: string): Promise<boolean> {
       }
     );
 
-    const { success, score, action } = response.data;
+    const { success } = response.data;
 
     // For reCAPTCHA v2, check if success is true
     // For reCAPTCHA v3, you might also want to check the score (score >= 0.5)
@@ -74,12 +80,10 @@ router.post(
     body('password')
       .isLength({ min: 6 })
       .withMessage('Password must be at least 6 characters long.'),
-    body('recaptchaToken')
-      .optional()
-      .isString()
-      .withMessage('Invalid reCAPTCHA token.'),
+    body('recaptchaToken').optional().isString().withMessage('Invalid reCAPTCHA token.'),
   ],
   authLimiter,
+  validateHoneypot(),
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -105,9 +109,7 @@ router.post(
         $or: [{ username }, { email }],
       });
       if (existingUser) {
-        return res
-          .status(409)
-          .json({ message: 'Username or email already taken.' });
+        return res.status(409).json({ message: 'Username or email already taken.' });
       }
 
       // Hash password
@@ -137,12 +139,10 @@ router.post(
   [
     body('username').notEmpty().withMessage('Username or email is required.'),
     body('password').notEmpty().withMessage('Password is required.'),
-    body('recaptchaToken')
-      .optional()
-      .isString()
-      .withMessage('Invalid reCAPTCHA token.'),
+    body('recaptchaToken').optional().isString().withMessage('Invalid reCAPTCHA token.'),
   ],
   authLimiter,
+  validateHoneypot(),
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -164,7 +164,7 @@ router.post(
 
       // Search for a user by either username or email.
       const user = await User.findOne({
-        $or: [{ username: username }, { email: username }],
+        $or: [{ username }, { email: username }],
       });
       if (!user) {
         // Consider removing these console.logs in production
@@ -220,12 +220,10 @@ router.post(
   '/forgot-password',
   [
     body('email').isEmail().withMessage('Valid email is required.'),
-    body('recaptchaToken')
-      .optional()
-      .isString()
-      .withMessage('Invalid reCAPTCHA token.'),
+    body('recaptchaToken').optional().isString().withMessage('Invalid reCAPTCHA token.'),
   ],
   authLimiter,
+  validateHoneypot(),
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -265,10 +263,7 @@ router.post(
       });
 
       if (recentReset) {
-        console.log(
-          '[Forgot Password] Recent reset request exists for:',
-          email
-        );
+        console.log('[Forgot Password] Recent reset request exists for:', email);
         return res.status(200).json({
           message:
             'If an account exists with this email, you will receive password reset instructions.',
@@ -277,10 +272,7 @@ router.post(
 
       // Generate reset token
       const resetToken = crypto.randomBytes(32).toString('hex');
-      const hashedToken = crypto
-        .createHash('sha256')
-        .update(resetToken)
-        .digest('hex');
+      const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
       // Create password reset record
       await PasswordReset.create({
@@ -301,9 +293,7 @@ router.post(
       });
     } catch (error) {
       console.error('[Forgot Password Error]', error);
-      res
-        .status(500)
-        .json({ message: 'Server error during password reset request.' });
+      res.status(500).json({ message: 'Server error during password reset request.' });
     }
   }
 );
@@ -328,9 +318,7 @@ router.get('/reset-password/validate', async (req: Request, res: Response) => {
     });
 
     if (!resetRecord) {
-      return res
-        .status(400)
-        .json({ valid: false, message: 'Invalid or expired token.' });
+      return res.status(400).json({ valid: false, message: 'Invalid or expired token.' });
     }
 
     res.status(200).json({ valid: true });
@@ -359,10 +347,7 @@ router.post(
 
     try {
       // Hash the token to compare with stored version
-      const hashedToken = crypto
-        .createHash('sha256')
-        .update(token)
-        .digest('hex');
+      const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
       // Find valid reset record
       const resetRecord = await PasswordReset.findOne({
@@ -372,9 +357,7 @@ router.post(
       });
 
       if (!resetRecord) {
-        return res
-          .status(400)
-          .json({ message: 'Invalid or expired reset token.' });
+        return res.status(400).json({ message: 'Invalid or expired reset token.' });
       }
 
       // Find the user
@@ -403,18 +386,14 @@ router.post(
         $or: [{ senderId: user._id }, { receiverId: user._id }],
       });
 
-      console.log(
-        '[Reset Password] Password reset successful for user:',
-        user.username
-      );
+      console.log('[Reset Password] Password reset successful for user:', user.username);
       console.log('[Reset Password] Deleted all messages for user:', user._id);
 
       // Send confirmation e-mail
       await emailService.sendPasswordResetConfirmation(user.email);
 
       res.status(200).json({
-        message:
-          'Password reset successful. All previous messages have been deleted.',
+        message: 'Password reset successful. All previous messages have been deleted.',
       });
     } catch (error) {
       console.error('[Reset Password Error]', error);
@@ -434,8 +413,8 @@ router.post('/logout', validateCSRF, async (req: Request, res: Response) => {
       sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
       path: '/',
       ...(process.env.NODE_ENV === 'production' && {
-        domain: '.quasar.contact'
-      })
+        domain: '.quasar.contact',
+      }),
     });
 
     res.status(200).json({

@@ -17,14 +17,14 @@ export class CsrfService {
     if (this.csrfToken) {
       return this.csrfToken;
     }
-    
+
     // Fall back to localStorage
     const stored = localStorage.getItem('csrf_token');
     if (stored) {
       this.csrfToken = stored;
       return stored;
     }
-    
+
     return null;
   }
 

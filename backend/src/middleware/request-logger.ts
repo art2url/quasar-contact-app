@@ -45,11 +45,7 @@ export const logSuspiciousRequest = (
     const userAgent = req.get('User-Agent') || 'Unknown';
 
     // Only log 4xx and 5xx responses or suspicious paths
-    if (
-      res.statusCode >= 400 ||
-      req.path.includes('admin') ||
-      req.path.includes('wp')
-    ) {
+    if (res.statusCode >= 400 || req.path.includes('admin') || req.path.includes('wp')) {
       const logEntry = {
         timestamp: formatDate(),
         ip: clientIP,
@@ -73,7 +69,7 @@ export const logSuspiciousRequest = (
         logsDir,
         `suspicious-${new Date().toISOString().split('T')[0]}.log`
       );
-      fs.appendFileSync(logFile, JSON.stringify(logEntry) + '\n');
+      fs.appendFileSync(logFile, `${JSON.stringify(logEntry)}\n`);
     }
   });
 
@@ -81,11 +77,7 @@ export const logSuspiciousRequest = (
 };
 
 // ─── Access Log for All Requests ──────────────────────────
-export const accessLogger = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
+export const accessLogger = (req: Request, res: Response, next: NextFunction): void => {
   const startTime = Date.now();
 
   res.on('finish', () => {
@@ -117,14 +109,14 @@ export const analyzeAttackPatterns = (): void => {
         const logs = fs
           .readFileSync(suspiciousLogFile, 'utf-8')
           .split('\n')
-          .filter((line) => line)
-          .map((line) => JSON.parse(line));
+          .filter(line => line)
+          .map(line => JSON.parse(line));
 
         // Analyze patterns
         const ipCounts = new Map<string, number>();
         const pathCounts = new Map<string, number>();
 
-        logs.forEach((log) => {
+        logs.forEach(log => {
           ipCounts.set(log.ip, (ipCounts.get(log.ip) || 0) + 1);
           pathCounts.set(log.path, (pathCounts.get(log.path) || 0) + 1);
         });

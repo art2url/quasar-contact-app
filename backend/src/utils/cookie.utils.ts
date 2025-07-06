@@ -18,8 +18,8 @@ export const setCookieOptions = (isDev: boolean = false): CookieOptions => {
     path: '/',
     // Set domain for cross-subdomain sharing in production
     ...(process.env.NODE_ENV === 'production' && {
-      domain: '.quasar.contact'
-    })
+      domain: '.quasar.contact',
+    }),
   };
 };
 
@@ -36,8 +36,8 @@ export const clearAuthCookie = (res: Response): void => {
     sameSite: isDev ? 'lax' : 'strict',
     path: '/',
     ...(process.env.NODE_ENV === 'production' && {
-      domain: '.quasar.contact'
-    })
+      domain: '.quasar.contact',
+    }),
   });
 };
 
@@ -55,7 +55,7 @@ export const setCSRFCookie = (res: Response, token: string): void => {
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     path: '/',
     ...(process.env.NODE_ENV === 'production' && {
-      domain: '.quasar.contact'
-    })
+      domain: '.quasar.contact',
+    }),
   });
 };

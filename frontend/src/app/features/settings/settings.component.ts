@@ -45,9 +45,7 @@ export class SettingsComponent {
         if (storedKey) {
           await this.crypto.importPrivateKey(storedKey);
         } else {
-          alert(
-            'No private key found. Please log in again to generate a new key.'
-          );
+          alert('No private key found. Please log in again to generate a new key.');
           return;
         }
       }
@@ -105,8 +103,7 @@ export class SettingsComponent {
 
     // Sanity‑check: accept only reasonably‑sized text files (< 50KB)
     if (file.size > 50_000) {
-      this.importError =
-        'Selected file is too large to be a private‑key backup.';
+      this.importError = 'Selected file is too large to be a private‑key backup.';
       return;
     }
 
@@ -126,9 +123,7 @@ export class SettingsComponent {
     } catch (err: unknown) {
       console.error('[Settings] Error importing private key:', err);
       this.importError =
-        err instanceof Error
-          ? err.message
-          : 'Invalid or unsupported private‑key file';
+        err instanceof Error ? err.message : 'Invalid or unsupported private‑key file';
     } finally {
       input.value = ''; // reset file input so the same file can be re‑added
       this.selectedFileName = ''; // Reset UI
@@ -155,7 +150,7 @@ export class SettingsComponent {
         console.log('[Settings] Avatar updated successfully');
         alert('Avatar updated ✅');
       },
-      error: (error) => {
+      error: error => {
         console.error('[Settings] Failed to update avatar:', error);
         alert('Could not update avatar on the server');
       },

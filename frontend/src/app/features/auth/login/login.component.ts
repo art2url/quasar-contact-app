@@ -17,12 +17,13 @@ import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { HttpClient } from '@angular/common/http';
-import { catchError, firstValueFrom, timeout, TimeoutError, Subscription, skip } from 'rxjs';
+import { catchError, firstValueFrom, timeout, TimeoutError, Subscription } from 'rxjs';
 
 import { AuthService } from '@services/auth.service';
 import { LoadingService } from '@services/loading.service';
 import { RecaptchaService } from '@services/recaptcha.service';
 import { ThemeService } from '@services/theme.service';
+import { HoneypotService } from '@services/honeypot.service';
 import { environment } from '@environments/environment';
 
 @Component({
@@ -55,6 +56,10 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
   recaptchaToken = '';
   recaptchaWidgetId: number | undefined;
   private themeSubscription?: Subscription;
+  
+  // Honeypot fields
+  honeypotFields: Record<string, string> = {};
+  formStartTime = 0;
 
   constructor(
     private auth: AuthService,
@@ -62,7 +67,8 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
     private loadingService: LoadingService,
     private http: HttpClient,
     private recaptchaService: RecaptchaService,
-    private themeService: ThemeService
+    private themeService: ThemeService,
+    public honeypotService: HoneypotService
   ) {}
 
   ngOnInit(): void {
@@ -72,6 +78,10 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
     if (state?.message) {
       console.log('Registration success:', state.message);
     }
+    
+    // Initialize honeypot fields
+    this.honeypotFields = this.honeypotService.createHoneypotData();
+    this.formStartTime = this.honeypotService.addFormStartTime();
   }
 
   ngAfterViewInit(): void {
@@ -83,25 +93,25 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
   private setupThemeSubscription(): void {
     console.log('Setting up theme subscription...');
     let isFirstEmission = true;
-    
-    this.themeSubscription = this.themeService.theme$.subscribe((theme) => {
+
+    this.themeSubscription = this.themeService.theme$.subscribe(theme => {
       console.log('Theme subscription triggered with theme:', theme);
-      
+
       if (isFirstEmission) {
         isFirstEmission = false;
         console.log('Skipping first emission');
         return;
       }
-      
+
       console.log('reCAPTCHA widget ID:', this.recaptchaWidgetId);
-      
+
       if (this.recaptchaWidgetId !== undefined) {
         console.log('Re-rendering reCAPTCHA for theme:', theme);
-        
+
         // Reset the widget first
         this.recaptchaService.resetRecaptcha(this.recaptchaWidgetId);
         this.recaptchaToken = '';
-        
+
         // Completely remove and recreate the DOM element
         const recaptchaElement = document.getElementById('recaptcha-login');
         if (recaptchaElement && recaptchaElement.parentNode) {
@@ -111,7 +121,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
           parent.replaceChild(newElement, recaptchaElement);
           console.log('Recreated reCAPTCHA DOM element');
         }
-        
+
         // Re-render with delay
         setTimeout(() => {
           try {
@@ -136,7 +146,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
   private initializeRecaptcha(retryCount = 0): void {
     const maxRetries = 3;
     const baseDelay = 500;
-    
+
     setTimeout(() => {
       try {
         this.recaptchaWidgetId = this.recaptchaService.renderRecaptcha(
@@ -146,15 +156,30 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
             this.error = ''; // Clear any reCAPTCHA-related errors
           }
         );
-        console.log('reCAPTCHA initialized successfully with widget ID:', this.recaptchaWidgetId);
+        console.log(
+          'reCAPTCHA initialized successfully with widget ID:',
+          this.recaptchaWidgetId
+        );
       } catch (error) {
-        console.error('Failed to initialize reCAPTCHA (attempt', retryCount + 1, '):', error);
-        
+        console.error(
+          'Failed to initialize reCAPTCHA (attempt',
+          retryCount + 1,
+          '):',
+          error
+        );
+
         if (retryCount < maxRetries) {
-          console.log('Retrying reCAPTCHA initialization in', (retryCount + 1) * 1000, 'ms');
-          setTimeout(() => {
-            this.initializeRecaptcha(retryCount + 1);
-          }, (retryCount + 1) * 1000); // Exponential backoff: 1s, 2s, 3s
+          console.log(
+            'Retrying reCAPTCHA initialization in',
+            (retryCount + 1) * 1000,
+            'ms'
+          );
+          setTimeout(
+            () => {
+              this.initializeRecaptcha(retryCount + 1);
+            },
+            (retryCount + 1) * 1000
+          ); // Exponential backoff: 1s, 2s, 3s
         } else {
           console.error('Max retries reached. reCAPTCHA initialization failed.');
           this.error = 'Failed to load security verification. Please refresh the page.';
@@ -183,6 +208,13 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
+    // Client-side honeypot validation
+    if (!this.honeypotService.validateHoneypotFields(this.honeypotFields)) {
+      console.warn('[Login] Honeypot validation failed on client side');
+      this.error = 'Please try again.';
+      return;
+    }
+
     this.error = '';
     this.isLoading = true;
 
@@ -192,8 +224,15 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
       await this.checkBackendAvailability();
       console.log('[Login] Authenticating with server...');
 
+      // Prepare form data with honeypot fields
+      const formData = this.honeypotService.prepareFormDataWithHoneypot({
+        username: this.username,
+        password: this.password,
+        recaptchaToken: this.recaptchaToken
+      }, this.formStartTime);
+
       await firstValueFrom(
-        this.auth.login(this.username, this.password, this.recaptchaToken)
+        this.auth.loginWithHoneypot(formData)
       );
       console.log('[Login] Login successful! Navigating...');
 
@@ -204,12 +243,8 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
 
       if (error instanceof Error) {
         if (error.message.includes('connect')) {
-          this.error =
-            'Cannot connect to server. Please check your connection.';
-        } else if (
-          error.message.includes('401') ||
-          error.message.includes('Invalid')
-        ) {
+          this.error = 'Cannot connect to server. Please check your connection.';
+        } else if (error.message.includes('401') || error.message.includes('Invalid')) {
           this.error = 'Invalid username or password.';
         } else if (error.message.includes('recaptcha')) {
           this.error = 'Security verification failed. Please try again.';
@@ -230,7 +265,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
       await firstValueFrom(
         this.http.get(`${environment.apiUrl}/health`).pipe(
           timeout(5000),
-          catchError((error) => {
+          catchError(error => {
             console.error('[Login] Backend check failed:', error);
             if (error instanceof TimeoutError) {
               throw new Error('Connection timeout - server may be unavailable');

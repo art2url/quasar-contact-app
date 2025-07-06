@@ -188,24 +188,24 @@ const getClientIP = (req: Request): string => {
 const isPathBlocked = (path: string): boolean => {
   const lowerPath = path.toLowerCase();
   return BLOCKED_PATHS.some(
-    (blocked) => lowerPath.startsWith(blocked) || lowerPath.endsWith(blocked)
+    blocked => lowerPath.startsWith(blocked) || lowerPath.endsWith(blocked)
   );
 };
 
 const containsSuspiciousPattern = (path: string): boolean => {
-  return SUSPICIOUS_PATTERNS.some((pattern) => pattern.test(path));
+  return SUSPICIOUS_PATTERNS.some(pattern => pattern.test(path));
 };
 
 const isUserAgentBlocked = (userAgent: string): boolean => {
   const lowerUA = userAgent.toLowerCase();
 
   // First check if whitelisted
-  if (WHITELISTED_BOTS.some((bot) => lowerUA.includes(bot))) {
+  if (WHITELISTED_BOTS.some(bot => lowerUA.includes(bot))) {
     return false;
   }
 
   // Then check if blocked
-  return BLOCKED_USER_AGENTS.some((blocked) => lowerUA.includes(blocked));
+  return BLOCKED_USER_AGENTS.some(blocked => lowerUA.includes(blocked));
 };
 
 // ─── Whitelisted Paths - Never Block These ────────────────
@@ -233,10 +233,7 @@ export const blockBots = async (
 
   try {
     // Skip bot blocking for whitelisted paths
-    if (
-      WHITELISTED_PATHS.some((whitePath) => path.startsWith(whitePath)) ||
-      path === '/'
-    ) {
+    if (WHITELISTED_PATHS.some(whitePath => path.startsWith(whitePath)) || path === '/') {
       return next();
     }
     // Check if IP is blacklisted
@@ -284,18 +281,14 @@ export const blockBots = async (
 
     // Check user agent
     if (isUserAgentBlocked(userAgent)) {
-      console.log(
-        `🤖 BLOCKED BOT: ${userAgent.substring(0, 50)} from ${clientIP}`
-      );
+      console.log(`🤖 BLOCKED BOT: ${userAgent.substring(0, 50)} from ${clientIP}`);
       res.status(403).end();
       return;
     }
 
     // Apply general rate limiting only for non-static resources
     if (
-      !path.match(
-        /\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webmanifest)$/
-      )
+      !path.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webmanifest)$/)
     ) {
       try {
         await rateLimiter.consume(clientIP);

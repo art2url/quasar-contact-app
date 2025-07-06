@@ -5,11 +5,7 @@ export interface CSRFRequest extends Request {
 }
 
 // Middleware to validate CSRF token for state-changing operations
-export const validateCSRF = (
-  req: CSRFRequest,
-  res: Response,
-  next: NextFunction
-) => {
+export const validateCSRF = (req: CSRFRequest, res: Response, next: NextFunction) => {
   // Skip CSRF validation for GET, HEAD, OPTIONS requests
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
     return next();
@@ -26,14 +22,14 @@ export const validateCSRF = (
   if (!tokenFromCookie) {
     return res.status(403).json({
       message: 'CSRF token missing from cookies.',
-      code: 'CSRF_COOKIE_MISSING'
+      code: 'CSRF_COOKIE_MISSING',
     });
   }
 
   if (!tokenFromHeader) {
     return res.status(403).json({
       message: 'CSRF token missing from headers.',
-      code: 'CSRF_HEADER_MISSING'
+      code: 'CSRF_HEADER_MISSING',
     });
   }
 
@@ -41,7 +37,7 @@ export const validateCSRF = (
   if (tokenFromCookie !== tokenFromHeader) {
     return res.status(403).json({
       message: 'CSRF token mismatch.',
-      code: 'CSRF_TOKEN_MISMATCH'
+      code: 'CSRF_TOKEN_MISMATCH',
     });
   }
 
@@ -50,11 +46,7 @@ export const validateCSRF = (
 };
 
 // Middleware to add CSRF token to responses
-export const addCSRFToken = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const addCSRFToken = (req: Request, res: Response, next: NextFunction) => {
   // Add CSRF token to response locals so it can be accessed in views/responses
   res.locals.csrfToken = req.cookies?.csrf_token;
   next();

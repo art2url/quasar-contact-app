@@ -1,12 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Subscription, filter } from 'rxjs';
-import {
-  Component,
-  OnInit,
-  OnDestroy,
-  ChangeDetectorRef,
-  NgZone,
-} from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -46,7 +40,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     private themeService: ThemeService
   ) {
     // Keep the header status in sync with WebSocket connection
-    this.sub = this.wsService.isConnected$.subscribe((status) => {
+    this.sub = this.wsService.isConnected$.subscribe(status => {
       console.log('[Header] WebSocket connection status changed:', status);
       this.online = status;
     });
@@ -94,11 +88,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
     // Subscribe to NotificationService for badge count
     this.subs.add(
-      this.notificationService.totalUnread$.subscribe((total) => {
-        console.log(
-          '[Header] Unread total updated from NotificationService:',
-          total
-        );
+      this.notificationService.totalUnread$.subscribe(total => {
+        console.log('[Header] Unread total updated from NotificationService:', total);
         console.log('[Header] Previous unread total was:', this.unreadTotal);
         this.ngZone.run(() => {
           this.unreadTotal = total;
@@ -112,7 +103,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.subs.add(
       this.router.events
         .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
-        .subscribe((e) => {
+        .subscribe(e => {
           console.log('[Header] Navigation to:', e.url);
           // Close mobile menu when navigating
           this.closeMenu();
@@ -121,7 +112,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
     // Subscribe to WebSocket connection changes for better status tracking
     this.subs.add(
-      this.wsService.isConnected$.subscribe((connected) => {
+      this.wsService.isConnected$.subscribe(connected => {
         this.online = connected;
         console.log('[Header] Connection status updated:', connected);
       })
@@ -152,7 +143,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
         // Ensure loading is hidden after navigation completes
         this.loadingService.forceHideLoading('header.navigation.complete');
       })
-      .catch((error) => {
+      .catch(error => {
         console.error('[Header] Navigation to login failed:', error);
         this.loadingService.forceHideLoading('header.navigation.error');
       });
@@ -160,9 +151,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   // Show logout button only when logged in and not on auth pages.
   get showLogout(): boolean {
-    return (
-      this.authService.isAuthenticated() && !this.router.url.startsWith('/auth')
-    );
+    return this.authService.isAuthenticated() && !this.router.url.startsWith('/auth');
   }
 
   // Check if user is currently on an auth page
