@@ -9,6 +9,8 @@ export interface IUser extends Document {
   publicKeyBundle?: any;
   /** stock avatar the user picked in Settings */
   avatarUrl: string;
+  /** Flag to indicate if user's encryption keys are missing/lost */
+  isKeyMissing: boolean;
   createdAt: Date;
 }
 
@@ -18,6 +20,7 @@ const UserSchema: Schema = new Schema<IUser>({
   passwordHash: { type: String, required: true },
   publicKeyBundle: { type: Schema.Types.Mixed, default: null },
   avatarUrl: { type: String, default: '' },
+  isKeyMissing: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
 });
 

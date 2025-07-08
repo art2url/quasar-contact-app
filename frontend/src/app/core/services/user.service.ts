@@ -67,6 +67,11 @@ export class UserService {
     return this.http.get<KeyBundleResponse>(getApiPath(`keys/${userId}`));
   }
 
+  /** Mark current user's keys as missing/lost */
+  markKeysAsMissing(): Observable<StandardResponse> {
+    return this.http.post<StandardResponse>(getApiPath('keys/mark-missing'), {});
+  }
+
   /* ───────── profile / avatar ───────── */
 
   /** Change my avatar URL */

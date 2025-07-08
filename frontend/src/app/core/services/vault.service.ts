@@ -35,11 +35,11 @@ export class VaultService {
   private aesKey!: CryptoKey;
   private ready$ = new BehaviorSubject<boolean>(false);
 
-  async setCurrentUser(uid: string): Promise<void> {
+  async setCurrentUser(uid: string, readOnly = false): Promise<void> {
     if (uid === this.userId && this.ready$.value) return;
     this.userId = uid;
     this.ready$.next(false);
-    await this.open();
+    await this.open(readOnly);
     this.ready$.next(true);
   }
 
@@ -160,7 +160,7 @@ export class VaultService {
     }
   }
 
-  private async open(): Promise<void> {
+  private async open(readOnly = false): Promise<void> {
     if (!this.userId) throw new Error('VaultService: userId not set');
     const DB = `quasarVault-${this.userId}`;
 
@@ -184,6 +184,7 @@ export class VaultService {
     });
 
     if (raw) {
+      console.log('*** [VAULT] Found existing AES key, importing it');
       this.aesKey = await crypto.subtle.importKey(
         'raw',
         new Uint8Array(raw),
@@ -192,16 +193,27 @@ export class VaultService {
         ['encrypt', 'decrypt']
       );
     } else {
-      this.aesKey = await crypto.subtle.generateKey(
-        { name: 'AES-GCM', length: 256 },
-        true,
-        ['encrypt', 'decrypt']
-      );
-      const exported = await crypto.subtle.exportKey('raw', this.aesKey);
+      if (readOnly) {
+        console.log('*** [VAULT] NO AES KEY FOUND - READ-ONLY MODE, NOT GENERATING NEW ONE');
+        throw new Error('Vault AES key missing - read-only mode');
+      } else {
+        console.log('*** [VAULT] NO AES KEY FOUND - GENERATING NEW ONE ***');
+        console.log('*** [VAULT] USER ID:', this.userId);
+        console.log('*** [VAULT] STACK TRACE FOR AES KEY GENERATION:');
+        console.trace();
+        console.log('*** [VAULT] This will create a new vault (old data will be inaccessible)');
+        this.aesKey = await crypto.subtle.generateKey(
+          { name: 'AES-GCM', length: 256 },
+          true,
+          ['encrypt', 'decrypt']
+        );
+        const exported = await crypto.subtle.exportKey('raw', this.aesKey);
 
-      const tx = this.db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).put(Array.from(new Uint8Array(exported)), KEY_ID);
-      await txDone(tx);
+        const tx = this.db.transaction(STORE, 'readwrite');
+        tx.objectStore(STORE).put(Array.from(new Uint8Array(exported)), KEY_ID);
+        await txDone(tx);
+        console.log('*** [VAULT] New AES key stored in IndexedDB');
+      }
     }
   }
 
@@ -215,7 +227,7 @@ export class VaultService {
       const error = e as Error;
       if ((error?.name === 'InvalidStateError' || !this.db) && this.userId) {
         console.warn('[Vault] DB handle lost – re-opening');
-        await this.open();
+        await this.open(false);
         return this.db!.transaction(STORE, mode);
       }
       throw e;

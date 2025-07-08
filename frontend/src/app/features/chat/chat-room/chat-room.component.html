@@ -6,10 +6,10 @@
       </button>
 
       <div class="user-info">
-        <img [src]="getPartnerAvatar()" [alt]="(chat.theirUsername$ | async) || 'User'" class="avatar" />
+        <img [src]="getPartnerAvatar()" [alt]="(chat.theirUsername$ | async) || 'Contact'" class="avatar" />
         <div>
           <h3 class="username">
-            {{ (chat.theirUsername$ | async) || 'User' }}
+            {{ (chat.theirUsername$ | async) || 'Loading...' }}
           </h3>
         </div>
       </div>
@@ -21,8 +21,8 @@
         <span class="status-dot" [class.online]="isPartnerOnline" [class.offline]="!isPartnerOnline"></span>
         <span>{{
           isPartnerOnline
-            ? ((chat.theirUsername$ | async) || 'User') + ' is online'
-            : ((chat.theirUsername$ | async) || 'User') + ' is offline'
+            ? ((chat.theirUsername$ | async) || 'Contact') + ' is online'
+            : ((chat.theirUsername$ | async) || 'Contact') + ' is offline'
         }}</span>
       </div>
     </div>
@@ -32,12 +32,89 @@
     <app-cache-info-banner [showBanner]="showCacheInfoBanner"></app-cache-info-banner>
 
     <!-- Public key status -->
-    <ng-container *ngIf="chat.keyLoading$ | async as loading">
-      <div *ngIf="loading" class="key-loading">Loading user's public key...</div>
-      <div *ngIf="!loading && (chat.keyMissing$ | async) === true" class="key-missing">
-        User hasn't uploaded a public key. Messages will be sent unencrypted.
+    <!-- Loading state -->
+    <div *ngIf="(chat.keyLoading$ | async) === true" class="key-loading">
+      <mat-icon>security</mat-icon>
+      <div *ngIf="chat.isGeneratingKeysAutomatically; else normalKeyLoading">
+        Setting up encryption for first conversation...
       </div>
-    </ng-container>
+      <ng-template #normalKeyLoading>
+        Loading {{ (chat.theirUsername$ | async) || 'contact' }}'s encryption key...
+      </ng-template>
+    </div>
+    
+    
+    <!-- User's own private key is missing -->
+    <div *ngIf="(chat.keyLoading$ | async) === false && (chat.myPrivateKeyMissing$ | async) === true && !chat.isGeneratingKeysAutomatically" 
+         class="key-recovery-overlay">
+      <div class="key-recovery-card">
+        
+        <!-- Real key loss (user actually lost their keys) -->
+        <div *ngIf="!chat.artificialKeyMissingState">
+          <mat-icon>security</mat-icon>
+          <div class="recovery-content">
+            <h3>Your encryption keys are missing</h3>
+            <p>Your private key could not be found. This might happen if you've cleared your browser data or switched devices.</p>
+            <button mat-raised-button color="primary" (click)="regenerateEncryptionKeys()" class="recovery-button">
+              Generate New Keys
+            </button>
+            <p class="warning-text">⚠️ Generating new keys will prevent you from reading previous messages.</p>
+          </div>
+        </div>
+        
+        <!-- Artificial key loss (partner lost their keys) -->
+        <div *ngIf="chat.artificialKeyMissingState">
+          <mat-icon>block</mat-icon>
+          <div class="recovery-content">
+            <h3>Chat Blocked - Partner Key Issue</h3>
+            <p><strong>{{ (chat.theirUsername$ | async) || 'Your contact' }}</strong> has lost their encryption keys and needs to regenerate them.</p>
+            <p>You cannot send messages until they fix their encryption keys. This is a security measure to protect your communications.</p>
+            <div class="partner-status">
+              <mat-icon>info</mat-icon>
+              <span>Waiting for {{ (chat.theirUsername$ | async) || 'your contact' }} to regenerate their keys...</span>
+            </div>
+            <p class="info-text">💡 Your keys are fine. This issue is on your partner's side.</p>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+    
+    <!-- Partner's public key is missing -->
+    <div *ngIf="(chat.keyLoading$ | async) === false && (chat.keyMissing$ | async) === true && (chat.myPrivateKeyMissing$ | async) !== true" class="key-missing">
+      <mat-icon>warning</mat-icon>
+      <span>{{ (chat.theirUsername$ | async) || 'Your contact' }} hasn't set up encryption yet. You cannot send messages until they upload their public key.</span>
+    </div>
+
+    <!-- Partner key regeneration notification - BLOCKS CHAT -->
+    <div *ngIf="chat.showPartnerKeyRegeneratedNotification$ | async" 
+         class="partner-key-regenerated-overlay">
+      <div class="partner-key-regenerated-card">
+        <mat-icon>block</mat-icon>
+        <div class="notification-content">
+          <h3>Chat Blocked</h3>
+          <p><strong>{{ (chat.theirUsername$ | async) || 'Your contact' }}</strong> is experiencing encryption key issues and may need to regenerate their keys.</p>
+          <p>You must reload the page to continue chatting. Until you reload:</p>
+          <ul>
+            <li>You cannot send new messages</li>
+            <li>New messages from your partner will appear encrypted</li>
+            <li>The chat is completely blocked for your security</li>
+          </ul>
+          <div class="notification-buttons">
+            <button mat-raised-button color="accent" (click)="checkPartnerKeyStatus()" class="check-button" 
+                    [disabled]="(chat.keyLoading$ | async) === true">
+              <mat-icon>sync</mat-icon>
+              {{ (chat.keyLoading$ | async) ? 'Checking...' : 'Check Status' }}
+            </button>
+            <button mat-raised-button color="primary" (click)="reloadPage()" class="reload-button">
+              <mat-icon>refresh</mat-icon>
+              Reload Page
+            </button>
+          </div>
+          <p class="security-note">This security measure ensures your messages remain encrypted.</p>
+        </div>
+      </div>
+    </div>
 
     <!-- Chat window -->
     <div #messageContainer class="chat-window">
@@ -121,7 +198,7 @@
 
     <!-- Typing indicator positioned between chat window and message form -->
     <div *ngIf="isPartnerTyping && !isLoadingMessages" class="typing-indicator">
-      {{ (chat.theirUsername$ | async) || 'Partner' }} is typing
+      {{ (chat.theirUsername$ | async) || 'Contact' }} is typing
     </div>
 
     <!-- SIMPLE SCROLL TO BOTTOM BUTTON -->
@@ -142,7 +219,7 @@
         class="message-input"
         [(ngModel)]="newMessage"
         name="message"
-        placeholder="Type a message..."
+        [placeholder]="getChatInputPlaceholder()"
         required
         (input)="onType()"
         [rows]="1"
@@ -150,7 +227,7 @@
         (keydown.enter)="onKeydownEnter($event)"
         (keydown.enter.control)="onKeydownCtrlEnter($event)"
         (keydown.enter.meta)="onKeydownMetaEnter($event)"
-        [disabled]="isLoadingMessages"></textarea>
+        [disabled]="isChatBlocked()"></textarea>
 
       <textarea
         *ngIf="editing"
@@ -169,7 +246,9 @@
         type="submit"
         class="send-button"
         [disabled]="
-          !(editing ? editDraft.trim() : newMessage.trim()) || (chat.connected$ | async) === false || isLoadingMessages
+          !(editing ? editDraft.trim() : newMessage.trim()) || 
+          (chat.connected$ | async) === false || 
+          isChatBlocked()
         "
         [attr.aria-label]="editing ? 'Save edited message' : 'Send message'">
         <svg

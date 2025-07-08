@@ -21,7 +21,10 @@ router.post('/upload', authenticateToken, async (req: AuthRequest, res) => {
   try {
     const updated = await User.findByIdAndUpdate(
       user.userId,
-      { publicKeyBundle },
+      { 
+        publicKeyBundle,
+        isKeyMissing: false // Keys are now available
+      },
       { new: true },
     );
 
@@ -29,6 +32,7 @@ router.post('/upload', authenticateToken, async (req: AuthRequest, res) => {
       return res.status(404).json({ message: 'User not found.' });
     }
 
+    console.log(`[Keys] User ${updated.username} uploaded public key - marking keys as available`);
     res.status(200).json({ message: 'Public key uploaded successfully.' });
   } catch (error) {
     console.error('[Key Upload Error]', error);
@@ -41,22 +45,58 @@ router.get('/:userId', async (req, res) => {
   const { userId } = req.params;
 
   try {
-    const user = await User.findById(userId).select('publicKeyBundle username avatarUrl');
+    const user = await User.findById(userId).select('publicKeyBundle username avatarUrl isKeyMissing');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found.' });
     }
 
-    // Always return user info, even if no public key
+    // Use the stored isKeyMissing flag from database as the source of truth
+    const hasPublicKey = !!user.publicKeyBundle;
+    
+    console.log(`[Keys] User ${user.username} status - hasPublicKey: ${hasPublicKey}, isKeyMissing: ${user.isKeyMissing}`);
+
+    // Always return user info, using the database flag as source of truth
     res.status(200).json({
       username: user.username,
       avatarUrl: user.avatarUrl,
       publicKeyBundle: user.publicKeyBundle || null,
-      hasPublicKey: !!user.publicKeyBundle,
+      hasPublicKey,
+      isKeyMissing: user.isKeyMissing, // Use database flag directly
     });
   } catch (error) {
     console.error('[Key Fetch Error]', error);
     res.status(500).json({ message: 'Server error while fetching key bundle.' });
+  }
+});
+
+// POST /api/keys/mark-missing - Mark user's keys as missing (when they lose them)
+router.post('/mark-missing', authenticateToken, async (req: AuthRequest, res) => {
+  const user = req.user;
+
+  if (!user) {
+    return res.status(401).json({ message: 'Unauthorized.' });
+  }
+
+  try {
+    const updated = await User.findByIdAndUpdate(
+      user.userId,
+      { 
+        publicKeyBundle: null, // Clear the public key
+        isKeyMissing: true     // Mark keys as missing
+      },
+      { new: true },
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    console.log(`[Keys] User ${updated.username} marked keys as missing`);
+    res.status(200).json({ message: 'Keys marked as missing successfully.' });
+  } catch (error) {
+    console.error('[Key Missing Mark Error]', error);
+    res.status(500).json({ message: 'Server error marking keys as missing.' });
   }
 });
 

@@ -66,6 +66,88 @@
   padding: var(--spacing-lg);
 }
 
+/* Find someone to chat with button styling */
+.find-contact-button {
+  margin: 0 auto var(--spacing-md) auto;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: none;
+  letter-spacing: 0.025em;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  width: fit-content;
+  /* Light theme - blue like primary buttons */
+  background-color: var(--primary-color);
+  color: var(--button-text);
+}
+
+.find-contact-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  /* Light theme hover - slightly darker blue */
+  background-color: var(--primary-hover, #1976d2);
+}
+
+.find-contact-button:active {
+  transform: translateY(0);
+}
+
+/* Dark theme green styling for find button */
+.dark-theme .empty-hint .find-contact-button {
+  background-color: #4caf50 !important;
+  color: #ffffff !important;
+}
+
+.dark-theme .empty-hint .find-contact-button:hover {
+  background-color: #66bb6a !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3) !important;
+}
+
+/* High specificity override for Material Design button */
+::ng-deep .dark-theme .find-contact-button {
+  background-color: #4caf50 !important;
+  color: #ffffff !important;
+}
+
+::ng-deep .dark-theme .find-contact-button:hover {
+  background-color: #66bb6a !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3) !important;
+}
+
+/* Even more specific selectors for Material button classes */
+::ng-deep .dark-theme .find-contact-button.mat-mdc-raised-button {
+  background-color: #4caf50 !important;
+  color: #ffffff !important;
+}
+
+::ng-deep .dark-theme .find-contact-button.mat-mdc-raised-button:hover {
+  background-color: #66bb6a !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3) !important;
+}
+
+/* Ultimate fallback with all possible Material classes */
+::ng-deep .dark-theme button.find-contact-button.mat-mdc-raised-button.mat-mdc-button-base {
+  background-color: #4caf50 !important;
+  color: #ffffff !important;
+}
+
+::ng-deep .dark-theme button.find-contact-button.mat-mdc-raised-button.mat-mdc-button-base:hover {
+  background-color: #66bb6a !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3) !important;
+}
+
 .padding-element {
   padding: var(--spacing-md);
 }
