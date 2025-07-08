@@ -45,7 +45,7 @@
   <!-- Empty state (only shown when loading is finished) -->
   <div *ngIf="!searchTerm && chatLoadingFinished && !chats.length" class="empty-hint">
     <p>No conversations found.</p>
-    <button mat-raised-button color="primary" (click)="findNewContact()">Find someone to chat with</button>
+    <button mat-raised-button class="find-contact-button" (click)="findNewContact()">Find someone to chat with</button>
   </div>
 
   <!-- Loading state -->

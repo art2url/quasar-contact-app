@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import type { VaultService } from './vault.service';
 
 @Injectable({ providedIn: 'root' })
 export class CryptoService {
@@ -33,6 +34,13 @@ export class CryptoService {
   async exportPrivateKey(): Promise<ArrayBuffer> {
     if (!this.keyPair?.privateKey) throw new Error('No key pair generated');
     return await crypto.subtle.exportKey('pkcs8', this.keyPair.privateKey);
+  }
+
+  /** Export the current public key as Base64 string */
+  async exportCurrentPublicKey(): Promise<string> {
+    if (!this.keyPair?.publicKey) throw new Error('No key pair loaded');
+    const spki = await crypto.subtle.exportKey('spki', this.keyPair.publicKey);
+    return this.arrayBufferToBase64(spki);
   }
 
   /**
@@ -267,5 +275,40 @@ export class CryptoService {
   // Check if private key is available
   hasPrivateKey(): boolean {
     return !!this.privateKey;
+  }
+
+  // Check if private key is available in vault (for persistent check across reloads)
+  async hasPrivateKeyInVault(vault: VaultService, userId: string): Promise<boolean> {
+    try {
+      const { VAULT_KEYS } = await import('./vault.service');
+      
+      console.log('*** [VAULT CHECK] Starting check for user:', userId);
+      
+      // Ensure vault is set up with user ID - USE READ-ONLY MODE to prevent automatic AES key generation
+      await vault.setCurrentUser(userId, true); // true = read-only mode
+      await vault.waitUntilReady();
+      
+      console.log('*** [VAULT CHECK] Vault ready, checking for private key');
+      
+      const privateKeyData = await vault.get(VAULT_KEYS.PRIVATE_KEY) as ArrayBuffer;
+      const hasKey = !!privateKeyData;
+      
+      console.log('*** [VAULT CHECK] Private key exists:', hasKey);
+      console.log('*** [VAULT CHECK] Private key data length:', privateKeyData?.byteLength || 0);
+      
+      return hasKey;
+    } catch (error) {
+      console.error('🔑 [VAULT CHECK] Error (this is expected if vault/keys are missing):', error);
+      // If vault fails to open in read-only mode, it means the AES key is missing
+      // which indicates the vault is corrupted/missing, so no private key exists
+      return false;
+    }
+  }
+
+  // Clear private key state to force clean import
+  clearPrivateKey(): void {
+    console.log('[CryptoService] Clearing corrupted private key state');
+    this.privateKey = null;
+    this.keyPair = null;
   }
 }

@@ -10,6 +10,8 @@ import {
   ReadPayload,
   MessageEditedEvent,
   MessageDeletedEvent,
+  KeyRegeneratedPayload,
+  PartnerKeyRecoveryStartedPayload,
 } from 'app/core/models/socket.model';
 
 // Enhanced debugging
@@ -49,6 +51,8 @@ export class WebSocketService {
   private messageReadHandlers: ((payload: ReadPayload) => void)[] = [];
   private messageEditedHandlers: ((event: MessageEditedEvent) => void)[] = [];
   private messageDeletedHandlers: ((event: MessageDeletedEvent) => void)[] = [];
+  private keyRegeneratedHandlers: ((payload: KeyRegeneratedPayload) => void)[] = [];
+  // Removed: Partner key recovery now handled via database flag
 
   // Enhanced presence streams
   public readonly userOnline$ = new Subject<string>();
@@ -62,6 +66,11 @@ export class WebSocketService {
 
   private _messageSentSubject = new Subject<AckPayload>();
   public messageSent$ = this._messageSentSubject.asObservable();
+
+  private _keyRegeneratedSubject = new Subject<KeyRegeneratedPayload>();
+  public keyRegenerated$ = this._keyRegeneratedSubject.asObservable();
+
+  // Removed: Partner key recovery now handled via database flag
 
   // Connection quality tracking
   private pingStartTime = 0;
@@ -195,6 +204,16 @@ export class WebSocketService {
         this.messageReadHandlers.forEach(handler => handler(payload));
       });
     });
+
+    this.socket.on('key-regenerated', payload => {
+      this.zone.run(() => {
+        logWs('Key regenerated notification:', payload.fromUserId);
+        this._keyRegeneratedSubject.next(payload);
+        this.keyRegeneratedHandlers.forEach(handler => handler(payload));
+      });
+    });
+
+    // Removed: Partner key recovery notifications now handled via database flag
 
     // Enhanced presence events with better logging
     this.socket.on('online-users', data => {
@@ -553,6 +572,19 @@ export class WebSocketService {
     this.socket?.off('message-deleted', cb);
   }
 
+  onKeyRegenerated(cb: (payload: KeyRegeneratedPayload) => void): void {
+    this.keyRegeneratedHandlers.push(cb);
+  }
+
+  offKeyRegenerated(cb: (payload: KeyRegeneratedPayload) => void): void {
+    const index = this.keyRegeneratedHandlers.indexOf(cb);
+    if (index > -1) {
+      this.keyRegeneratedHandlers.splice(index, 1);
+    }
+  }
+
+  // Removed: Partner key recovery handlers now handled via database flag
+
   onMessageSent(cb: (ack: AckPayload) => void): void {
     this.messageSentHandlers.push(cb);
   }
@@ -568,6 +600,19 @@ export class WebSocketService {
   markMessageRead(messageId: string): void {
     this.socket?.emit('read-message', { messageId });
   }
+
+  // Key regeneration notification
+  notifyKeyRegenerated(toUserId: string): void {
+    if (!this.socket?.connected) {
+      logWs('Cannot notify key regeneration - socket not connected');
+      return;
+    }
+
+    this.socket.emit('notify-key-regenerated', { toUserId });
+    logWs('Key regeneration notification sent to:', toUserId);
+  }
+
+  // Removed: Partner key recovery notifications now handled via database flag
 
   onMessageRead(cb: (data: ReadPayload) => void): void {
     this.messageReadHandlers.push(cb);

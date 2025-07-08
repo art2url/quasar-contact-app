@@ -153,12 +153,26 @@ export class ChatRoomComponent
     }
   }
 
+  @HostListener('window:focus')
+  onWindowFocus() {
+    // When user returns to the app, check if partner key status changed
+    console.log('[ChatRoom] Window gained focus - checking partner key status');
+    this.chat.manuallyCheckKeyStatus();
+  }
+
+  @HostListener('window:visibilitychange')
+  onVisibilityChange() {
+    // When tab becomes visible again, check for key changes
+    if (!document.hidden) {
+      console.log('[ChatRoom] Tab became visible - checking partner key status');
+      this.chat.manuallyCheckKeyStatus();
+    }
+  }
+
   async ngOnInit(): Promise<void> {
     document.body.classList.add('chat-room-page');
 
-    console.log('[ChatRoom] Component initializing');
     this.receiverId = this.route.snapshot.paramMap.get('id')!;
-    console.log('[ChatRoom] Chat room ID:', this.receiverId);
 
     if (!this.receiverId) {
       console.error('[ChatRoom] No receiverId found in URL');
@@ -234,17 +248,15 @@ export class ChatRoomComponent
    */
   private async initializeOnce(): Promise<void> {
     if (this.isInitialized) {
-      console.log('[ChatRoom] Already initialized, skipping');
       return;
     }
 
-    console.log('[ChatRoom] Starting one-time initialization');
     this.loadingService.show('chat-room-init');
 
     try {
       // Initialize chat session ONCE
       await this.chat.init(this.receiverId);
-      console.log('[ChatRoom] Chat session initialized successfully');
+      
 
       // Subscribe to loading state first
       this.subs.add(
@@ -302,6 +314,30 @@ export class ChatRoomComponent
         this.chat.theirAvatar$.subscribe(avatar => {
           console.log('[ChatRoom] Partner avatar updated:', avatar);
           this.partnerAvatar = avatar;
+        })
+      );
+
+      // DEBUG: Monitor observable states for recovery UI debugging
+      this.subs.add(
+        this.chat.keyLoading$.subscribe(loading => {
+          console.log('*** [ChatRoom] keyLoading$ changed to:', loading);
+        })
+      );
+      
+      this.subs.add(
+        this.chat.myPrivateKeyMissing$.subscribe(missing => {
+          if (missing === true && !this.chat.keyLoading$.value) {
+            // Only mark keys as missing if this is genuine key loss, not artificial blocking
+            if (!this.chat.isArtificialKeyMissingState) {
+              console.log('[ChatRoom] Genuine key loss detected - marking keys as missing in database');
+              this.chat.ensureKeysMissingFlagSet();
+            } else {
+              console.log('[ChatRoom] Artificial blocking state - NOT marking keys as missing');
+            }
+            
+            // Force change detection
+            setTimeout(() => this.cdr.detectChanges(), 0);
+          }
         })
       );
 
@@ -1035,6 +1071,161 @@ export class ChatRoomComponent
     if (confirm('Delete this message for everyone?')) {
       this.chat.deleteMessage(m.id);
     }
+  }
+
+
+
+  /**
+   * Handle private key regeneration when user's own key is missing
+   */
+  async regenerateEncryptionKeys(): Promise<void> {
+    if (confirm('Your encryption keys are missing. This will generate new keys, but you will lose access to previous messages. Continue?')) {
+      try {
+        await this.chat.regenerateKeys();
+        console.log('[ChatRoom] Successfully regenerated encryption keys');
+      } catch (error) {
+        console.error('[ChatRoom] Failed to regenerate keys:', error);
+        alert('Failed to regenerate encryption keys. Please try again or contact support.');
+      }
+    }
+  }
+
+  /**
+   * Reload the page when partner regenerates keys
+   */
+  reloadPage(): void {
+    window.location.reload();
+  }
+
+  /**
+   * Manually check for updated partner keys
+   */
+  checkPartnerKeyStatus(): void {
+    console.log('[ChatRoom] Manually checking partner key status');
+    
+    // Use the new event-driven approach
+    this.chat.manuallyCheckKeyStatus();
+  }
+
+  /**
+   * Debug method to test partner key recovery notification
+   */
+  debugTestPartnerKeyRecovery(): void {
+    console.log('[ChatRoom] DEBUG: Partner key recovery now handled via database flag');
+  }
+
+  /**
+   * DEBUG METHOD: Force current user to lose their keys for testing
+   */
+  debugForceKeyLoss(): void {
+    console.log('[ChatRoom] DEBUG: Forcing key loss for current user...');
+    this.chat.debugForceKeyLoss();
+  }
+
+  /**
+   * DEBUG METHOD: Clear artificial blocking state for testing
+   */
+  debugClearBlocking(): void {
+    console.log('[ChatRoom] DEBUG: Clearing artificial blocking state...');
+    this.chat.debugClearArtificialBlocking();
+  }
+
+  /**
+   * Debug method to test WebSocket connection and handlers
+   */
+  debugTestWebSocket(): void {
+    console.log('[ChatRoom] DEBUG: Testing WebSocket connection');
+    console.log('[ChatRoom] WebSocket connected:', this.ws.isConnected());
+    console.log('[ChatRoom] Current online users:', this.ws.getCurrentOnlineUsers());
+    
+    // Test if we can call WebSocket methods
+    try {
+      this.ws.debugOnlineStatus();
+    } catch (error) {
+      console.error('[ChatRoom] WebSocket debug error:', error);
+    }
+  }
+
+  /**
+   * Debug method to show room info
+   */
+  debugShowRoomInfo(): void {
+    console.log('[ChatRoom] DEBUG: Current room info');
+    console.log('[ChatRoom] receiverId:', this.receiverId);
+    this.chat.debugShowRoomInfo();
+  }
+
+
+  /**
+   * Check if chat is blocked due to various key issues
+   */
+  isChatBlocked(): boolean {
+    // Check if we're loading messages
+    if (this.isLoadingMessages) {
+      console.log('*** [ChatRoom] CHAT BLOCKED: Loading messages');
+      return true;
+    }
+    
+    // Check if WE have missing private keys (our own recovery UI is visible)
+    const myPrivateKeyMissing = this.chat.myPrivateKeyMissing$.value;
+    if (myPrivateKeyMissing) {
+      console.log('*** [ChatRoom] CHAT BLOCKED: My private key missing');
+      return true;
+    }
+    
+    // Check if partner's key is missing
+    const keyMissing = this.chat.keyMissing$.value;
+    if (keyMissing) {
+      console.log('*** [ChatRoom] CHAT BLOCKED: Partner key missing');
+      return true;
+    }
+    
+    // Check if partner has regenerated keys and we need to reload
+    const partnerKeyRegenerated = this.chat.showPartnerKeyRegeneratedNotification$.value;
+    if (partnerKeyRegenerated) {
+      console.log('*** [ChatRoom] CHAT BLOCKED: Partner key regenerated notification');
+      return true;
+    }
+    
+    // Chat not blocked - all checks passed
+    
+    return false;
+  }
+
+  /**
+   * Get appropriate placeholder text for chat input
+   */
+  getChatInputPlaceholder(): string {
+    if (this.isLoadingMessages) {
+      return 'Loading messages...';
+    }
+    
+    // Check if WE have missing private keys first
+    const myPrivateKeyMissing = this.chat.myPrivateKeyMissing$.value;
+    if (myPrivateKeyMissing) {
+      // Check if this is due to partner losing keys
+      const artificialState = this.chat.artificialKeyMissingState;
+      if (artificialState) {
+        const username = this.chat.theirUsername$.value || 'Your contact';
+        return `Chat blocked - ${username} has lost their keys and must regenerate them`;
+      } else {
+        return 'Cannot send messages - you need to regenerate your encryption keys';
+      }
+    }
+    
+    const partnerKeyRegenerated = this.chat.showPartnerKeyRegeneratedNotification$.value;
+    if (partnerKeyRegenerated) {
+      const username = this.chat.theirUsername$.value || 'your contact';
+      return `Chat blocked - ${username} is recovering their keys. Refresh to check status.`;
+    }
+    
+    const keyMissing = this.chat.keyMissing$.value;
+    if (keyMissing) {
+      const username = this.chat.theirUsername$.value || 'Your contact';
+      return `Cannot send messages - ${username} needs to set up encryption`;
+    }
+    
+    return 'Type a message...';
   }
 
   ngOnDestroy() {

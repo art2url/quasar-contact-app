@@ -14,6 +14,7 @@ export interface KeyBundleResponse {
   username: string;
   avatarUrl: string;
   hasPublicKey: boolean;
+  isKeyMissing: boolean;
 }
 
 // Response from GET /messages/history/:id

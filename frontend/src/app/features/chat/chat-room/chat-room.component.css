@@ -497,15 +497,477 @@
 
 .key-loading,
 .key-missing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
   text-align: center;
   padding: var(--spacing-md);
   background-color: var(--card-background);
   color: var(--text-secondary);
   font-style: italic;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  margin: var(--spacing-sm) var(--spacing-md);
+}
+
+.key-loading mat-icon {
+  color: var(--primary-color);
 }
 
 .key-missing {
-  color: var(--warning-color);
+  background-color: #fff3cd;
+  border-color: #ffeaa7;
+  color: #856404;
+}
+
+.key-missing mat-icon {
+  color: #f39c12;
+}
+
+/* Key recovery overlay - centered in chat area */
+.key-recovery-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  backdrop-filter: blur(2px);
+}
+
+.key-recovery-card {
+  background: var(--card-background);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-xl);
+  max-width: 480px;
+  width: 90%;
+  text-align: center;
+  border: 1px solid var(--border-color);
+}
+
+.key-recovery-card mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  color: #ff9800;
+  margin-bottom: var(--spacing-md);
+}
+
+.recovery-content h3 {
+  margin: 0 0 var(--spacing-md) 0;
+  color: var(--text-color);
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.recovery-content p {
+  margin: 0 0 var(--spacing-lg) 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.recovery-content .recovery-button {
+  margin: 0 auto var(--spacing-md) auto;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: none;
+  letter-spacing: 0.025em;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  width: fit-content;
+}
+
+.recovery-content .recovery-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.recovery-content .recovery-button:active {
+  transform: translateY(0);
+}
+
+/* Dark theme green styling for recovery button */
+.dark-theme .recovery-content .recovery-button {
+  background-color: #4caf50 !important;
+  color: #ffffff !important;
+}
+
+.dark-theme .recovery-content .recovery-button:hover {
+  background-color: #66bb6a !important;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3) !important;
+}
+
+.recovery-content .warning-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  opacity: 0.8;
+  font-style: italic;
+  margin: 0;
+}
+
+/* Dark theme support for recovery overlay */
+.dark-theme .key-recovery-overlay {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.dark-theme .key-recovery-card {
+  background: var(--card-background);
+  border-color: var(--border-color);
+}
+
+.dark-theme .key-recovery-card mat-icon {
+  color: #ffa726;
+}
+
+.dark-theme .recovery-content h3 {
+  color: var(--text-color);
+}
+
+.dark-theme .recovery-content p {
+  color: var(--text-secondary);
+}
+
+.dark-theme .recovery-content .warning-text {
+  color: var(--text-secondary);
+}
+
+/* Partner key regeneration notification overlay - BLOCKS CHAT */
+.partner-key-regenerated-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  backdrop-filter: blur(4px);
+}
+
+.partner-key-regenerated-card {
+  background: var(--card-background);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-xl);
+  max-width: 520px;
+  width: 90%;
+  text-align: left;
+  border: 2px solid #f44336;
+  animation: slideInFromTop 0.3s ease-out;
+}
+
+@keyframes slideInFromTop {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.partner-key-regenerated-card mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  color: #f44336;
+  margin-bottom: var(--spacing-md);
+  display: block;
+  text-align: center;
+}
+
+.notification-content h3 {
+  margin: 0 0 var(--spacing-md) 0;
+  color: #f44336;
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.notification-content p {
+  margin: 0 0 var(--spacing-md) 0;
+  color: var(--text-color);
+  line-height: 1.5;
+}
+
+.notification-content ul {
+  margin: 0 0 var(--spacing-lg) var(--spacing-md);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.notification-content ul li {
+  margin-bottom: var(--spacing-xs);
+}
+
+.notification-content .security-note {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  text-align: center;
+  margin-top: var(--spacing-md);
+  margin-bottom: 0;
+}
+
+.notification-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.notification-buttons .reload-button,
+.notification-buttons .check-button {
+  padding: 14px 28px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  width: fit-content;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: none;
+  letter-spacing: 0.025em;
+  min-height: 44px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.notification-buttons .reload-button:hover,
+.notification-buttons .check-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.notification-buttons .reload-button:active,
+.notification-buttons .check-button:active {
+  transform: translateY(0);
+}
+
+.notification-buttons .check-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.notification-buttons .check-button:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Dark theme support for partner key notification */
+.dark-theme .partner-key-regenerated-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.dark-theme .partner-key-regenerated-card {
+  background: var(--card-background);
+  border-color: #ef5350;
+}
+
+.dark-theme .partner-key-regenerated-card mat-icon {
+  color: #ef5350;
+}
+
+.dark-theme .notification-content h3 {
+  color: #ef5350;
+}
+
+.dark-theme .notification-content p {
+  color: var(--text-color);
+}
+
+.dark-theme .notification-content ul {
+  color: var(--text-secondary);
+}
+
+.dark-theme .notification-content .security-note {
+  color: var(--text-secondary);
+}
+
+.key-error-content {
+  flex: 1;
+}
+
+.key-error-content h4 {
+  margin: 0 0 var(--spacing-sm) 0;
+  color: #721c24;
+  font-size: 1.1em;
+  font-weight: 600;
+}
+
+.key-error-content p {
+  margin: 0 0 var(--spacing-md) 0;
+  line-height: 1.4;
+}
+
+.key-error-content button {
+  margin-bottom: var(--spacing-sm);
+}
+
+.warning-text {
+  font-size: 0.9em;
+  color: #856404;
+  font-style: italic;
+  margin: var(--spacing-sm) 0 0 0 !important;
+}
+
+/* Partner status styling for when partner lost keys */
+.partner-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background-color: rgba(255, 152, 0, 0.1);
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  border-radius: var(--border-radius);
+  margin: var(--spacing-md) 0;
+}
+
+.partner-status mat-icon {
+  color: #ff9800 !important;
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  flex-shrink: 0;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.partner-status mat-icon.mat-icon {
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  line-height: 18px !important;
+}
+
+.partner-status span {
+  font-size: 0.9rem;
+  color: var(--text-color);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.info-text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-top: var(--spacing-sm);
+  text-align: center;
+}
+
+/* Dark theme support for partner status */
+.dark-theme .partner-status {
+  background-color: rgba(255, 152, 0, 0.15);
+  border-color: rgba(255, 152, 0, 0.4);
+}
+
+.dark-theme .partner-status mat-icon {
+  color: #ffa726 !important;
+}
+
+.dark-theme .partner-status span {
+  color: var(--text-color);
+}
+
+.dark-theme .info-text {
+  color: var(--text-secondary);
+}
+
+/* Dark theme styling for key status messages */
+.dark-theme .key-loading,
+.dark-theme .key-missing {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+.dark-theme .key-recovery-banner {
+  background-color: rgba(255, 152, 0, 0.1) !important;
+  border: 1px solid rgba(255, 152, 0, 0.3) !important;
+  color: rgba(255, 152, 0, 0.9) !important;
+}
+
+.dark-theme .key-recovery-banner .recovery-button {
+  border-color: rgba(255, 152, 0, 0.6) !important;
+  color: rgba(255, 152, 0, 0.9) !important;
+}
+
+.dark-theme .key-recovery-banner mat-icon {
+  color: rgba(255, 152, 0, 0.9) !important;
+}
+
+/* Mobile styles for key recovery banner */
+@media (max-width: 599px) {
+  .key-recovery-banner {
+    font-size: 0.8rem !important;
+    padding: 10px !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border: 1px solid #ff9800 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+  }
+
+  .dark-theme .key-recovery-banner {
+    background-color: rgba(255, 152, 0, 0.15) !important;
+    border-color: rgba(255, 152, 0, 0.4) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .key-recovery-banner {
+    font-size: 0.75rem;
+    padding: var(--spacing-sm);
+  }
+
+  .key-recovery-banner .banner-content .text {
+    display: none;
+  }
+}
+
+.dark-theme .key-loading mat-icon {
+  color: var(--primary-color);
+}
+
+.dark-theme .key-missing {
+  background-color: rgba(255, 193, 7, 0.1);
+  border-color: rgba(255, 193, 7, 0.3);
+  color: #ffc107;
+}
+
+.dark-theme .key-missing mat-icon {
+  color: #ffc107;
 }
 
 /* Styling for unreadable messages - Light theme */
@@ -836,6 +1298,72 @@
   }
 
   .messages-loading p {
+    font-size: 0.8rem;
+  }
+
+  /* Mobile adjustments for recovery modal */
+  .key-recovery-card {
+    width: 95%;
+    max-width: none;
+    margin: var(--spacing-md);
+    padding: var(--spacing-lg);
+  }
+
+  .key-recovery-card mat-icon {
+    font-size: 36px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .recovery-content h3 {
+    font-size: 1.2rem;
+  }
+
+  .recovery-content p {
+    font-size: 0.9rem;
+  }
+
+  .recovery-content .recovery-button {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+  }
+
+  /* Mobile adjustments for partner key notification */
+  .partner-key-regenerated-card {
+    width: 95%;
+    max-width: none;
+    margin: var(--spacing-md);
+    padding: var(--spacing-lg);
+    border-width: 1px;
+  }
+
+  .partner-key-regenerated-card mat-icon {
+    font-size: 36px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .notification-content h3 {
+    font-size: 1.2rem;
+  }
+
+  .notification-content p {
+    font-size: 0.9rem;
+  }
+
+  .notification-content ul {
+    font-size: 0.85rem;
+    margin-left: var(--spacing-sm);
+  }
+
+  .notification-buttons .reload-button,
+  .notification-buttons .check-button {
+    padding: 12px 20px;
+    font-size: 1rem;
+    gap: var(--spacing-xs);
+  }
+
+  .notification-content .security-note {
     font-size: 0.8rem;
   }
 
