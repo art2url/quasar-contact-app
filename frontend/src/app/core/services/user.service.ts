@@ -64,12 +64,33 @@ export class UserService {
 
   /** Retrieve someone's public key bundle for E2E encryption */
   getPublicKey(userId: string): Observable<KeyBundleResponse> {
-    return this.http.get<KeyBundleResponse>(getApiPath(`keys/${userId}`));
+    return this.http.get<KeyBundleResponse>(getApiPath(`keys/${userId}`)).pipe(
+      catchError(error => {
+        console.log(`[UserService] Failed to get public key for ${userId}:`, error.status, error.message);
+        // Re-throw the error to let the calling service handle it appropriately
+        throw error;
+      })
+    );
   }
 
   /** Mark current user's keys as missing/lost */
   markKeysAsMissing(): Observable<StandardResponse> {
     return this.http.post<StandardResponse>(getApiPath('keys/mark-missing'), {});
+  }
+
+  /** Debug method: Clear keys missing flag for current user */
+  debugClearKeysMissingFlag(): Observable<StandardResponse> {
+    return this.http.post<StandardResponse>(getApiPath('keys/debug-clear-missing'), {});
+  }
+
+  /** Fix inconsistent key states - users who have keys but are marked as missing */
+  fixInconsistentKeyStates(): Observable<StandardResponse> {
+    return this.http.post<StandardResponse>(getApiPath('keys/debug/fix-inconsistent'), {});
+  }
+
+  /** Emergency cleanup: Clear isKeyMissing flag for ALL users */
+  clearAllMissingFlags(): Observable<StandardResponse> {
+    return this.http.post<StandardResponse>(getApiPath('keys/debug-clear-all-missing'), {});
   }
 
   /* ───────── profile / avatar ───────── */

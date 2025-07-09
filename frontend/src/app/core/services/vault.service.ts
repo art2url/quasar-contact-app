@@ -184,7 +184,6 @@ export class VaultService {
     });
 
     if (raw) {
-      console.log('*** [VAULT] Found existing AES key, importing it');
       this.aesKey = await crypto.subtle.importKey(
         'raw',
         new Uint8Array(raw),
@@ -194,14 +193,8 @@ export class VaultService {
       );
     } else {
       if (readOnly) {
-        console.log('*** [VAULT] NO AES KEY FOUND - READ-ONLY MODE, NOT GENERATING NEW ONE');
         throw new Error('Vault AES key missing - read-only mode');
       } else {
-        console.log('*** [VAULT] NO AES KEY FOUND - GENERATING NEW ONE ***');
-        console.log('*** [VAULT] USER ID:', this.userId);
-        console.log('*** [VAULT] STACK TRACE FOR AES KEY GENERATION:');
-        console.trace();
-        console.log('*** [VAULT] This will create a new vault (old data will be inaccessible)');
         this.aesKey = await crypto.subtle.generateKey(
           { name: 'AES-GCM', length: 256 },
           true,
@@ -212,7 +205,6 @@ export class VaultService {
         const tx = this.db.transaction(STORE, 'readwrite');
         tx.objectStore(STORE).put(Array.from(new Uint8Array(exported)), KEY_ID);
         await txDone(tx);
-        console.log('*** [VAULT] New AES key stored in IndexedDB');
       }
     }
   }
@@ -226,7 +218,6 @@ export class VaultService {
     } catch (e: unknown) {
       const error = e as Error;
       if ((error?.name === 'InvalidStateError' || !this.db) && this.userId) {
-        console.warn('[Vault] DB handle lost – re-opening');
         await this.open(false);
         return this.db!.transaction(STORE, mode);
       }
@@ -237,39 +228,22 @@ export class VaultService {
   // Temporary debugging method
   async debugVaultContents(): Promise<void> {
     if (!this.userId) {
-      console.log('[Vault Debug] No user set');
       return;
     }
 
-    console.log('[Vault Debug] Current user:', this.userId);
-    console.log('[Vault Debug] Vault ready:', this.ready$.value);
 
     try {
       // List all keys
       const allKeys = await this.keysStartingWith('');
-      console.log('[Vault Debug] All keys in vault:', allKeys);
 
       // Check specifically for private key
       const privateKey = await this.get<ArrayBuffer>(VAULT_KEYS.PRIVATE_KEY);
-      console.log('[Vault Debug] Private key check:', {
-        exists: !!privateKey,
-        type: typeof privateKey,
-        isArrayBuffer: privateKey instanceof ArrayBuffer,
-        size: privateKey instanceof ArrayBuffer ? privateKey.byteLength : 'N/A',
-      });
 
       // Test storing and retrieving a simple value
       const testValue = new Uint8Array([1, 2, 3, 4, 5]).buffer;
       await this.set('test_arraybuffer', testValue);
       const retrieved = await this.get<ArrayBuffer>('test_arraybuffer');
 
-      console.log('[Vault Debug] Test ArrayBuffer storage:', {
-        stored: testValue.byteLength,
-        retrieved: retrieved instanceof ArrayBuffer ? retrieved.byteLength : 'FAILED',
-        match:
-          retrieved instanceof ArrayBuffer &&
-          new Uint8Array(retrieved).toString() === new Uint8Array(testValue).toString(),
-      });
 
       // Clean up test
       await this.set('test_arraybuffer', null);

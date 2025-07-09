@@ -11,7 +11,7 @@ import { VAULT_KEYS } from '@services/vault.service';
 
 /* shared domain types */
 import { ChatMsg, SentCacheEntry } from '@models/chat.model';
-import { ServerMessage } from '@models/api-response.model';
+import { ServerMessage, KeyBundleResponse, MessageHistoryResponse } from '@models/api-response.model';
 import {
   AckPayload,
   IncomingSocketMessage,
@@ -52,6 +52,9 @@ export class ChatSessionService implements OnDestroy {
   // Initialization tracking
   private isInitialized = false;
   private isInitializing = false;
+  
+  // Global flag to prevent multiple instances from marking keys as missing
+  private static keysMissingAlreadyMarked = false;
 
   // Message state management
   private pendingMessages = new Map<
@@ -85,7 +88,7 @@ export class ChatSessionService implements OnDestroy {
 
   // Event-driven key status management
   private lastKeyStatusCheck = 0;
-  private keyStatusCache = new Map<string, { result: any; timestamp: number }>();
+  private keyStatusCache = new Map<string, { result: KeyBundleResponse; timestamp: number }>();
   private readonly KEY_STATUS_CACHE_TTL = 300000; // 5 minutes cache
   
   // Track automatic key generation to prevent error UI during the process
@@ -128,20 +131,15 @@ export class ChatSessionService implements OnDestroy {
     this.subs.add(
       this.ws.isConnected$.subscribe(connected => {
         if (connected && this.connectionLossDetected) {
-          console.log(
-            '[ChatSession] Connection restored, scheduling sync and cleaning up stale messages'
-          );
           this.connectionLossDetected = false;
           this.cleanupStalePendingMessages();
           this.scheduleReconnectSync();
           
           // Re-fetch partner's public key in case they regenerated while we were disconnected
           if (this.roomId) {
-            console.log('[ChatSession] Re-fetching partner public key after reconnection');
             this.refetchPartnerKeyOnReconnect();
           }
         } else if (!connected) {
-          console.log('[ChatSession] Connection lost, marking for sync');
           this.connectionLossDetected = true;
         }
       })
@@ -152,7 +150,6 @@ export class ChatSessionService implements OnDestroy {
    * Setup message event handlers with better error handling
    */
   private setupMessageHandlers(): void {
-    console.log('[ChatSession] Setting up message handlers including partner key recovery');
     this.ws.onMessageEdited(this.messageEditedCb);
     this.ws.onMessageDeleted(this.messageDeletedCb);
     this.ws.onMessageSent(this.messageSentCb);
@@ -165,27 +162,16 @@ export class ChatSessionService implements OnDestroy {
    * Enhanced message sent callback with fallback sync
    */
   private readonly messageSentCb = async ({ messageId, timestamp }: AckPayload) => {
-    console.log(
-      '[ChatSession] Message sent ack received for:',
-      messageId,
-      'at timestamp:',
-      timestamp
-    );
 
     try {
       // Always try to update pending messages, even during loading
       const success = await this.updatePendingMessage(messageId, timestamp);
       if (!success) {
-        console.warn(
+        console.error(
           '[ChatSession] Failed to update pending message, scheduling sync. MessageId:',
           messageId
         );
         this.scheduleFallbackSync();
-      } else {
-        console.log(
-          '[ChatSession] Successfully updated pending message to sent/delivered:',
-          messageId
-        );
       }
 
       // Always update vault storage
@@ -201,14 +187,13 @@ export class ChatSessionService implements OnDestroy {
    * Handle read receipts from the recipient
    */
   private readonly messageReadCb = async ({ messageId }: ReadPayload) => {
-    console.log('[ChatSession] Message read receipt received for:', messageId);
 
     try {
       const messages = this.messages$.value;
       const messageIndex = messages.findIndex(m => m.id === messageId);
 
       if (messageIndex === -1) {
-        console.warn('[ChatSession] Message not found for read receipt:', messageId);
+        console.error('[ChatSession] Message not found for read receipt:', messageId);
         return;
       }
 
@@ -232,15 +217,12 @@ export class ChatSessionService implements OnDestroy {
       ];
 
       this.messages$.next(updatedMessages);
-      console.log('[ChatSession] Updated message status to read:', messageId);
     } catch (error) {
       console.error('[ChatSession] Error processing read receipt:', error);
     }
   };
 
   private readonly keyRegeneratedCb = async (payload: KeyRegeneratedPayload) => {
-    console.log('[ChatSession] Partner has regenerated their keys:', payload.fromUsername);
-    console.log('[ChatSession] Need to fetch new public key for:', payload.fromUserId);
     
     // Clear the old public key immediately to block chat
     this.theirPubKey = null;
@@ -285,18 +267,15 @@ export class ChatSessionService implements OnDestroy {
   private refetchPartnerKeyOnReconnect(): void {
     if (!this.roomId) return;
     
-    console.log('[ChatSession] Checking if partner key needs updating after reconnection');
     
     this.users.getPublicKey(this.roomId).subscribe({
       next: ({ publicKeyBundle, username, avatarUrl, hasPublicKey, isKeyMissing }) => {
-        console.log('[ChatSession] Reconnection key check - hasPublicKey:', hasPublicKey, 'isKeyMissing:', isKeyMissing);
         
         // Check if partner has a different public key than what we have cached
         const currentKey = this.theirPubKey;
         const newKey = publicKeyBundle;
         
         if (hasPublicKey && newKey && currentKey !== newKey) {
-          console.log('[ChatSession] Partner has new public key after reconnection, updating');
           this.theirPubKey = newKey;
           this.keyLoading$.next(false);
           this.keyMissing$.next(false);
@@ -313,25 +292,25 @@ export class ChatSessionService implements OnDestroy {
           this.theirAvatar$.next(partnerAvatar);
           this.partnerAvatar = partnerAvatar;
           
-          console.log('[ChatSession] Updated to new partner public key after reconnection');
         } else if (isKeyMissing) {
-          console.log('[ChatSession] Partner keys are missing after reconnection - showing blocking UI');
           this.theirPubKey = null;
           this.keyLoading$.next(false);
           this.keyMissing$.next(false);
           this.myPrivateKeyMissing$.next(true);
           this.artificialKeyMissingState = true;
         } else if (!hasPublicKey) {
-          console.log('[ChatSession] Partner still has no public key after reconnection');
           this.theirPubKey = null;
           this.keyLoading$.next(false);
           this.keyMissing$.next(true);
-        } else {
-          console.log('[ChatSession] Partner key unchanged after reconnection');
         }
       },
       error: err => {
         console.error('[ChatSession] Failed to check partner key after reconnection:', err);
+        // For 404 errors, don't block the chat
+        if (err.status === 404) {
+          console.log('[ChatSession] Partner key not found on reconnect (404), allowing chat to continue');
+          this.keyMissing$.next(false);
+        }
       }
     });
   }
@@ -344,13 +323,12 @@ export class ChatSessionService implements OnDestroy {
     const baseDelay = 2000; // 2 seconds
     
     if (attempt >= maxAttempts) {
-      console.warn('[ChatSession] Max attempts reached for fetching partner key, showing notification');
+      console.error('[ChatSession] Max attempts reached for fetching partner key, showing notification');
       this.showPartnerKeyRegeneratedNotification$.next(true);
       return;
     }
     
     const delay = baseDelay * Math.pow(1.5, attempt);
-    console.log(`[ChatSession] Attempting to fetch partner key (attempt ${attempt + 1}/${maxAttempts}) in ${delay}ms`);
     
     setTimeout(() => {
       this.fetchAndUpdatePartnerKey(userId, attempt);
@@ -361,14 +339,11 @@ export class ChatSessionService implements OnDestroy {
    * Fetch and update partner's public key after key regeneration
    */
   public fetchAndUpdatePartnerKey(userId: string, attempt = 0): void {
-    console.log(`[ChatSession] Fetching updated public key for: ${userId} (attempt ${attempt + 1})`);
     
     this.users.getPublicKey(userId).subscribe({
       next: ({ publicKeyBundle, username, avatarUrl, hasPublicKey }) => {
-        console.log('[ChatSession] Received updated encryption data for:', username, 'hasKey:', hasPublicKey);
         
         if (hasPublicKey && publicKeyBundle) {
-          console.log('[ChatSession] Partner has new public key, updating encryption');
           this.theirPubKey = publicKeyBundle;
           this.keyLoading$.next(false);
           this.keyMissing$.next(false);
@@ -390,9 +365,7 @@ export class ChatSessionService implements OnDestroy {
           // Hide the regeneration notification since we have the new key
           this.showPartnerKeyRegeneratedNotification$.next(false);
           
-          console.log('[ChatSession] Successfully updated to new public key, chat unblocked');
         } else {
-          console.log('[ChatSession] Partner still has no public key, retrying...');
           // Retry if the partner hasn't uploaded their key yet
           this.retryFetchPartnerKey(userId, attempt + 1);
         }
@@ -411,7 +384,6 @@ export class ChatSessionService implements OnDestroy {
   private fetchPartnerBasicInfo(roomId: string): void {
     this.users.getPublicKey(roomId).subscribe({
       next: ({ username, avatarUrl }) => {
-        console.log('[ChatSession] Fetched partner basic info:', username);
         
         // Set username and avatar immediately
         this.theirUsername$.next(username || 'Unknown User');
@@ -424,6 +396,11 @@ export class ChatSessionService implements OnDestroy {
         // Set fallback username
         this.theirUsername$.next('Unknown User');
         this.theirAvatar$.next('assets/images/avatars/01.svg');
+        
+        // For 404 errors, this is normal - user may not have public key yet
+        if (err.status === 404) {
+          console.log('[ChatSession] Partner basic info not found (404), using fallback values');
+        }
       },
     });
   }
@@ -452,7 +429,7 @@ export class ChatSessionService implements OnDestroy {
     }
 
     if (bestMatchIdx === -1) {
-      console.warn('[ChatSession] No pending message found for ack:', messageId);
+      console.error('[ChatSession] No pending message found for ack:', messageId);
       return false;
     }
 
@@ -473,10 +450,6 @@ export class ChatSessionService implements OnDestroy {
     if (pendingInfo) {
       clearTimeout(pendingInfo.timeoutId);
       this.pendingMessages.delete(pendingKey);
-      console.log(
-        '[ChatSession] Successfully acknowledged message, cleared timeout:',
-        messageId
-      );
     }
 
     // Update messages list
@@ -486,9 +459,6 @@ export class ChatSessionService implements OnDestroy {
       ...list.slice(bestMatchIdx + 1),
     ]);
 
-    console.log(
-      `[ChatSession] Message updated successfully: ${messageId} -> status: ${newStatus}`
-    );
 
     // Update vault storage
     await this.updateVaultForSentMessage(messageId, timestamp, patched.text);
@@ -514,7 +484,7 @@ export class ChatSessionService implements OnDestroy {
       }
 
       if (!text) {
-        console.warn(
+        console.error(
           `[ChatSession] No text found for message ${messageId}, skipping vault update`
         );
         return;
@@ -527,20 +497,11 @@ export class ChatSessionService implements OnDestroy {
         ts: serverTimestamp,
       };
 
-      console.log(
-        `[ChatSession] Storing vault entry for ${messageId} with text: "${text.substring(
-          0,
-          20
-        )}..."`
-      );
 
       // Store with multiple keys for better retrieval
       await this.vault.set(this.key(messageId), cacheEntry);
       await this.vault.set(this.key(`server::${serverTimestamp}`), cacheEntry);
 
-      console.log(
-        `[ChatSession] Successfully updated vault storage for message: ${messageId}`
-      );
     } catch (err) {
       console.error('[ChatSession] Error updating vault storage:', err);
     }
@@ -550,7 +511,6 @@ export class ChatSessionService implements OnDestroy {
    * Enhanced typing handler with connection awareness
    */
   private setupTypingHandler(): void {
-    console.log('[ChatSession] Setting up typing indicator subscription');
 
     this.subs.add(
       this.ws.typing$.subscribe(({ fromUserId }) => {
@@ -579,7 +539,6 @@ export class ChatSessionService implements OnDestroy {
 
         // Sync if it's been too long since last sync
         if (timeSinceLastSync > this.SYNC_INTERVAL) {
-          console.log('[ChatSession] Periodic sync check');
           this.scheduleFallbackSync();
         }
       }
@@ -592,7 +551,6 @@ export class ChatSessionService implements OnDestroy {
   private scheduleFallbackSync(): void {
     if (this.reconnectSyncInProgress) return;
 
-    console.log('[ChatSession] Scheduling fallback message sync');
 
     setTimeout(() => {
       this.performFallbackSync();
@@ -605,7 +563,6 @@ export class ChatSessionService implements OnDestroy {
   private scheduleReconnectSync(): void {
     if (this.reconnectSyncInProgress) return;
 
-    console.log('[ChatSession] Scheduling reconnect sync');
 
     setTimeout(() => {
       this.performReconnectSync();
@@ -620,12 +577,10 @@ export class ChatSessionService implements OnDestroy {
 
     // Don't sync messages if keys are missing
     if (this.myPrivateKeyMissing$.value) {
-      console.log('[ChatSession] Skipping fallback sync - private key is missing');
       return;
     }
 
     try {
-      console.log('[ChatSession] Performing fallback sync');
       this.reconnectSyncInProgress = true;
 
       // Get current messages for comparison
@@ -662,10 +617,6 @@ export class ChatSessionService implements OnDestroy {
                     readAt: serverMsg.read ? toEpoch(serverMsg.createdAt) : undefined,
                   };
                   hasUpdates = true;
-                  console.log(
-                    '[ChatSession] Updated pending message with server data:',
-                    serverMsg._id
-                  );
                 }
               }
               continue;
@@ -675,7 +626,6 @@ export class ChatSessionService implements OnDestroy {
             if (serverTimestamp <= lastMessageTime) continue;
 
             // This is a new message we missed
-            console.log('[ChatSession] Found missed message:', serverMsg._id);
             hasUpdates = true;
 
             const fromMe = serverMsg.senderId.toString() === this.meId;
@@ -713,7 +663,6 @@ export class ChatSessionService implements OnDestroy {
             // Sort messages and update
             currentMessages.sort((a, b) => a.ts - b.ts);
             this.messages$.next([...currentMessages]);
-            console.log('[ChatSession] Applied fallback sync updates');
           }
 
           this.lastSyncTime = Date.now();
@@ -735,7 +684,6 @@ export class ChatSessionService implements OnDestroy {
    * Perform sync after reconnection
    */
   private async performReconnectSync(): Promise<void> {
-    console.log('[ChatSession] Performing reconnect sync');
     await this.performFallbackSync();
   }
 
@@ -756,7 +704,6 @@ export class ChatSessionService implements OnDestroy {
 
   async editMessage(id: string, newText: string) {
     if (!this.theirPubKey) {
-      console.log('[ChatSession] Cannot edit - partner has no encryption key');
       return;
     }
 
@@ -790,7 +737,6 @@ export class ChatSessionService implements OnDestroy {
 
   async init(roomId: string): Promise<void> {
     if (this.isInitialized && this.roomId === roomId) {
-      console.log('[ChatSession] Already initialized for room:', roomId);
       
       // Ensure we have username even for already initialized sessions
       if (!this.theirUsername$.value || this.theirUsername$.value === 'Unknown User') {
@@ -801,22 +747,16 @@ export class ChatSessionService implements OnDestroy {
       
       // Only reset key state if we're not in artificial state
       if (!this.artificialKeyMissingState) {
-        console.log('[ChatSession] Not in artificial state, checking actual vault state');
         const hasPrivateKeyInVault = await this.crypto.hasPrivateKeyInVault(this.vault, this.meId);
         const wasKeyMissing = this.myPrivateKeyMissing$.value;
         const isKeyMissing = !hasPrivateKeyInVault;
         
         // Key state check (early return path)
-        console.log('[ChatSession] hasPrivateKeyInVault:', hasPrivateKeyInVault);
-        console.log('[ChatSession] wasKeyMissing:', wasKeyMissing);
-        console.log('[ChatSession] isKeyMissing:', isKeyMissing);
-        console.log('[ChatSession] artificialKeyMissingState:', this.artificialKeyMissingState);
         
         // For already initialized sessions, if keys are missing, try automatic generation for new users
         if (isKeyMissing) {
-          const hasAnyVaultData = await this.checkForAnyVaultData();
-          if (!hasAnyVaultData) {
-            console.log('[ChatSession] 🆕 Already initialized session - NEW USER detected, attempting automatic key generation');
+          const hasMessageHistory = await this.checkIfUserHasMessageHistory();
+          if (!hasMessageHistory) {
             // Set loading state to prevent error UI from showing during key generation
             this.keyLoading$.next(true);
             this.myPrivateKeyMissing$.next(false);
@@ -827,7 +767,6 @@ export class ChatSessionService implements OnDestroy {
               this.myPrivateKeyMissing$.next(false);
               this.keyLoading$.next(false);
               this.isGeneratingKeysForNewUser = false;
-              console.log('[ChatSession] Automatic key generation successful in early return path');
             } catch (error) {
               console.error('[ChatSession] Automatic key generation failed in early return path:', error);
               this.myPrivateKeyMissing$.next(true);
@@ -835,7 +774,6 @@ export class ChatSessionService implements OnDestroy {
               this.isGeneratingKeysForNewUser = false;
             }
           } else {
-            console.log('[ChatSession] 🔑 EXISTING USER with corrupted vault in early return - showing recovery UI');
             this.myPrivateKeyMissing$.next(true);
           }
         } else {
@@ -846,8 +784,6 @@ export class ChatSessionService implements OnDestroy {
         if (isKeyMissing && !wasKeyMissing && !this.artificialKeyMissingState) {
           // Key just became missing - should start monitoring
         }
-      } else {
-        console.log('[ChatSession] In artificial state, preserving partner key loss UI');
       }
       
       // Removed: Recovery UI monitoring now handled via database flag
@@ -856,7 +792,6 @@ export class ChatSessionService implements OnDestroy {
     }
 
     if (this.isInitializing) {
-      console.log('[ChatSession] Already initializing, skipping');
       return;
     }
 
@@ -872,20 +807,12 @@ export class ChatSessionService implements OnDestroy {
     
     // Check if we have a private key in vault before setting the missing state
     const hasPrivateKeyInVault = await this.crypto.hasPrivateKeyInVault(this.vault, this.meId);
-    const isKeyMissing = !hasPrivateKeyInVault;
     
     // Key state check (main initialization)
-    console.log('[ChatSession] hasPrivateKeyInVault:', hasPrivateKeyInVault);
-    console.log('[ChatSession] isKeyMissing:', isKeyMissing);
-    console.log('[ChatSession] artificialKeyMissingState:', this.artificialKeyMissingState);
     
     // Don't set myPrivateKeyMissing$ to true yet - we'll try automatic key generation first
     // Only set it to true if key generation fails
     this.myPrivateKeyMissing$.next(false);
-    
-    if (isKeyMissing) {
-      console.log('[ChatSession] *** PRIVATE KEY IS MISSING - WILL TRY AUTOMATIC KEY GENERATION ***');
-    }
 
     this.messagesLoading$.next(true);
     this.loadingOperations = 0;
@@ -902,26 +829,25 @@ export class ChatSessionService implements OnDestroy {
         await this.vault.setCurrentUser(this.meId, true); // true = read-only
         await this.vault.waitUntilReady();
         privateKeyData = await this.vault.get<ArrayBuffer>(VAULT_KEYS.PRIVATE_KEY);
-      } catch {
+      } catch (error) {
         // Vault unavailable in read-only mode - this means either:
         // 1. New user (no vault exists yet) - should auto-generate keys
         // 2. Corrupted vault (AES key missing) - user needs key recovery
-        console.log('[ChatSession] Vault unavailable in read-only mode - checking if new user or corrupted vault');
+        console.log('[ChatSession] Vault unavailable in read-only mode:', error);
         
-        // Check if this is truly a new user by looking for any vault data
-        const hasAnyVaultData = await this.checkForAnyVaultData();
+        // Check if this is truly a new user by looking at message history
+        const hasMessageHistory = await this.checkIfUserHasMessageHistory();
         
-        if (!hasAnyVaultData) {
-          // This is a new user - automatically generate keys
-          console.log('[ChatSession] 🆕 NEW USER detected - automatically generating encryption keys');
-          console.log('[ChatSession] No vault database exists - this is a fresh user');
-          console.log('[ChatSession] Keeping keyLoading$ = true during automatic key generation');
+        console.log(`[ChatSession] New user check: hasMessageHistory=${hasMessageHistory}, roomId=${this.roomId}`);
+        
+        if (!hasMessageHistory) {
+          // This is a new user with no message history - automatically generate keys
+          console.log('[ChatSession] 🔑 Detected new user - starting automatic key generation');
           
           this.isGeneratingKeysForNewUser = true;
           
           try {
             await this.generateKeysForNewUser();
-            console.log('[ChatSession] Successfully generated keys for new user');
             
             // Continue with normal initialization flow
             await this.vault.setCurrentUser(this.meId, false); // false = write mode
@@ -931,23 +857,27 @@ export class ChatSessionService implements OnDestroy {
             // Import the newly generated private key
             await this.crypto.importPrivateKey(privateKeyData!);
             
-            console.log('[ChatSession] New user key generation completed successfully');
-            console.log('[ChatSession] keyLoading$ will remain true until partner key retrieval completes');
             
             // Continue with normal flow (don't return here)
             // Note: keyLoading$ will be set to false in the partner key retrieval callback
             // This ensures the error UI never shows during automatic key generation
           } catch (keyGenError) {
-            console.error('[ChatSession] Failed to generate keys for new user:', keyGenError);
+            console.error('[ChatSession] ❌ Failed to generate keys for new user:', keyGenError);
+            console.error('[ChatSession] ❌ Key generation error details:', {
+              error: keyGenError,
+              roomId: this.roomId,
+              userId: this.meId,
+              hasPrivateKey: this.crypto.hasPrivateKey(),
+              isGeneratingKeysForNewUser: this.isGeneratingKeysForNewUser
+            });
             this.isGeneratingKeysForNewUser = false;
             // Fall back to marking keys as missing
             await this.markKeysAsMissingAndComplete();
             return;
           }
         } else {
-          // Corrupted vault - existing user needs key recovery
-          console.log('[ChatSession] 🔑 EXISTING USER with corrupted vault detected - showing recovery UI');
-          console.log('[ChatSession] This user has vault data but keys are corrupted/missing');
+          // Existing user with message history - needs key recovery
+          console.log('[ChatSession] 🔐 Detected existing user with message history - showing key recovery UI');
           await this.markKeysAsMissingAndComplete();
           return;
         }
@@ -956,7 +886,6 @@ export class ChatSessionService implements OnDestroy {
       if (!privateKeyData) {
         // Private key not found in vault - this shouldn't happen if we got here
         // but handle it gracefully by marking as missing
-        console.log('[ChatSession] Private key not found in vault - marking as missing in database');
         await this.markKeysAsMissingAndComplete();
         return;
       }
@@ -979,7 +908,6 @@ export class ChatSessionService implements OnDestroy {
         this.crypto.clearPrivateKey();
         
         // Mark keys as missing in database and complete initialization
-        console.log('[ChatSession] Corrupted key detected - marking as missing in database');
         await this.markKeysAsMissingAndComplete();
         return;
       }
@@ -992,8 +920,6 @@ export class ChatSessionService implements OnDestroy {
       // Get partner's public key
       this.users.getPublicKey(roomId).subscribe({
         next: ({ publicKeyBundle, username, avatarUrl, hasPublicKey, isKeyMissing }) => {
-          console.log('[ChatSession] Received partner encryption data for:', username);
-          console.log('[ChatSession] Partner key status - hasPublicKey:', hasPublicKey, 'isKeyMissing:', isKeyMissing);
           
           // Update username and avatar if not already set (fallback)
           if (!this.theirUsername$.value || this.theirUsername$.value === 'Unknown User') {
@@ -1006,14 +932,12 @@ export class ChatSessionService implements OnDestroy {
           
           // Check if partner lost their keys first
           if (isKeyMissing) {
-            console.log('[ChatSession] Partner keys are missing during initial load - showing blocking UI');
             this.theirPubKey = null;
             this.keyLoading$.next(false);
             this.keyMissing$.next(false);
             this.myPrivateKeyMissing$.next(true);
             this.artificialKeyMissingState = true;
           } else if (hasPublicKey && publicKeyBundle) {
-            console.log('[ChatSession] Partner has public key, encryption enabled');
             this.theirPubKey = publicKeyBundle;
             this.keyLoading$.next(false);
             this.keyMissing$.next(false);
@@ -1031,13 +955,11 @@ export class ChatSessionService implements OnDestroy {
             // Reset automatic key generation flag when partner key retrieval completes
             if (this.isGeneratingKeysForNewUser) {
               this.isGeneratingKeysForNewUser = false;
-              console.log('[ChatSession] Automatic key generation completed - new user setup finished');
               
               // Check partner status now that key generation is complete
               this.checkPartnerKeyStatusOnDemand('key_generation_complete');
             }
           } else {
-            console.log('[ChatSession] Partner has no public key, encryption required');
             this.theirPubKey = null;
             this.keyLoading$.next(false);
             this.keyMissing$.next(true);
@@ -1047,8 +969,17 @@ export class ChatSessionService implements OnDestroy {
           console.error('[ChatSession] Failed to get partner data:', err);
           // Set generic fallback username if API call fails completely
           this.theirUsername$.next('Unknown User');
-          this.keyMissing$.next(true);
           this.keyLoading$.next(false);
+          
+          // Only set keyMissing if this is specifically about missing keys
+          // For 404 errors, we should allow the chat to continue without blocking
+          if (err.status === 404) {
+            console.log('[ChatSession] Partner public key not found (404), allowing chat to continue');
+            this.keyMissing$.next(false);
+          } else {
+            // For other errors, set keyMissing to true
+            this.keyMissing$.next(true);
+          }
         },
       });
 
@@ -1067,7 +998,15 @@ export class ChatSessionService implements OnDestroy {
       
       // Set up event-driven key status monitoring
       this.setupEventDrivenKeyStatusMonitoring();
+      
+      // Fix any incorrect key states from previous bugs
+      this.checkOwnKeyStatus();
+      
+      // IMPORTANT: Force partner key status check after initialization is complete
+      // This ensures that on page reload, we detect if partner has missing keys
+      this.schedulePostInitializationCheck();
     } finally {
+      this.isInitialized = true;
       this.isInitializing = false;
     }
   }
@@ -1078,14 +1017,12 @@ export class ChatSessionService implements OnDestroy {
   private loadMessageHistory(): void {
     // Don't load message history if keys are missing
     if (this.myPrivateKeyMissing$.value) {
-      console.log('[ChatSession] Skipping message history load - private key is missing');
       this.messagesLoading$.next(false);
       return;
     }
 
     this.api.getMessageHistory(this.roomId).subscribe({
       next: async res => {
-        console.log('[ChatSession] Loading message history, count:', res.messages.length);
         const historyMessages: ChatMsg[] = [];
 
         for (const m of res.messages) {
@@ -1138,12 +1075,11 @@ export class ChatSessionService implements OnDestroy {
    */
   async send(_: string, plain: string): Promise<void> {
     if (!plain?.trim() || !this.roomId || !this.theirPubKey) {
-      console.log('[ChatSession] Cannot send - missing parameters or partner encryption key');
       return;
     }
 
     if (!this.ws.isConnected()) {
-      console.warn(
+      console.error(
         '[ChatSession] Cannot send - socket disconnected, message will not be sent'
       );
       // Don't add message to UI if we can't send it
@@ -1171,7 +1107,7 @@ export class ChatSessionService implements OnDestroy {
       // Add pending message with timeout tracking
       const timeoutId = setTimeout(() => {
         if (this.pendingMessages.has(pendingKey)) {
-          console.warn(
+          console.error(
             '[ChatSession] Message ack timeout after 30s, but keeping message visible'
           );
           // Don't remove the message from UI, just mark it as potentially failed
@@ -1193,11 +1129,6 @@ export class ChatSessionService implements OnDestroy {
       };
 
       await this.vault.set(this.key(pendingKey), pendingCacheEntry);
-      console.log(
-        `[ChatSession] Stored pending message in vault with key: ${this.key(
-          pendingKey
-        )}, text: "${plain}"`
-      );
 
       this.ws.sendMessage(this.roomId, ct, myAvatar);
     } catch (error) {
@@ -1213,10 +1144,6 @@ export class ChatSessionService implements OnDestroy {
   private cleanupStalePendingMessages(): void {
     if (this.pendingMessages.size === 0) return;
 
-    console.log(
-      '[ChatSession] Cleaning up stale pending message tracking:',
-      this.pendingMessages.size
-    );
 
     // Clear timeouts and tracking, but keep messages in UI
     // Let fallback sync determine what actually needs to be done
@@ -1225,7 +1152,6 @@ export class ChatSessionService implements OnDestroy {
     });
 
     this.pendingMessages.clear();
-    console.log('[ChatSession] Cleared pending message tracking (messages kept in UI)');
   }
 
   private startLoadingOperation(): void {
@@ -1366,9 +1292,10 @@ export class ChatSessionService implements OnDestroy {
 
     try {
       return await this.crypto.decryptMessage(ct);
-    } catch {
+    } catch (error) {
       // Mark this ciphertext as failed to avoid retrying
       this.failedDecryptions.add(ct);
+      console.log('[ChatSession] Failed to decrypt message:', error);
 
       // Clean up old failed entries periodically (keep last 100)
       if (this.failedDecryptions.size > 100) {
@@ -1423,7 +1350,6 @@ export class ChatSessionService implements OnDestroy {
       return;
     }
     
-    console.log('[ChatSession] Vault corruption detected - forcing recovery UI');
     this.vaultCorruptionDetected = true;
     
     // Force recovery state
@@ -1438,9 +1364,6 @@ export class ChatSessionService implements OnDestroy {
     const messageId = m._id;
     const serverTimestamp = toEpoch(m.createdAt);
 
-    console.log(
-      `[ChatSession] Looking for cached text for message ${messageId}, server timestamp: ${serverTimestamp}`
-    );
 
     // Try various lookup strategies
     const strategies = [
@@ -1454,28 +1377,22 @@ export class ChatSessionService implements OnDestroy {
       try {
         const cached = await this.vault.get<SentCacheEntry>(key);
         if (cached && cached.text) {
-          console.log(`[ChatSession] Found cached text for ${messageId} with key: ${key}`);
           return cached.text;
         }
       } catch (error) {
         vaultFailureCount++;
-        console.log(`[ChatSession] Vault get failed for key ${key}:`, error);
+        console.log('[ChatSession] Vault failure during cache retrieval:', error);
       }
     }
     
     // If we had multiple vault failures, this indicates corruption
     if (vaultFailureCount > 0) {
-      console.log(`[ChatSession] Detected ${vaultFailureCount} vault failures - triggering recovery detection`);
       this.detectVaultCorruption();
     }
 
-    console.log(
-      `[ChatSession] No exact match found, trying fuzzy match for ${messageId}`
-    );
 
     // Fuzzy match for pending messages with expanded time window
     const keys = await this.vault.keysStartingWith(this.key('pending::'));
-    console.log(`[ChatSession] Found ${keys.length} pending keys for fuzzy matching`);
 
     for (const key of keys) {
       const match = key.match(/pending::(\d+)$/);
@@ -1486,9 +1403,6 @@ export class ChatSessionService implements OnDestroy {
           // Increased from 5 seconds to 10 seconds
           const cached = await this.vault.get<SentCacheEntry>(key);
           if (cached && cached.text) {
-            console.log(
-              `[ChatSession] Found fuzzy match for ${messageId} with pending key: ${key}, time diff: ${timeDiff}ms`
-            );
             // Update vault with proper keys
             await this.vault.set(this.key(messageId), cached);
             await this.vault.set(key, null);
@@ -1498,7 +1412,7 @@ export class ChatSessionService implements OnDestroy {
       }
     }
 
-    console.warn(
+    console.error(
       `[ChatSession] No cached text found for message ${messageId}, using fallback`
     );
     
@@ -1540,46 +1454,59 @@ export class ChatSessionService implements OnDestroy {
 
   /**
    * Check our own key status to ensure we're not incorrectly showing artificial blocking
+   * This method fixes users who were incorrectly marked as having missing keys
    */
   private checkOwnKeyStatus(): void {
     this.users.getPublicKey(this.meId).subscribe({
       next: (response) => {
-        console.log('[ChatSession] Own key status:', response.username, 'isKeyMissing:', response.isKeyMissing, 'hasPublicKey:', response.hasPublicKey);
+        console.log('[ChatSession] checkOwnKeyStatus response:', response);
         
-        // If we have valid keys and we're in artificial blocking state, clear it
+        // Case 1: Server shows we have valid keys but we're in artificial blocking state
         if (response.hasPublicKey && !response.isKeyMissing && this.artificialKeyMissingState) {
-          console.log('[ChatSession] Our own keys are valid but we are in artificial blocking - clearing it');
+          console.log('[ChatSession] Clearing artificial blocking state - user has valid keys');
           this.artificialKeyMissingState = false;
           this.myPrivateKeyMissing$.next(false);
           this.keyLoading$.next(false);
           this.keyMissing$.next(false);
         }
         
-        // AGGRESSIVE FIX: If we have valid keys, ensure we're not showing missing key UI
-        if (response.hasPublicKey && !response.isKeyMissing) {
-          // Force clear all blocking states if our own keys are valid AND we have a working private key
-          if (this.myPrivateKeyMissing$.value && this.artificialKeyMissingState && this.crypto.hasPrivateKey()) {
-            console.log('[ChatSession] FORCE CLEARING: We have valid keys in database and memory, clearing all blocking states');
+        // Case 2: Server shows we have valid keys but we're somehow showing missing key UI
+        if (response.hasPublicKey && !response.isKeyMissing && this.myPrivateKeyMissing$.value) {
+          console.log('[ChatSession] Detected incorrectly marked user - fixing state');
+          
+          // Check if we have a valid private key locally
+          if (this.crypto.hasPrivateKey()) {
+            console.log('[ChatSession] User has valid private key, clearing all blocking states');
             this.artificialKeyMissingState = false;
             this.myPrivateKeyMissing$.next(false);
             this.keyLoading$.next(false);
             this.keyMissing$.next(false);
-          } else if (this.myPrivateKeyMissing$.value && !this.artificialKeyMissingState && !this.crypto.hasPrivateKey()) {
-            console.log('[ChatSession] Database says keys valid but we have no private key in memory - keeping recovery UI');
-            // Keep the recovery UI since we actually need to recover our private key
+          } else {
+            console.log('[ChatSession] User missing private key but has public key - need key recovery');
+            // User needs to recover their private key but isn't in artificial blocking
+            this.artificialKeyMissingState = false;
+            this.myPrivateKeyMissing$.next(true);
+            this.keyMissing$.next(false);
           }
         }
         
-        // If our keys are actually missing, ensure UI reflects this
+        // Case 3: Server correctly shows we have missing keys
         if (response.isKeyMissing && !this.myPrivateKeyMissing$.value) {
-          console.log('[ChatSession] Our own keys are missing according to database - updating UI');
+          console.log('[ChatSession] Server correctly shows missing keys - updating UI');
           this.myPrivateKeyMissing$.next(true);
           this.keyMissing$.next(true);
+          this.artificialKeyMissingState = false;
+        }
+        
+        // Case 4: Server incorrectly shows missing keys but we have valid keys
+        if (response.isKeyMissing && this.crypto.hasPrivateKey()) {
+          console.log('[ChatSession] Server incorrectly shows missing keys - will reset database flag');
+          this.resetDatabaseKeyFlag();
         }
       },
       error: (error) => {
         if (error.message && error.message.includes('Rate limited')) {
-          console.log('[ChatSession] Rate limited checking own key status - will retry later');
+          console.log('[ChatSession] Rate limited when checking own key status');
         } else {
           console.error('[ChatSession] Error checking own key status:', error);
         }
@@ -1590,7 +1517,7 @@ export class ChatSessionService implements OnDestroy {
   /**
    * Check partner key status only when needed (event-driven)
    */
-  private checkPartnerKeyStatusOnDemand(reason: string = 'manual'): void {
+  private checkPartnerKeyStatusOnDemand(reason = 'manual'): void {
     if (!this.roomId) {
       return;
     }
@@ -1601,23 +1528,19 @@ export class ChatSessionService implements OnDestroy {
     
     // Use cached result if available and not expired
     if (cached && (now - cached.timestamp) < this.KEY_STATUS_CACHE_TTL) {
-      console.log(`[ChatSession] Using cached partner key status (${reason}):`, cached.result);
       this.processPartnerKeyStatusResponse(cached.result);
       return;
     }
     
     // Avoid duplicate requests within short time window
     if (now - this.lastKeyStatusCheck < 5000) {
-      console.log(`[ChatSession] Skipping partner key status check - recent check performed (${reason})`);
       return;
     }
     
-    console.log(`[ChatSession] Checking partner key status on demand (${reason}):`, this.roomId);
     this.lastKeyStatusCheck = now;
     
     this.users.getPublicKey(this.roomId).subscribe({
       next: (response) => {
-        console.log(`[ChatSession] Partner key status response (${reason}):`, response);
         
         // Cache the result
         this.keyStatusCache.set(cacheKey, {
@@ -1637,24 +1560,46 @@ export class ChatSessionService implements OnDestroy {
   /**
    * Process partner key status response (extracted from polling logic)
    */
-  private processPartnerKeyStatusResponse(response: any): void {
+  private processPartnerKeyStatusResponse(response: KeyBundleResponse): void {
+    console.log('[ChatSession] 🔍 Processing partner key status:', {
+      partnerUserId: this.roomId,
+      partnerHasPublicKey: response.hasPublicKey,
+      partnerIsKeyMissing: response.isKeyMissing,
+      myHasPrivateKey: this.crypto.hasPrivateKey(),
+      myPrivateKeyMissing: this.myPrivateKeyMissing$.value,
+      currentArtificialState: this.artificialKeyMissingState
+    });
+    
     if (response.isKeyMissing) {
-      console.log('[ChatSession] Partner keys are missing - checking if we should show blocking UI');
+      console.log('[ChatSession] 🚫 Partner has lost their keys');
       
-      // CRITICAL: Only show partner blocking if we have our own valid keys
-      if (this.crypto.hasPrivateKey() && !this.myPrivateKeyMissing$.value) {
-        console.log('[ChatSession] We have valid keys, partner is missing keys - showing partner blocking UI');
+      // Partner has lost their keys - show blocking UI only if:
+      // 1. We have our own valid keys (crypto.hasPrivateKey())
+      // 2. We're not already in artificial blocking state
+      // 3. We're not already showing our own key recovery UI (myPrivateKeyMissing is false)
+      if (this.crypto.hasPrivateKey() && !this.artificialKeyMissingState && !this.myPrivateKeyMissing$.value) {
+        console.log('[ChatSession] 🚫 Setting artificial blocking state - partner key issue');
+        
+        // IMPORTANT: Set artificial state FIRST before triggering UI changes
+        // This prevents race condition where ensureKeysMissingFlagSet is called before artificialKeyMissingState is set
+        this.artificialKeyMissingState = true; // This shows "Partner Key Issue" message
+        
+        // This creates an artificial "missing key" state to block the UI
+        // The user's keys are fine, but we simulate missing keys to show partner blocking
         this.theirPubKey = null;
         this.keyLoading$.next(false);
         this.keyMissing$.next(false);
-        this.myPrivateKeyMissing$.next(true);
-        this.artificialKeyMissingState = true;
-        console.log('[ChatSession] Blocking UI activated for partner key loss');
+        this.myPrivateKeyMissing$.next(true); // This triggers the blocking UI (after artificial state is set)
+        
+        console.log('[ChatSession] ✅ Artificial blocking state set - user should see "Chat Blocked - Partner Key Issue"');
       } else {
-        console.log('[ChatSession] We have missing keys ourselves - NOT showing partner blocking');
-        console.log('[ChatSession] Current state: hasPrivateKey=', this.crypto.hasPrivateKey(), 'myPrivateKeyMissing=', this.myPrivateKeyMissing$.value);
+        // If we don't have our own keys OR we're already showing our own key recovery UI,
+        // don't change the state - the user should see their own key recovery UI, not partner blocking
+        console.log('[ChatSession] ⚠️ Partner keys missing, but user has own key issues or already showing recovery UI - keeping current state');
       }
     } else if (response.hasPublicKey && !response.isKeyMissing) {
+      console.log('[ChatSession] ✅ Partner has valid keys - clearing any blocking states');
+      
       // Partner has valid keys and is not marked as missing - normal chat
       
       // Check if partner has a different public key than what we have cached
@@ -1662,21 +1607,23 @@ export class ChatSessionService implements OnDestroy {
       const newKey = response.publicKeyBundle;
       
       if (newKey && currentKey !== newKey) {
-        console.log('[ChatSession] Partner has new public key detected, updating');
+        console.log('[ChatSession] 🔄 Partner has new public key - updating');
         this.theirPubKey = newKey;
-        console.log('[ChatSession] Updated to new partner public key');
       }
       
+      // Clear blocking states and enable normal chat
+      this.keyLoading$.next(false);
+      this.keyMissing$.next(false);
+      this.theirPubKey = response.publicKeyBundle;
+      
+      // Only clear artificial blocking state if we were in artificial mode
       if (this.artificialKeyMissingState) {
-        console.log('[ChatSession] Partner keys restored - clearing blocking UI');
-        console.log('[ChatSession] Partner status: hasPublicKey=', response.hasPublicKey, 'isKeyMissing=', response.isKeyMissing);
+        console.log('[ChatSession] 🔓 Clearing artificial blocking state - partner fixed their keys');
         this.artificialKeyMissingState = false;
         this.myPrivateKeyMissing$.next(false);
-        this.keyLoading$.next(false);
-        this.keyMissing$.next(false);
-        this.theirPubKey = response.publicKeyBundle;
-        console.log('[ChatSession] Artificial blocking state cleared - chat unblocked');
       }
+      
+      console.log('[ChatSession] ✅ Normal chat enabled - partner has valid keys');
     }
   }
 
@@ -1684,7 +1631,6 @@ export class ChatSessionService implements OnDestroy {
    * Set up event-driven key status monitoring
    */
   private setupEventDrivenKeyStatusMonitoring(): void {
-    console.log('[ChatSession] Setting up event-driven key status monitoring');
     
     // Listen for WebSocket events that indicate key changes
     this.setupKeyStatusWebSocketListeners();
@@ -1694,13 +1640,29 @@ export class ChatSessionService implements OnDestroy {
   }
   
   /**
+   * Schedule a post-initialization check to ensure partner key status is properly evaluated
+   */
+  private schedulePostInitializationCheck(): void {
+    // Use requestAnimationFrame for proper timing without arbitrary delays
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (this.roomId) {
+          console.log('[ChatSession] 🔄 Post-initialization partner key check');
+          // Clear any cached results to force a fresh check
+          this.keyStatusCache.clear();
+          this.lastKeyStatusCheck = 0;
+          this.checkPartnerKeyStatusOnDemand('post_initialization');
+        }
+      });
+    });
+  }
+  
+  /**
    * Set up WebSocket listeners for key status changes
    */
   private setupKeyStatusWebSocketListeners(): void {
     // Listen for key regeneration events
-    this.ws.onKeyRegenerated((payload) => {
-      console.log('[ChatSession] Key regenerated event received:', payload);
-      
+    this.ws.onKeyRegenerated(() => {
       // Clear cache and check status
       this.clearKeyStatusCache();
       this.checkPartnerKeyStatusOnDemand('key_regenerated');
@@ -1710,7 +1672,6 @@ export class ChatSessionService implements OnDestroy {
     this.subs.add(
       this.ws.isConnected$.subscribe(connected => {
         if (connected) {
-          console.log('[ChatSession] WebSocket connected - checking if partner keys changed');
           this.checkPartnerKeyStatusOnDemand('connection_restored');
         }
       })
@@ -1722,14 +1683,12 @@ export class ChatSessionService implements OnDestroy {
    */
   private clearKeyStatusCache(): void {
     this.keyStatusCache.clear();
-    console.log('[ChatSession] Key status cache cleared');
   }
   
   /**
    * Manually trigger key status check (for UI buttons, etc.)
    */
   public manuallyCheckKeyStatus(): void {
-    console.log('[ChatSession] Manual key status check requested');
     this.clearKeyStatusCache();
     this.checkPartnerKeyStatusOnDemand('manual_trigger');
   }
@@ -1738,16 +1697,9 @@ export class ChatSessionService implements OnDestroy {
    * Debug method to show current room info
    */
   debugShowRoomInfo(): void {
-    console.log('=== [ChatSession] Room Debug Info ===');
-    console.log('[ChatSession] Current roomId:', this.roomId);
-    console.log('[ChatSession] Partner username:', this.theirUsername$.value);
-    console.log('[ChatSession] Is initialized:', this.isInitialized);
-    console.log('[ChatSession] My user ID:', this.meId);
-    console.log('[ChatSession] artificialKeyMissingState:', this.artificialKeyMissingState);
     
     // Test partner key status immediately
     if (this.roomId) {
-      console.log('[ChatSession] === TESTING PARTNER KEY STATUS ===');
       this.checkPartnerKeyStatusOnDemand('debug_test');
     }
   }
@@ -1757,44 +1709,53 @@ export class ChatSessionService implements OnDestroy {
    * This simulates key loss and triggers the missing key flow
    */
   async debugForceKeyLoss(): Promise<void> {
-    console.log('[ChatSession] DEBUG: Forcing key loss for testing...');
+    console.log('[ChatSession] 🔥 DEBUG: Forcing key loss for testing');
+    console.log('[ChatSession] 🔥 Before key loss - User state:', {
+      hasPrivateKey: this.crypto.hasPrivateKey(),
+      myPrivateKeyMissing: this.myPrivateKeyMissing$.value,
+      artificialKeyMissingState: this.artificialKeyMissingState,
+      userId: this.meId,
+      roomId: this.roomId
+    });
     
     try {
       // 1. Clear private key from vault (public key is stored in database)
+      console.log('[ChatSession] 🔥 Step 1: Clearing private key from vault');
       await this.vault.setCurrentUser(this.meId, false); // write mode
       await this.vault.waitUntilReady();
       await this.vault.set(VAULT_KEYS.PRIVATE_KEY, null);
-      console.log('[ChatSession] DEBUG: Cleared private key from vault');
       
-      // 2. Mark keys as missing in database
-      console.log('[ChatSession] DEBUG: Calling markKeysAsMissing API...');
-      this.users.markKeysAsMissing().subscribe({
-        next: (response) => {
-          console.log('[ChatSession] DEBUG: Successfully marked keys as missing in database');
-          console.log('[ChatSession] DEBUG: API response:', response);
-          
-          // 3. Update UI state to show missing keys
-          this.keyLoading$.next(false);
-          this.keyMissing$.next(true);
-          this.myPrivateKeyMissing$.next(true);
-          
-          console.log('[ChatSession] DEBUG: Key loss simulation complete!');
-          console.log('[ChatSession] DEBUG: User should now see "Your encryption keys are missing"');
-          console.log('[ChatSession] DEBUG: Database should now show isKeyMissing=true for this user');
-        },
-        error: (error) => {
-          console.error('[ChatSession] DEBUG: Failed to mark keys as missing:', error);
-          console.error('[ChatSession] DEBUG: Error details:', error);
-          
-          // Still update UI state even if API call failed
-          this.keyLoading$.next(false);
-          this.keyMissing$.next(true);
-          this.myPrivateKeyMissing$.next(true);
-        }
+      // 2. Clear crypto service memory
+      console.log('[ChatSession] 🔥 Step 2: Clearing crypto service memory');
+      this.crypto.clearPrivateKey();
+      
+      // 3. Mark keys as missing in database (only if not already marked)
+      if (ChatSessionService.keysMissingAlreadyMarked) {
+        console.log('[ChatSession] ⚠️ Keys already marked as missing by another instance');
+      } else {
+        console.log('[ChatSession] 🔥 Step 3: Marking keys as missing in database using protected method');
+        // Use the protected method to ensure database flag is only set for real key loss
+        this.ensureKeysMissingFlagSet();
+      }
+      
+      // 4. Update UI state to show missing keys (always do this)
+      console.log('[ChatSession] 🔥 Step 4: Updating UI state to show missing keys');
+      this.artificialKeyMissingState = false; // This is REAL key loss, not artificial blocking
+      this.keyLoading$.next(false);
+      this.keyMissing$.next(true);
+      this.myPrivateKeyMissing$.next(true);
+      
+      console.log('[ChatSession] 🔥 After key loss - User state:', {
+        hasPrivateKey: this.crypto.hasPrivateKey(),
+        myPrivateKeyMissing: this.myPrivateKeyMissing$.value,
+        artificialKeyMissingState: this.artificialKeyMissingState,
+        keyMissing: this.keyMissing$.value
       });
       
+      console.log('[ChatSession] 🔥 Key loss simulation completed - user should now see "Generate New Keys" button');
+      
     } catch (error) {
-      console.error('[ChatSession] DEBUG: Error during key loss simulation:', error);
+      console.error('[ChatSession] ❌ Error during key loss simulation:', error);
     }
   }
 
@@ -1803,7 +1764,7 @@ export class ChatSessionService implements OnDestroy {
    * This fixes the bug where all users were marked as having missing keys
    */
   async resetDatabaseKeyFlag(): Promise<void> {
-    console.log('[ChatSession] RESET: Checking if we should reset database key flag');
+    console.log('[ChatSession] RESET: Attempting to reset database key flag for user with valid keys');
     
     try {
       // First, ensure vault is available and try to load private key
@@ -1812,17 +1773,22 @@ export class ChatSessionService implements OnDestroy {
       
       const privateKeyData = await this.vault.get<ArrayBuffer>(VAULT_KEYS.PRIVATE_KEY);
       if (privateKeyData) {
-        console.log('[ChatSession] RESET: Found private key in vault, importing it');
+        console.log('[ChatSession] RESET: Found valid private key in vault, uploading to server');
         
         // Clear any existing key and import from vault
         this.crypto.clearPrivateKey();
         await this.crypto.importPrivateKey(privateKeyData);
         
-        console.log('[ChatSession] RESET: Successfully imported private key, exporting public key');
+        // Verify the key was imported correctly
+        if (!this.crypto.hasPrivateKey()) {
+          throw new Error('Failed to import private key from vault');
+        }
+        
+        // Export the public key from the imported private key
         const publicKeyB64 = await this.crypto.exportCurrentPublicKey();
         await firstValueFrom(this.users.uploadPublicKey(publicKeyB64));
         
-        console.log('[ChatSession] RESET: Successfully reset database flag - keys marked as available');
+        console.log('[ChatSession] RESET: Successfully uploaded public key, user should now have isKeyMissing=false');
         
         // Clear any artificial blocking states
         this.artificialKeyMissingState = false;
@@ -1831,7 +1797,7 @@ export class ChatSessionService implements OnDestroy {
         this.keyMissing$.next(false);
         
       } else {
-        console.log('[ChatSession] RESET: No private key found in vault - user genuinely has missing keys');
+        console.log('[ChatSession] RESET: No private key found in vault - user actually has missing keys');
       }
       
     } catch (error) {
@@ -1844,7 +1810,6 @@ export class ChatSessionService implements OnDestroy {
    * Use this to recover from stuck blocking UI
    */
   forceResetBlockingState(): void {
-    console.log('[ChatSession] FORCE RESET: Clearing all blocking states');
     this.artificialKeyMissingState = false;
     this.myPrivateKeyMissing$.next(false);
     this.keyLoading$.next(false);
@@ -1856,39 +1821,156 @@ export class ChatSessionService implements OnDestroy {
       this.checkPartnerKeyStatusOnDemand('debug_force_reset');
     }
     
-    console.log('[ChatSession] FORCE RESET: Complete - checking actual key status');
   }
 
   /**
    * DEBUG METHOD: Manually clear artificial blocking state for testing
    */
   debugClearArtificialBlocking(): void {
-    console.log('[ChatSession] DEBUG: Clearing artificial blocking state...');
-    console.log('[ChatSession] DEBUG: Current artificialKeyMissingState:', this.artificialKeyMissingState);
     
     if (this.artificialKeyMissingState) {
       this.artificialKeyMissingState = false;
       this.myPrivateKeyMissing$.next(false);
       this.keyLoading$.next(false);
       this.keyMissing$.next(false);
-      console.log('[ChatSession] DEBUG: Artificial blocking state cleared manually');
-    } else {
-      console.log('[ChatSession] DEBUG: No artificial blocking state to clear');
     }
+  }
+
+  /**
+   * DEBUG METHOD: Emergency cleanup - clear ALL isKeyMissing flags
+   */
+  debugClearAllMissingFlags(): void {
+    console.log('[ChatSession] DEBUG: Emergency cleanup - clearing all isKeyMissing flags...');
+    this.users.clearAllMissingFlags().subscribe({
+      next: (response) => {
+        console.log('[ChatSession] DEBUG: Successfully cleared all missing flags:', response);
+      },
+      error: (error) => console.error('[ChatSession] DEBUG: Failed to clear all missing flags:', error)
+    });
+  }
+
+  /**
+   * DEBUG METHOD: Regenerate public key from existing private key
+   */
+  async debugRegeneratePublicKey(): Promise<void> {
+    console.log('[ChatSession] DEBUG: Regenerating public key from existing private key...');
+    
+    try {
+      // Check if we have a private key
+      if (!this.crypto.hasPrivateKey()) {
+        console.log('[ChatSession] DEBUG: No private key found, cannot regenerate public key');
+        return;
+      }
+      
+      // Export the current public key
+      const publicKeyB64 = await this.crypto.exportCurrentPublicKey();
+      console.log('[ChatSession] DEBUG: Exported public key:', publicKeyB64.substring(0, 50) + '...');
+      
+      // Upload to server
+      const response = await firstValueFrom(this.users.uploadPublicKey(publicKeyB64));
+      console.log('[ChatSession] DEBUG: Successfully uploaded public key:', response);
+      
+      // Re-check key status
+      this.checkOwnKeyStatus();
+      if (this.roomId) {
+        this.checkPartnerKeyStatusOnDemand('debug_regenerate_public_key');
+      }
+      
+    } catch (error) {
+      console.error('[ChatSession] DEBUG: Failed to regenerate public key:', error);
+    }
+  }
+
+  /**
+   * DEBUG METHOD: Fix both users' database key missing flags
+   */
+  debugFixBothUsersKeyFlags(): void {
+    console.log('[ChatSession] DEBUG: Fixing both users key missing flags');
+    
+    // First, fix all inconsistent states globally
+    this.users.fixInconsistentKeyStates().subscribe({
+      next: () => {
+        console.log('[ChatSession] DEBUG: Fixed all inconsistent key states globally');
+        
+        // Then clear my own database flag specifically
+        this.users.debugClearKeysMissingFlag().subscribe({
+          next: () => {
+            console.log('[ChatSession] DEBUG: Cleared my own key missing flag');
+            // Clear my artificial blocking state
+            this.artificialKeyMissingState = false;
+            this.myPrivateKeyMissing$.next(false);
+            this.keyLoading$.next(false);
+            this.keyMissing$.next(false);
+            
+            // Force re-check key statuses
+            this.checkOwnKeyStatus();
+            if (this.roomId) {
+              this.checkPartnerKeyStatusOnDemand('debug_fix_both_users');
+            }
+          },
+          error: (error) => console.error('[ChatSession] DEBUG: Failed to clear my key missing flag:', error)
+        });
+      },
+      error: (error) => {
+        console.error('[ChatSession] DEBUG: Failed to fix inconsistent key states:', error);
+        // Continue with individual flag clearing even if global fix fails
+        this.users.debugClearKeysMissingFlag().subscribe({
+          next: () => {
+            console.log('[ChatSession] DEBUG: Cleared my own key missing flag');
+            this.artificialKeyMissingState = false;
+            this.myPrivateKeyMissing$.next(false);
+            this.keyLoading$.next(false);
+            this.keyMissing$.next(false);
+            
+            this.checkOwnKeyStatus();
+            if (this.roomId) {
+              this.checkPartnerKeyStatusOnDemand('debug_fix_both_users');
+            }
+          },
+          error: (error) => console.error('[ChatSession] DEBUG: Failed to clear my key missing flag:', error)
+        });
+      }
+    });
   }
 
 
   /**
    * Ensure database flag is set when keys are missing
    * This can be called as a fallback to ensure partners get notified
+   * IMPORTANT: Only mark keys as missing for REAL key loss, not artificial blocking
    */
   ensureKeysMissingFlagSet(): void {
-    if (this.myPrivateKeyMissing$.value) {
-      console.log('[ChatSession] Ensuring database flag is set for missing keys');
+    // DETAILED LOGGING: Track exact state when this method is called
+    console.log('[ChatSession] 🔍 ensureKeysMissingFlagSet called with state:', {
+      myPrivateKeyMissing: this.myPrivateKeyMissing$.value,
+      artificialKeyMissingState: this.artificialKeyMissingState,
+      hasPrivateKey: this.crypto.hasPrivateKey(),
+      userId: this.meId,
+      roomId: this.roomId,
+      willMarkMissing: this.myPrivateKeyMissing$.value && !this.artificialKeyMissingState
+    });
+    
+    // ADDITIONAL PROTECTION: Double-check artificial state to prevent race conditions
+    if (this.artificialKeyMissingState) {
+      console.log('[ChatSession] 🛡️ PROTECTION: Preventing database flag setting due to artificial blocking state');
+      return;
+    }
+    
+    // Only mark keys as missing if this is real key loss (not artificial blocking due to partner issues)
+    if (this.myPrivateKeyMissing$.value && !this.artificialKeyMissingState) {
+      console.log('[ChatSession] 🚨 MARKING KEYS AS MISSING IN DATABASE - this should only happen for real key loss');
       this.users.markKeysAsMissing().subscribe({
-        next: () => console.log('[ChatSession] Database flag confirmed - keys marked as missing'),
-        error: (error) => console.error('[ChatSession] Failed to set database flag for missing keys:', error)
+        next: () => {
+          console.log('[ChatSession] ✅ Successfully marked keys as missing in database');
+        },
+        error: (error) => console.error('[ChatSession] ❌ Failed to set database flag for missing keys:', error)
       });
+    } else if (this.myPrivateKeyMissing$.value && this.artificialKeyMissingState) {
+      console.log('[ChatSession] ⚠️ Skipping key marking - this is artificial blocking due to partner key issues');
+    } else if (!this.myPrivateKeyMissing$.value) {
+      console.log('[ChatSession] ⚠️ Skipping key marking - myPrivateKeyMissing is false');
+    } else {
+      console.log('[ChatSession] ⚠️ Skipping key marking - unknown condition');
     }
   }
 
@@ -1898,7 +1980,6 @@ export class ChatSessionService implements OnDestroy {
    */
   async regenerateKeys(): Promise<void> {
     try {
-      console.log('[ChatSession] Regenerating encryption keys');
       this.isRegeneratingKeys = true; // Set flag to prevent stored notification processing
       
       // Removed: Recovery UI monitoring now handled via database flag
@@ -1909,7 +1990,6 @@ export class ChatSessionService implements OnDestroy {
       this.artificialKeyMissingState = false; // Clear artificial state
 
       // Open vault in WRITE mode for key regeneration (may have been opened in read-only mode previously)
-      console.log('[ChatSession] Opening vault in write mode for key regeneration');
       await this.vault.setCurrentUser(this.meId, false); // false = write mode
       await this.vault.waitUntilReady();
 
@@ -1929,7 +2009,6 @@ export class ChatSessionService implements OnDestroy {
         throw new Error('Failed to store new private key');
       }
 
-      console.log('[ChatSession] New private key stored successfully');
 
       // Upload new public key to server
       const response = await firstValueFrom(this.users.uploadPublicKey(publicKeyB64));
@@ -1937,16 +2016,22 @@ export class ChatSessionService implements OnDestroy {
         throw new Error('Failed to upload public key to server');
       }
 
-      console.log('[ChatSession] New public key uploaded successfully');
+      // Fix any inconsistent database states that might have been caused by mutual blocking
+      try {
+        await firstValueFrom(this.users.fixInconsistentKeyStates());
+        console.log('[ChatSession] Fixed inconsistent key states in database');
+      } catch (fixError) {
+        console.warn('[ChatSession] Failed to fix inconsistent key states:', fixError);
+        // Don't fail the entire regeneration process if this cleanup fails
+      }
+
 
       // Notify partner about key regeneration
       if (this.roomId) {
-        console.log('[ChatSession] Notifying partner about key regeneration');
         this.ws.notifyKeyRegenerated(this.roomId);
       }
 
       // Clear old undecryptable messages since they were encrypted with the old key
-      console.log('[ChatSession] Clearing old message cache - old messages are no longer decryptable');
       this.messages$.next([]);
       this.tempMessages = [];
       
@@ -1963,14 +2048,12 @@ export class ChatSessionService implements OnDestroy {
 
       // Try to re-initialize chat session
       if (this.roomId) {
-        console.log('[ChatSession] Re-initializing chat session with new keys');
         await this.init(this.roomId);
       }
       
       this.isRegeneratingKeys = false; // Clear flag after successful regeneration
 
       // Refresh the page after successful key generation to ensure clean state
-      console.log('[ChatSession] Keys regenerated successfully, refreshing page in 2 seconds...');
       setTimeout(() => {
         window.location.reload();
       }, 2000);
@@ -1986,7 +2069,6 @@ export class ChatSessionService implements OnDestroy {
   }
 
   ngOnDestroy() {
-    console.log('[ChatSession] Service cleanup');
 
     // Stop sync monitoring
     if (this.syncTimer) {
@@ -2023,21 +2105,32 @@ export class ChatSessionService implements OnDestroy {
   }
 
   /**
-   * Check if user has any vault data (to distinguish new users from corrupted vaults)
+   * Check if user has any message history (to distinguish new users from existing users)
    */
-  private async checkForAnyVaultData(): Promise<boolean> {
+  private async checkIfUserHasMessageHistory(): Promise<boolean> {
     try {
-      // Check if IndexedDB database exists for this user
-      const dbName = `vault_${this.meId}`;
-      const databases = await indexedDB.databases();
-      const hasVaultDb = databases.some(db => db.name === dbName);
+      console.log(`[ChatSession] 📝 Checking message history for roomId: ${this.roomId}`);
       
-      console.log('[ChatSession] Vault database exists:', hasVaultDb);
-      return hasVaultDb;
+      // Check if user has any sent or received messages in this room
+      const response = await new Promise<MessageHistoryResponse>((resolve, reject) => {
+        this.api.getMessageHistory(this.roomId).subscribe({
+          next: (response) => resolve(response),
+          error: (error) => reject(error)
+        });
+      });
+      
+      const hasMessages = response.messages && response.messages.length > 0;
+      const messageCount = response.messages ? response.messages.length : 0;
+      
+      console.log(`[ChatSession] 📝 Message history check result: hasMessages=${hasMessages}, messageCount=${messageCount}`);
+      
+      return hasMessages;
     } catch (error) {
-      console.error('[ChatSession] Error checking vault data:', error);
-      // If we can't check, assume it's a new user to be safe
-      return false;
+      console.error('[ChatSession] Error checking message history:', error);
+      // If we can't check message history, assume user has history to be safe
+      // This prevents accidental key generation for existing users
+      console.log('[ChatSession] 📝 Defaulting to hasMessageHistory=true due to error (safer for existing users)');
+      return true;
     }
   }
 
@@ -2045,31 +2138,33 @@ export class ChatSessionService implements OnDestroy {
    * Generate keys for a new user automatically
    */
   private async generateKeysForNewUser(): Promise<void> {
-    console.log('[ChatSession] Starting automatic key generation for new user');
     
     try {
+      console.log('[ChatSession] 🔑 Starting automatic key generation for new user');
+      
       // Generate new key pair
+      console.log('[ChatSession] 🔑 Step 1: Generating key pair');
       const publicKeyBase64 = await this.crypto.generateKeyPair();
-      console.log('[ChatSession] ✅ Generated new key pair');
       
       // Export private key for vault storage
+      console.log('[ChatSession] 🔑 Step 2: Exporting private key');
       const privateKeyBuffer = await this.crypto.exportPrivateKey();
-      console.log('[ChatSession] ✅ Exported private key for vault storage');
       
       // Setup vault for new user (this will create the vault and AES key)
+      console.log('[ChatSession] 🔑 Step 3: Setting up vault');
       await this.vault.setCurrentUser(this.meId, false); // false = write mode
       await this.vault.waitUntilReady();
-      console.log('[ChatSession] ✅ Vault initialized for new user');
       
       // Store private key in vault
+      console.log('[ChatSession] 🔑 Step 4: Storing private key in vault');
       await this.vault.set(VAULT_KEYS.PRIVATE_KEY, privateKeyBuffer);
-      console.log('[ChatSession] ✅ Private key stored in vault');
       
       // Upload public key to server
+      console.log('[ChatSession] 🔑 Step 5: Uploading public key to server');
       await new Promise<void>((resolve, reject) => {
         this.users.uploadPublicKey(publicKeyBase64).subscribe({
-          next: (response) => {
-            console.log('[ChatSession] ✅ Public key uploaded to server:', response);
+          next: () => {
+            console.log('[ChatSession] ✅ Public key uploaded successfully');
             resolve();
           },
           error: (error) => {
@@ -2079,7 +2174,8 @@ export class ChatSessionService implements OnDestroy {
         });
       });
       
-      console.log('[ChatSession] 🎉 Automatic key generation completed successfully for new user');
+      console.log('[ChatSession] ✅ Automatic key generation completed successfully');
+      
     } catch (error) {
       console.error('[ChatSession] ❌ Automatic key generation failed:', error);
       throw error;
@@ -2090,17 +2186,22 @@ export class ChatSessionService implements OnDestroy {
    * Mark keys as missing and complete initialization
    */
   private async markKeysAsMissingAndComplete(): Promise<void> {
-    this.users.markKeysAsMissing().subscribe({
-      next: () => console.log('[ChatSession] Successfully marked keys as missing in database'),
-      error: (error) => console.error('[ChatSession] Failed to mark keys as missing:', error)
-    });
+    console.log('[ChatSession] 🔥 markKeysAsMissingAndComplete called for user:', this.meId);
+    console.log('[ChatSession] 🔥 Stack trace:', new Error().stack);
     
+    // Set the UI state first
     this.keyLoading$.next(false);
     this.keyMissing$.next(true);
     this.myPrivateKeyMissing$.next(true);
     
+    // IMPORTANT: Set artificial state to false - this is real key recovery, not partner blocking
+    this.artificialKeyMissingState = false;
+    
     // IMPORTANT: Clear messages loading state and complete initialization
     this.messagesLoading$.next(false);
     this.isInitialized = true;
+    
+    // Use the protected method to ensure database flag is only set for real key loss
+    this.ensureKeysMissingFlagSet();
   }
 }

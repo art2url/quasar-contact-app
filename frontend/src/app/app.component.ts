@@ -51,18 +51,12 @@ export class AppComponent implements OnInit, OnDestroy {
     private themeService: ThemeService
   ) {
     // Initialize theme service - this will load saved theme from localStorage
-    console.log('[App] Theme service initialized');
   }
 
   /**
    * Debug methods for testing
    */
   private debugTestWebSocket(): void {
-    console.log('=== [App] WebSocket Debug Info ===');
-    console.log('[App] WebSocket connected:', this.ws.isConnected());
-    console.log('[App] Current online users:', this.ws.getCurrentOnlineUsers());
-    // Removed: Global handler setup debug no longer needed
-    
     try {
       this.ws.debugOnlineStatus();
     } catch (error) {
@@ -71,7 +65,6 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private debugTestPartnerKeyRecovery(): void {
-    console.log('[App] DEBUG: Manually testing partner key recovery');
     
     // Get the correct room ID from current URL
     let roomIdMatch = window.location.pathname.match(/\/chat\/([^\/]+)$/);
@@ -83,7 +76,6 @@ export class AppComponent implements OnInit, OnDestroy {
     }
     
     const currentRoomId = roomIdMatch ? roomIdMatch[1] : '686a697292874729d30037b8';
-    console.log('[App] Using room ID:', currentRoomId);
     
     // Simulate receiving a notification from the current chat partner
     const testPayload = {
@@ -92,7 +84,6 @@ export class AppComponent implements OnInit, OnDestroy {
       timestamp: new Date().toISOString()
     };
     
-    console.log('[App] Simulating notification with payload:', testPayload);
     
     // Store notification
     localStorage.setItem(`partnerKeyRecovery_${testPayload.fromUserId}`, JSON.stringify({
@@ -102,23 +93,15 @@ export class AppComponent implements OnInit, OnDestroy {
       received: Date.now()
     }));
     
-    console.log('[App] Test notification stored in localStorage');
   }
 
   private debugCheckHandlerSetup(): void {
-    console.log('=== [App] Handler Setup Debug ===');
-    // Removed: Global handler setup debug no longer needed
-    console.log('[App] WebSocket service exists:', !!this.ws);
-    console.log('[App] WebSocket connected:', this.ws?.isConnected());
-    
     // Check if there are any stored notifications
     const userId = '686a697a92874729d30037bb'; // User 1's ID
     const stored = localStorage.getItem(`partnerKeyRecovery_${userId}`);
-    console.log('[App] Stored notification for User 1:', stored);
   }
 
   private debugTriggerStoredNotificationProcessing(): void {
-    console.log('[App] DEBUG: Manually triggering stored notification processing');
     
     // Get the room ID from current URL - try multiple patterns
     let roomIdMatch = window.location.pathname.match(/\/chat\/([^\/]+)$/);
@@ -129,10 +112,8 @@ export class AppComponent implements OnInit, OnDestroy {
       roomIdMatch = window.location.pathname.match(/\/chat-room\/([^\/]+)$/);
     }
     const currentRoomId = roomIdMatch ? roomIdMatch[1] : null;
-    console.log('[App] Current room ID from URL:', currentRoomId);
     
     if (!currentRoomId) {
-      console.log('[App] No room ID found, cannot process stored notifications');
       return;
     }
     
@@ -141,13 +122,7 @@ export class AppComponent implements OnInit, OnDestroy {
     if (stored) {
       try {
         const notification = JSON.parse(stored);
-        console.log('[App] Found stored notification:', notification);
-        console.log('[App] Notification fromUserId:', notification.fromUserId);
-        console.log('[App] Current room ID:', currentRoomId);
-        console.log('[App] IDs match?', notification.fromUserId === currentRoomId);
-        
         // Directly call the global handler callback
-        console.log('[App] Triggering immediate processing...');
         window.dispatchEvent(new CustomEvent('partner-key-recovery-received', {
           detail: notification
         }));
@@ -155,7 +130,6 @@ export class AppComponent implements OnInit, OnDestroy {
         console.error('[App] Error processing stored notification:', error);
       }
     } else {
-      console.log('[App] No stored notification found');
     }
   }
 
@@ -167,13 +141,26 @@ export class AppComponent implements OnInit, OnDestroy {
       testPartnerKeyRecovery: () => this.debugTestPartnerKeyRecovery(),
       checkHandlerSetup: () => this.debugCheckHandlerSetup(),
       triggerStoredProcessing: () => this.debugTriggerStoredNotificationProcessing(),
+      forceKeyLoss: () => {
+        // Access chat session service through chat room component
+        const chatRoomElements = document.querySelectorAll('app-chat-room');
+        if (chatRoomElements.length > 0) {
+          // Get the Angular component instance
+          const chatRoomComponent = (chatRoomElements[0] as any).__ngContext__?.[8];
+          if (chatRoomComponent?.chat?.debugForceKeyLoss) {
+            chatRoomComponent.chat.debugForceKeyLoss();
+          } else {
+            console.error('[App] Could not access chat session service');
+          }
+        } else {
+          console.error('[App] No chat room component found - navigate to a chat first');
+        }
+      },
       showRoomInfo: () => {
         // Try to get the chat room component debug info
         const chatRoomElements = document.querySelectorAll('app-chat-room');
         if (chatRoomElements.length > 0) {
-          console.log('[App] Found chat room component, showing debug info');
           // Access the component through Angular's debug utilities if available
-          console.log('[App] Current URL:', window.location.pathname);
           let roomIdMatch = window.location.pathname.match(/\/chat\/([^\/]+)$/);
           if (!roomIdMatch) {
             roomIdMatch = window.location.pathname.match(/\/app\/chat-room\/([^\/]+)$/);
@@ -182,19 +169,14 @@ export class AppComponent implements OnInit, OnDestroy {
             roomIdMatch = window.location.pathname.match(/\/chat-room\/([^\/]+)$/);
           }
           if (roomIdMatch) {
-            console.log('[App] Room ID from URL:', roomIdMatch[1]);
           } else {
-            console.log('[App] No room ID found in URL');
           }
         } else {
-          console.log('[App] No chat room component found');
         }
       }
     };
 
     // Ensure global handler is set up early
-    const username = localStorage.getItem('username');
-    const userId = localStorage.getItem('userId');
     // Removed: Global partner key recovery handler now handled via database flag
 
     // Delay initialization to prevent change detection error
@@ -212,9 +194,8 @@ export class AppComponent implements OnInit, OnDestroy {
           this.loadingService.setAuthState(isAuthenticated);
 
           if (isAuthenticated) {
-            const username = localStorage.getItem('username');
             const userId = localStorage.getItem('userId');
-            if (username && userId) {
+            if (localStorage.getItem('username') && userId) {
               // Removed: Global partner key recovery handler now handled via database flag
               
               if (!this.ws.isConnected()) {
@@ -265,20 +246,16 @@ export class AppComponent implements OnInit, OnDestroy {
    * Simplified app initialization to prevent change detection errors
    */
   private async initializeApp(): Promise<void> {
-    const username = localStorage.getItem('username');
     const userId = localStorage.getItem('userId');
 
-    if (!username || !userId) {
-      console.log('[App] No auth data found, skipping initialization');
-      return;
+    if (!localStorage.getItem('username') || !userId) {
+        return;
     }
 
-    console.log('[App] Auth data found, setting up app');
 
     try {
       const userId = localStorage.getItem('userId');
       if (!userId) {
-        console.warn('[App] No userId found');
         return;
       }
 
@@ -289,11 +266,10 @@ export class AppComponent implements OnInit, OnDestroy {
         // Try to preload private key (don't fail if missing)
         await this.preloadPrivateKey();
       } catch (vaultError) {
-        console.log('[App] Vault not available in read-only mode (expected if keys missing):', vaultError);
         // This is normal - vault will be created later when user actually needs it
+        console.log('[App] Vault not ready during initialization:', vaultError);
       }
 
-      console.log('[App] App initialization complete');
 
       // Don't force change detection - let Angular handle it
     } catch (error) {
@@ -314,11 +290,10 @@ export class AppComponent implements OnInit, OnDestroy {
       const stored = await this.vault.get<ArrayBuffer | string>(VAULT_KEYS.PRIVATE_KEY);
       if (stored) {
         await this.crypto.importPrivateKey(stored);
-        console.log('[App] Successfully preloaded private key');
       }
-    } catch (error) {
-      console.warn('[App] Could not preload private key:', error);
+    } catch (keyError) {
       // Clear invalid key
+      console.log('[App] Failed to preload private key:', keyError);
       try {
         await this.vault.set(VAULT_KEYS.PRIVATE_KEY, null);
       } catch (clearError) {
@@ -330,7 +305,6 @@ export class AppComponent implements OnInit, OnDestroy {
   // Removed: Global partner key recovery handler now handled via database flag
 
   ngOnDestroy(): void {
-    console.log('[App] Component destroying');
     this.subs.unsubscribe();
     this.ws.disconnect();
     this.loadingService.emergencyStop('app-destroy');
