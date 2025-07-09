@@ -1,0 +1,265 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title='404 - Page Not Found | Quasar Contact'
+  description="The page you're looking for doesn't exist. Return to Quasar Contact's homepage for secure, encrypted messaging."
+  noIndex={true}
+>
+  <div class='main-content page-content'>
+    <div class='container inner'>
+      <div class='error-container'>
+        <div class='error-content'>
+          <div class='error-icon'>
+            <svg
+              width='120'
+              height='120'
+              viewBox='0 0 120 120'
+              fill='none'
+              xmlns='http://www.w3.org/2000/svg'
+            >
+              <circle
+                cx='60'
+                cy='60'
+                r='50'
+                stroke='var(--accent-green)'
+                stroke-width='3'
+                fill='none'></circle>
+              <path
+                d='M40 40L80 80M80 40L40 80'
+                stroke='var(--accent-green)'
+                stroke-width='3'
+                stroke-linecap='round'></path>
+            </svg>
+          </div>
+
+          <h1 class='error-title'>404</h1>
+          <h2 class='error-subtitle'>Page Not Found</h2>
+
+          <p class='error-description'>
+            The page you're looking for seems to have vanished into the digital void. Don't worry -
+            your secure conversations are still safe with us.
+          </p>
+
+          <div class='error-actions'>
+            <a href='/' class='btn btn-primary'>
+              <svg width='16' height='16' viewBox='0 0 24 24' fill='currentColor'>
+                <path d='M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z'></path>
+              </svg>
+              Return Home
+            </a>
+
+            <a href='/about' class='btn btn-secondary'> Learn More </a>
+          </div>
+
+          <div class='help-section'>
+            <h3>Looking for something specific?</h3>
+            <div class='help-links'>
+              <a href='/app'>Start Chat</a>
+              <a href='/about'>About</a>
+              <a href='/faq'>FAQ</a>
+              <a href='/legal'>Legal</a>
+              <a href='/author'>Author</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .error-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(
+      100vh - var(--alpha-banner-height) - var(--header-height) - var(--footer-height)
+    );
+    text-align: center;
+    padding: 2rem 1rem;
+  }
+
+  .error-content {
+    max-width: 600px;
+    width: 100%;
+  }
+
+  .error-icon {
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: center;
+    opacity: 0.8;
+  }
+
+  .error-title {
+    font-size: 8rem;
+    font-weight: 900;
+    color: var(--accent-green);
+    margin-bottom: 0.5rem;
+    text-shadow: 0 0 30px rgba(195, 247, 58, 0.3);
+    line-height: 1;
+  }
+
+  .error-subtitle {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-light);
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+  }
+
+  .error-description {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 8rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    cursor: pointer;
+  }
+
+  .btn-primary {
+    background: var(--accent-green);
+    color: var(--primary-dark);
+    border-color: var(--accent-green);
+  }
+
+  .btn-primary:hover {
+    background: var(--accent-green-light);
+    border-color: var(--accent-green-light);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(195, 247, 58, 0.3);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text-light);
+    border-color: var(--text-muted);
+  }
+
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--text-light);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.1);
+  }
+
+  .help-section {
+    margin-bottom: 2rem;
+  }
+
+  .help-section h3 {
+    color: var(--text-light);
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+  }
+
+  .help-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  .help-links a {
+    color: var(--accent-green);
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--accent-green);
+    border-radius: 25px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+  }
+
+  .help-links a:hover {
+    background: var(--accent-green);
+    color: var(--primary-dark);
+    transform: translateY(-1px);
+  }
+
+  /* Mobile Responsive */
+  @media (max-width: 768px) {
+    .error-container {
+      padding: 1rem;
+    }
+
+    .error-title {
+      font-size: 5rem;
+    }
+
+    .error-subtitle {
+      font-size: 1.8rem;
+    }
+
+    .error-description {
+      font-size: 1.1rem;
+    }
+
+    .error-actions {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .btn {
+      width: 100%;
+      max-width: 300px;
+      justify-content: center;
+    }
+
+    .help-links {
+      gap: 0.5rem;
+    }
+
+    .help-links a {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.9rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .error-title {
+      font-size: 4rem;
+    }
+
+    .error-subtitle {
+      font-size: 1.5rem;
+    }
+
+    .help-links {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .help-links a {
+      width: 100%;
+      max-width: 200px;
+      text-align: center;
+    }
+  }
+</style>
