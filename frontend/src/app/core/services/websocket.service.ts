@@ -15,11 +15,11 @@ import {
 } from 'app/core/models/socket.model';
 
 // Enhanced debugging
-const DEBUG_WS = true;
+const DEBUG_WS = false;
 
 function logWs(message: string, ...args: unknown[]) {
   if (DEBUG_WS) {
-    console.log(`[WebSocket Debug] ${message}`, ...args);
+    console.error(`[WebSocket Debug] ${message}`, ...args);
   }
 }
 
@@ -334,9 +334,8 @@ export class WebSocketService {
     }
 
     // Check if user is authenticated (JWT is now in HttpOnly cookies)
-    const username = localStorage.getItem('username');
     const userId = localStorage.getItem('userId');
-    if (!username || !userId) {
+    if (!localStorage.getItem('username') || !userId) {
       logWs('No auth data available for reconnection');
       return;
     }
@@ -673,7 +672,7 @@ export class WebSocketService {
    * @deprecated - Reconnection is now handled automatically
    */
   setupReconnection(): void {
-    console.log('[WebSocket] setupReconnection called - now handled automatically');
+    console.error('[WebSocket] setupReconnection called - now handled automatically');
     // This method is kept for backwards compatibility but does nothing
     // since reconnection is now handled automatically in the enhanced service
   }
@@ -683,9 +682,8 @@ export class WebSocketService {
    */
   reconnect(): void {
     // Check if user is authenticated (JWT is now in HttpOnly cookies)
-    const username = localStorage.getItem('username');
     const userId = localStorage.getItem('userId');
-    if (!username || !userId) return;
+    if (!localStorage.getItem('username') || !userId) return;
 
     logWs('Manual reconnect requested');
     this.forceReconnect();
@@ -696,9 +694,8 @@ export class WebSocketService {
    */
   forceReconnect(): void {
     // Check if user is authenticated (JWT is now in HttpOnly cookies)
-    const username = localStorage.getItem('username');
     const userId = localStorage.getItem('userId');
-    if (!username || !userId) return;
+    if (!localStorage.getItem('username') || !userId) return;
 
     logWs('Force reconnection requested');
     this.disconnect();

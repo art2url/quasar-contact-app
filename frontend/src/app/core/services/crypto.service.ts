@@ -74,11 +74,11 @@ export class CryptoService {
       // Store the private key for direct access
       this.privateKey = privateKey;
 
-      if (!this.keyPair) {
-        this.keyPair = { privateKey, publicKey: null! };
-      } else {
-        this.keyPair.privateKey = privateKey;
-      }
+      // Derive the public key from the private key
+      const publicKey = await this.derivePublicKeyFromPrivate(privateKey);
+
+      // Set up the key pair with both keys
+      this.keyPair = { privateKey, publicKey };
 
       // Return the SHA-256 fingerprint
       const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', raw));
@@ -93,6 +93,59 @@ export class CryptoService {
         }`
       );
     }
+  }
+
+  /**
+   * Derive the public key from a private key
+   */
+  private async derivePublicKeyFromPrivate(privateKey: CryptoKey): Promise<CryptoKey> {
+    // Export the private key to get the key material
+    const privateKeyData = await crypto.subtle.exportKey('pkcs8', privateKey);
+    
+    // Create a temporary key pair to extract the public key
+    const tempKeyPair = await crypto.subtle.generateKey(
+      {
+        name: 'RSA-OAEP',
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: 'SHA-256',
+      },
+      true,
+      ['encrypt', 'decrypt']
+    );
+
+    // Re-import the private key to get access to the algorithm parameters
+    const reimportedPrivateKey = await crypto.subtle.importKey(
+      'pkcs8',
+      privateKeyData,
+      { name: 'RSA-OAEP', hash: 'SHA-256' },
+      true,
+      ['decrypt']
+    );
+
+    // Use the jwk format to extract the public key components from the private key
+    const jwkPrivateKey = await crypto.subtle.exportKey('jwk', reimportedPrivateKey);
+    
+    // Create a public key JWK from the private key JWK
+    const jwkPublicKey = {
+      kty: jwkPrivateKey.kty,
+      use: jwkPrivateKey.use,
+      key_ops: ['encrypt'],
+      alg: jwkPrivateKey.alg,
+      n: jwkPrivateKey.n,
+      e: jwkPrivateKey.e,
+    };
+
+    // Import the public key
+    const publicKey = await crypto.subtle.importKey(
+      'jwk',
+      jwkPublicKey,
+      { name: 'RSA-OAEP', hash: 'SHA-256' },
+      true,
+      ['encrypt']
+    );
+
+    return publicKey;
   }
 
   /* ═══════════ Encryption helpers ═══════════ */
@@ -282,19 +335,15 @@ export class CryptoService {
     try {
       const { VAULT_KEYS } = await import('./vault.service');
       
-      console.log('*** [VAULT CHECK] Starting check for user:', userId);
       
       // Ensure vault is set up with user ID - USE READ-ONLY MODE to prevent automatic AES key generation
       await vault.setCurrentUser(userId, true); // true = read-only mode
       await vault.waitUntilReady();
       
-      console.log('*** [VAULT CHECK] Vault ready, checking for private key');
       
       const privateKeyData = await vault.get(VAULT_KEYS.PRIVATE_KEY) as ArrayBuffer;
       const hasKey = !!privateKeyData;
       
-      console.log('*** [VAULT CHECK] Private key exists:', hasKey);
-      console.log('*** [VAULT CHECK] Private key data length:', privateKeyData?.byteLength || 0);
       
       return hasKey;
     } catch (error) {
@@ -307,7 +356,6 @@ export class CryptoService {
 
   // Clear private key state to force clean import
   clearPrivateKey(): void {
-    console.log('[CryptoService] Clearing corrupted private key state');
     this.privateKey = null;
     this.keyPair = null;
   }

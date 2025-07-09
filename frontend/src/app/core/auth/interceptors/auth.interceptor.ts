@@ -31,9 +31,6 @@ export const authInterceptor: HttpInterceptorFn = (
   // If rate limited, wait until the rate limit expires
   if (limitUntil > now) {
     const waitTime = limitUntil - now;
-    console.log(
-      `URL ${urlKey} is rate limited. Waiting ${Math.ceil(waitTime / 1000)} seconds...`
-    );
     return timer(waitTime).pipe(
       mergeMap(() => proceedWithRequest(req, next, router, urlKey, csrfService))
     );
@@ -73,7 +70,6 @@ function proceedWithRequest(
   if (needsCSRF) {
     const csrfToken = csrfService.getToken();
     if (csrfToken) {
-      console.log('[AuthInterceptor] Adding CSRF token to request:', request.url);
       request = request.clone({
         setHeaders: {
           'X-CSRF-Token': csrfToken,
@@ -85,11 +81,10 @@ function proceedWithRequest(
       !request.url.includes('/api/auth/forgot-password') &&
       !request.url.includes('/api/auth/reset-password')
     ) {
-      console.warn('[AuthInterceptor] No CSRF token found for state-changing request!');
+      console.error('[AuthInterceptor] No CSRF token found for state-changing request!');
     }
   }
 
-  console.log('[AuthInterceptor] Request configured with credentials:', request.url);
 
   // Forward the request with error handling
   return next(request).pipe(
@@ -103,7 +98,7 @@ function proceedWithRequest(
       // Handle auth errors
       if (error.status === 401) {
         // Unauthorized - cookies may be expired or invalid
-        console.warn(
+        console.error(
           '[AuthInterceptor] Received 401 Unauthorized - redirecting to login'
         );
         // Clear CSRF token since auth is invalid
@@ -140,7 +135,7 @@ function handleRateLimitError(
   const resetTime = Date.now() + retryAfter;
   rateLimitedUntil[urlKey] = resetTime;
 
-  console.warn(
+  console.error(
     `Rate limited at ${urlKey} (429). Backing off for ${Math.ceil(
       retryAfter / 1000
     )} seconds.`

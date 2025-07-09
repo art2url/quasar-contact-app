@@ -11,6 +11,10 @@ export interface IUser extends Document {
   avatarUrl: string;
   /** Flag to indicate if user's encryption keys are missing/lost */
   isKeyMissing: boolean;
+  /** Security tracking: timestamp of last time keys were marked as missing */
+  lastKeyMarkTime?: number;
+  /** Security tracking: count of how many times user has marked keys as missing */
+  keyMarkCount?: number;
   createdAt: Date;
 }
 
@@ -21,6 +25,8 @@ const UserSchema: Schema = new Schema<IUser>({
   publicKeyBundle: { type: Schema.Types.Mixed, default: null },
   avatarUrl: { type: String, default: '' },
   isKeyMissing: { type: Boolean, default: false },
+  lastKeyMarkTime: { type: Number, default: null },
+  keyMarkCount: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
 });
 
