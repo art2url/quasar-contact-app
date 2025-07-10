@@ -1519,6 +1519,14 @@ h1 {
   animation-delay: 1.6s;
 }
 
+.fade-in-up[data-delay="500"] {
+  animation-delay: 1.8s;
+}
+
+.fade-in-up[data-delay="600"] {
+  animation-delay: 2s;
+}
+
 .feature:hover {
   transform: translateY(-10px) scale(1.02);
   box-shadow: 0 20px 40px rgba(195, 247, 58, 0.1);
@@ -1684,6 +1692,330 @@ h1 {
   color: var(--text-muted);
   font-size: 0.75rem;
   line-height: 1.4;
+}
+
+/* App Showcase Carousel */
+.app-showcase {
+  max-width: 1200px;
+  width: 100%;
+  padding: 3rem 0;
+  opacity: 0;
+  transform: translateY(50px);
+  text-align: center;
+}
+
+.app-showcase h2 {
+  color: var(--text-light);
+  font-size: 2.2rem;
+  margin: 1rem 0 1rem 0;
+  text-align: center;
+  background: linear-gradient(45deg, var(--text-light), var(--accent-green-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.showcase-description {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  max-width: 800px;
+  margin: 0 auto 3rem auto;
+}
+
+.carousel-container {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto 2rem auto;
+  overflow: hidden;
+  border-radius: 16px;
+  background: none;
+}
+
+.carousel-container::before,
+.carousel-container::after {
+  display: none;
+}
+
+.carousel-track {
+  display: flex;
+  transition: transform 0.5s ease-in-out;
+  background: none;
+}
+
+.carousel-track::before,
+.carousel-track::after {
+  display: none;
+}
+
+.carousel-slide {
+  min-width: 100%;
+  position: relative;
+  background: none;
+}
+
+.carousel-slide::before,
+.carousel-slide::after {
+  display: none;
+}
+
+.carousel-slide img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.slide-banner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 3.5rem 2rem 2rem 2rem;
+  text-align: center;
+  background: linear-gradient(
+    180deg,
+    rgba(12, 37, 36, 0.9) 0%,
+    rgba(12, 37, 36, 0.7) 50%,
+    transparent 100%
+  );
+  border-radius: 15px 15px 0 0;
+}
+
+.slide-banner h3 {
+  color: var(--accent-green-light);
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.slide-banner p {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.carousel-btn:hover {
+  color: var(--accent-green-light);
+}
+
+.carousel-btn-prev:hover,
+.carousel-btn-next:hover {
+  transform: translateY(-50%) scale(1.4);
+}
+
+.carousel-btn-pause:hover {
+  color: var(--accent-green-light);
+  transform: scale(1.2);
+}
+
+@media (max-width: 1024px) {
+  .carousel-btn-pause:hover {
+    transform: translate(-50%, -50%) scale(1.2);
+    background: rgba(12, 37, 36, 0.3);
+    border-color: rgba(195, 247, 58, 0.8);
+  }
+}
+
+.carousel-btn-prev {
+  left: 20px;
+}
+
+.carousel-btn-next {
+  right: 20px;
+}
+
+.carousel-btn-pause {
+  top: 20px;
+  right: 20px;
+  transform: none;
+}
+
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0;
+  margin-top: 1.5rem;
+}
+
+.carousel-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.carousel-dot.active,
+.carousel-dot:hover {
+  background: var(--accent-green);
+  transform: scale(1.2);
+}
+
+/* App Showcase Mobile Responsive */
+@media (max-width: 1024px) {
+  .slide-banner {
+    padding: 2.5rem 2rem 2rem 2rem;
+  }
+
+  .slide-banner h3 {
+    font-size: 1.2rem;
+  }
+
+  .slide-banner p {
+    font-size: 0.95rem;
+  }
+
+  .carousel-btn-pause {
+    top: 50%;
+    left: 50%;
+    right: auto;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    background: transparent;
+    border: 2px solid rgba(195, 247, 58, 0.6);
+    border-radius: 50%;
+  }
+
+  .carousel-btn-pause .play-icon {
+    transform: translateX(2px);
+  }
+}
+
+@media (max-width: 960px) {
+  .slide-banner {
+    padding: 2.25rem 1.5rem 1.5rem 1.5rem;
+  }
+
+  .slide-banner h3 {
+    font-size: 1rem;
+  }
+
+  .slide-banner p {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-showcase {
+    padding: 2rem 0;
+  }
+
+  .app-showcase h2 {
+    font-size: 1.8rem;
+  }
+
+  .showcase-description {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .carousel-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .carousel-btn-prev {
+    left: 10px;
+  }
+
+  .carousel-btn-next {
+    right: 10px;
+  }
+
+  .carousel-dots {
+    margin-top: 1rem;
+  }
+
+  .slide-banner {
+    padding: 3rem 1.5rem 1.5rem 1.5rem;
+  }
+
+  .slide-banner h3 {
+    font-size: 1.2rem;
+  }
+
+  .slide-banner p {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .slide-banner {
+    padding: 2.5rem 1rem 1rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-showcase {
+    padding: 1.5rem 0;
+  }
+
+  .app-showcase h2 {
+    font-size: 1.6rem;
+  }
+
+  .carousel-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .carousel-btn-prev {
+    left: 5px;
+  }
+
+  .carousel-btn-next {
+    right: 5px;
+  }
+
+  .carousel-dots {
+    margin-top: 0.75rem;
+  }
+
+  .slide-banner {
+    padding: 1.5rem 1rem 1rem 1rem;
+  }
+
+  .slide-banner h3 {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 375px) {
+  .slide-banner {
+    padding: 1.25rem 1rem 1rem 1rem;
+  }
+
+  .slide-banner h3 {
+    font-size: 0.85rem;
+  }
 }
 
 /* Footer */
