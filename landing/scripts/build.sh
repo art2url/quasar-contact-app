@@ -77,6 +77,12 @@ if [ $? -eq 0 ]; then
         echo "✅ Updated author.html"
     fi
     
+    # Copy 404 page
+    if [ -f "dist/404.html" ]; then
+        cp dist/404.html ../public/404.html
+        echo "✅ Updated 404.html"
+    fi
+    
     # Copy all Astro-generated assets (CSS, JS, images)
     if [ -d "dist/_astro" ]; then
         rm -rf ../public/_astro 2>/dev/null || true
