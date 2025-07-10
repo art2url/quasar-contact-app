@@ -12,30 +12,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <div class='error-container'>
         <div class='error-content'>
           <div class='error-icon'>
-            <svg
-              width='120'
-              height='120'
-              viewBox='0 0 120 120'
-              fill='none'
-              xmlns='http://www.w3.org/2000/svg'
-            >
-              <circle
-                cx='60'
-                cy='60'
-                r='50'
-                stroke='var(--accent-green)'
-                stroke-width='3'
-                fill='none'></circle>
-              <path
-                d='M40 40L80 80M80 40L40 80'
-                stroke='var(--accent-green)'
-                stroke-width='3'
-                stroke-linecap='round'></path>
-            </svg>
+            <h1 class='error-number'>404</h1>
+            <img
+              src='/assets/images/404.svg'
+              alt='404 Error Illustration'
+              width='600'
+              height='300'
+              class='error-svg'
+            />
           </div>
 
-          <h1 class='error-title'>404</h1>
-          <h2 class='error-subtitle'>Page Not Found</h2>
+          <h2 class='error-title'>Page Not Found</h2>
 
           <p class='error-description'>
             The page you're looking for seems to have vanished into the digital void. Don't worry -
@@ -79,7 +66,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       100vh - var(--alpha-banner-height) - var(--header-height) - var(--footer-height)
     );
     text-align: center;
-    padding: 2rem 1rem;
+    /* padding: 2rem 1rem; */
   }
 
   .error-content {
@@ -88,27 +75,47 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   }
 
   .error-icon {
-    margin-bottom: 2rem;
+    margin-bottom: 4rem;
     display: flex;
     justify-content: center;
-    opacity: 0.8;
+    position: relative;
+  }
+
+  .error-svg {
+    width: 500px;
+    height: auto;
+    max-width: 100%;
+    aspect-ratio: 2 / 1;
+    object-fit: contain;
+  }
+
+  .error-number {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    font-size: 5rem;
+    font-weight: 400;
+    line-height: 1;
+    z-index: 10;
+    transform: translateX(-50%) !important;
+    opacity: 1 !important;
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    -webkit-text-fill-color: var(--text-light) !important;
+    background-clip: unset !important;
   }
 
   .error-title {
-    font-size: 8rem;
-    font-weight: 900;
-    color: var(--accent-green);
-    margin-bottom: 0.5rem;
-    text-shadow: 0 0 30px rgba(195, 247, 58, 0.3);
-    line-height: 1;
-  }
-
-  .error-subtitle {
     font-size: 2.5rem;
     font-weight: 700;
-    color: var(--text-light);
     margin-bottom: 1.5rem;
     line-height: 1.2;
+    background: linear-gradient(45deg, var(--text-light), var(--accent-green-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    opacity: 1 !important;
+    transform: none !important;
   }
 
   .error-description {
@@ -175,7 +182,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   .help-section h3 {
     color: var(--text-light);
-    margin-bottom: 1rem;
+    margin-bottom: 2rem;
     font-size: 1.3rem;
     font-weight: 600;
   }
@@ -209,21 +216,34 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       padding: 1rem;
     }
 
-    .error-title {
-      font-size: 5rem;
+    .error-icon {
+      margin-bottom: 3rem;
     }
 
-    .error-subtitle {
+    .error-svg {
+      max-width: 400px;
+      max-height: 200px;
+      aspect-ratio: 2 / 1;
+      object-fit: contain;
+    }
+
+    .error-number {
+      font-size: 5rem;
+      top: -20px;
+    }
+
+    .error-actions {
+      margin-bottom: 5rem;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .error-title {
       font-size: 1.8rem;
     }
 
     .error-description {
       font-size: 1.1rem;
-    }
-
-    .error-actions {
-      flex-direction: column;
-      align-items: center;
     }
 
     .btn {
@@ -243,11 +263,25 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   }
 
   @media (max-width: 480px) {
-    .error-title {
-      font-size: 4rem;
+    .error-icon {
+      margin-bottom: 2rem;
     }
 
-    .error-subtitle {
+    .error-svg {
+      max-width: 300px;
+      max-height: 150px;
+    }
+
+    .error-number {
+      font-size: 3rem;
+      top: -10px;
+    }
+
+    .error-actions {
+      margin-bottom: 4rem;
+    }
+
+    .error-title {
       font-size: 1.5rem;
     }
 
