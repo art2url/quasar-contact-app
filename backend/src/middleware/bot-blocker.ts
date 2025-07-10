@@ -188,7 +188,7 @@ const getClientIP = (req: Request): string => {
 const isPathBlocked = (path: string): boolean => {
   const lowerPath = path.toLowerCase();
   return BLOCKED_PATHS.some(
-    blocked => lowerPath.startsWith(blocked) || lowerPath.endsWith(blocked)
+    blocked => lowerPath.startsWith(blocked) || lowerPath.endsWith(blocked),
   );
 };
 
@@ -218,13 +218,18 @@ const WHITELISTED_PATHS = [
   '/manifest.json',
   '/robots.txt',
   '/sitemap.xml',
+  '/about',
+  '/faq',
+  '/legal',
+  '/author',
+  '/404',
 ];
 
 // ─── Main Bot Blocker Middleware ───────────────────────────
 export const blockBots = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   const clientIP = getClientIP(req);
   const userAgent = req.get('User-Agent') || '';
