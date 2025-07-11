@@ -345,7 +345,7 @@
 
 .scroll-to-bottom-btn {
   position: absolute;
-  bottom: calc(80px + 40px); /* form height + 40px above form */
+  bottom: calc(80px + 40px);
   left: 50%;
   transform: translateX(-50%);
   width: 48px;
