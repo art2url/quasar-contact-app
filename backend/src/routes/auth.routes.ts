@@ -372,8 +372,8 @@ router.post(
 
       // Update user password
       user.passwordHash = passwordHash;
-      // Clear the public key bundle since encryption will change
-      user.publicKeyBundle = null;
+      // DO NOT clear public key - password reset should not affect encryption keys
+      // user.publicKeyBundle = null; // REMOVED - this was wrong!
       await user.save();
 
       // Mark reset token as used

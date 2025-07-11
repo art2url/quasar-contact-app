@@ -6,10 +6,10 @@
       </button>
 
       <div class="user-info">
-        <img [src]="getPartnerAvatar()" [alt]="(chat.theirUsername$ | async) || 'User'" class="avatar" />
+        <img [src]="getPartnerAvatar()" [alt]="(chat.theirUsername$ | async) || 'Contact'" class="avatar" />
         <div>
           <h3 class="username">
-            {{ (chat.theirUsername$ | async) || 'User' }}
+            {{ (chat.theirUsername$ | async) || 'Loading...' }}
           </h3>
         </div>
       </div>
@@ -21,8 +21,8 @@
         <span class="status-dot" [class.online]="isPartnerOnline" [class.offline]="!isPartnerOnline"></span>
         <span>{{
           isPartnerOnline
-            ? ((chat.theirUsername$ | async) || 'User') + ' is online'
-            : ((chat.theirUsername$ | async) || 'User') + ' is offline'
+            ? ((chat.theirUsername$ | async) || 'Contact') + ' is online'
+            : ((chat.theirUsername$ | async) || 'Contact') + ' is offline'
         }}</span>
       </div>
     </div>
@@ -32,12 +32,115 @@
     <app-cache-info-banner [showBanner]="showCacheInfoBanner"></app-cache-info-banner>
 
     <!-- Public key status -->
-    <ng-container *ngIf="chat.keyLoading$ | async as loading">
-      <div *ngIf="loading" class="key-loading">Loading user's public key...</div>
-      <div *ngIf="!loading && (chat.keyMissing$ | async) === true" class="key-missing">
-        User hasn't uploaded a public key. Messages will be sent unencrypted.
+    <!-- Loading state -->
+    <div *ngIf="(chat.keyLoading$ | async) === true" class="key-loading">
+      <mat-icon>security</mat-icon>
+      <div *ngIf="chat.isGeneratingKeysAutomatically; else normalKeyLoading">
+        Setting up encryption for first conversation...
       </div>
-    </ng-container>
+      <ng-template #normalKeyLoading>
+        Loading {{ (chat.theirUsername$ | async) || 'contact' }}'s encryption key...
+      </ng-template>
+    </div>
+
+    <!-- User's own private key is missing -->
+    <div
+      *ngIf="
+        (chat.keyLoading$ | async) === false &&
+        (chat.myPrivateKeyMissing$ | async) === true &&
+        !chat.isGeneratingKeysAutomatically
+      "
+      class="key-recovery-overlay">
+      <div class="key-recovery-card">
+        <!-- Real key loss (user actually lost their keys) -->
+        <div *ngIf="!chat.artificialKeyMissingState">
+          <mat-icon>security</mat-icon>
+          <div class="recovery-content">
+            <h3>Your encryption keys are missing</h3>
+            <p>
+              Your private key could not be found. This might happen if you've cleared your browser data or switched
+              devices.
+            </p>
+            <button mat-raised-button color="primary" (click)="regenerateEncryptionKeys()" class="recovery-button">
+              Generate New Keys
+            </button>
+            <p class="warning-text">⚠️ Generating new keys will prevent you from reading previous messages.</p>
+          </div>
+        </div>
+
+        <!-- Artificial key loss (partner lost their keys) -->
+        <div *ngIf="chat.artificialKeyMissingState">
+          <mat-icon>block</mat-icon>
+          <div class="recovery-content">
+            <h3>Chat Blocked - Partner Key Issue</h3>
+            <p>
+              <strong>{{ (chat.theirUsername$ | async) || 'Your contact' }}</strong> has lost their encryption keys and
+              needs to regenerate them.
+            </p>
+            <p>
+              You cannot send messages until they fix their encryption keys. This is a security measure to protect your
+              communications.
+            </p>
+            <div class="partner-status">
+              <mat-icon>info</mat-icon>
+              <span>Waiting for {{ (chat.theirUsername$ | async) || 'your contact' }} to regenerate their keys...</span>
+            </div>
+            <p class="info-text">💡 Your keys are fine. This issue is on your partner's side.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Partner's public key is missing -->
+    <div
+      *ngIf="
+        (chat.keyLoading$ | async) === false &&
+        (chat.keyMissing$ | async) === true &&
+        (chat.myPrivateKeyMissing$ | async) !== true
+      "
+      class="key-missing">
+      <mat-icon>warning</mat-icon>
+      <span
+        >{{ (chat.theirUsername$ | async) || 'Your contact' }} hasn't set up encryption yet. You cannot send messages
+        until they upload their public key.</span
+      >
+    </div>
+
+    <!-- Partner key regeneration notification - BLOCKS CHAT -->
+    <div *ngIf="chat.showPartnerKeyRegeneratedNotification$ | async" class="partner-key-regenerated-overlay">
+      <div class="partner-key-regenerated-card">
+        <mat-icon>block</mat-icon>
+        <div class="notification-content">
+          <h3>Chat Blocked</h3>
+          <p>
+            <strong>{{ (chat.theirUsername$ | async) || 'Your contact' }}</strong> is experiencing encryption key issues
+            and may need to regenerate their keys.
+          </p>
+          <p>You must reload the page to continue chatting. Until you reload:</p>
+          <ul>
+            <li>You cannot send new messages</li>
+            <li>New messages from your partner will appear encrypted</li>
+            <li>The chat is completely blocked for your security</li>
+          </ul>
+          <div class="notification-buttons">
+            <button
+              mat-raised-button
+              color="accent"
+              (click)="checkPartnerKeyStatus()"
+              class="check-button"
+              [disabled]="(chat.keyLoading$ | async) === true">
+              <mat-icon>sync</mat-icon>
+              {{ (chat.keyLoading$ | async) ? 'Checking...' : 'Check Status' }}
+            </button>
+            <button mat-raised-button color="primary" (click)="reloadPage()" class="reload-button">
+              <mat-icon>refresh</mat-icon>
+              Reload Page
+            </button>
+          </div>
+          <p class="security-note">This security measure ensures your messages remain encrypted.</p>
+        </div>
+      </div>
+    </div>
 
     <!-- Chat window -->
     <div #messageContainer class="chat-window">
@@ -121,7 +224,7 @@
 
     <!-- Typing indicator positioned between chat window and message form -->
     <div *ngIf="isPartnerTyping && !isLoadingMessages" class="typing-indicator">
-      {{ (chat.theirUsername$ | async) || 'Partner' }} is typing
+      {{ (chat.theirUsername$ | async) || 'Contact' }} is typing
     </div>
 
     <!-- SIMPLE SCROLL TO BOTTOM BUTTON -->
@@ -142,7 +245,7 @@
         class="message-input"
         [(ngModel)]="newMessage"
         name="message"
-        placeholder="Type a message..."
+        [placeholder]="getChatInputPlaceholder()"
         required
         (input)="onType()"
         [rows]="1"
@@ -150,7 +253,7 @@
         (keydown.enter)="onKeydownEnter($event)"
         (keydown.enter.control)="onKeydownCtrlEnter($event)"
         (keydown.enter.meta)="onKeydownMetaEnter($event)"
-        [disabled]="isLoadingMessages"></textarea>
+        [disabled]="isChatBlocked()"></textarea>
 
       <textarea
         *ngIf="editing"
@@ -169,7 +272,7 @@
         type="submit"
         class="send-button"
         [disabled]="
-          !(editing ? editDraft.trim() : newMessage.trim()) || (chat.connected$ | async) === false || isLoadingMessages
+          !(editing ? editDraft.trim() : newMessage.trim()) || (chat.connected$ | async) === false || isChatBlocked()
         "
         [attr.aria-label]="editing ? 'Save edited message' : 'Send message'">
         <svg
@@ -182,15 +285,15 @@
           aria-hidden="true">
           <g clip-path="url(#clip0_232_1230)">
             <path
-              d="M156.175 328.627C148.111 321.005 123.612 300.527 123.295 290.196C122.842 275.513 141.362 267.782 148.02 256.818C150.091 253.408 151.38 249.144 152.976 245.476C196.178 146.2 268.749 69.9202 370.569 29.9828C405.377 16.33 453.266 1.99795 489.572 0.945603C510.083 -3.91847 512.849 14.6291 511.577 29.9411C506.162 95.118 481.959 164.167 446.693 218.668C407.889 278.637 351.08 324.947 287.287 356.504C275.597 362.288 273.233 362.271 264.037 371.627C256.889 378.898 243.179 396.601 233.134 397.147C220.527 397.834 194.96 366.77 184.438 357.313C158.205 385.266 129.296 413.436 101.864 440.173C94.3494 447.497 87.1465 457.037 78.1335 462.431C65.3503 468.179 50.018 458.855 49.8393 444.768C49.6592 430.63 66.6836 419.489 76.0115 409.815C102.408 382.437 129.501 355.733 156.175 328.627ZM353.002 102.823C277.359 110.472 287.724 215.972 360.48 213.994C436.802 205.848 423.342 98.1298 353.002 102.823Z" />
+              d="M159.696 330.41C151.681 322.841 123.113 298.291 122.797 288.033C122.347 273.451 140.755 265.773 147.374 254.886C149.432 251.499 150.714 247.264 152.3 243.622C195.242 145.034 267.375 69.2821 368.582 29.6213C403.181 16.063 450.781 1.83022 486.868 0.785166C505 1.5 510.005 14.3739 508.74 29.5799C503.359 94.3054 479.301 162.876 444.247 217C405.678 276.553 349.21 322.543 285.801 353.882C274.182 359.626 271.832 359.609 262.691 368.9C255.587 376.12 241.96 393.7 231.975 394.243C219.443 394.925 198.248 368.289 187.789 358.898C161.714 386.657 132.98 414.632 105.713 441.184C98.2434 448.458 91.0838 457.932 82.1252 463.288C69.4189 468.997 54.1791 459.736 54.0014 445.747C53.8223 431.707 70.7442 420.643 80.0159 411.037C106.253 383.848 133.183 357.329 159.696 330.41ZM351.121 101.957C275.933 109.553 286.236 214.322 358.554 212.358C434.416 204.269 421.037 97.2963 351.121 101.957Z" />
             <path
-              d="M44.9576 246.892L20.934 222.579C12.0395 213.725 -5.59446 200.563 7.53685 186.396C12.6792 180.848 21.9815 178.615 28.9299 176.144C69.0026 161.896 108.491 155.061 150.719 153.208C154.419 153.097 158.136 153.191 161.838 153.208C144.677 175.476 129.766 202.862 118.563 228.836C108.333 252.551 90.813 258.465 77.1209 277.726L76.8209 278.155C66.9371 270.917 53.8449 255.84 44.9576 246.892Z" />
+              d="M27.6805 419.681C17.4519 421.618 7.33802 415.186 5.20379 404.818C2.12955 389.878 17.1002 379.733 26.3795 370.561C33.0655 363.952 39.631 357.221 46.2399 350.534L61.8915 334.611C67.8373 328.518 72.0712 322.903 80.7621 321.08C99.2849 319.854 109.993 339.214 97.2072 353.273C87.7818 363.635 76.8716 373.601 67.0073 383.705L46.6773 404.347C41.0441 410.043 35.683 417.45 27.6805 419.681Z" />
             <path
-              d="M22.957 418.808C12.624 420.764 2.40694 414.268 0.250937 403.794C-2.85468 388.704 12.2688 378.457 21.6427 369.192C28.397 362.516 35.0294 355.717 41.7057 348.962L57.5171 332.878C63.5235 326.724 67.8007 321.052 76.5802 319.211C95.2921 317.973 106.11 337.528 93.1932 351.729C83.6715 362.195 72.65 372.263 62.6851 382.469L42.1476 403.319C36.457 409.073 31.0411 416.555 22.957 418.808Z" />
+              d="M264.795 419.094L280.363 402.935C292.884 390.123 295.812 390.47 311.326 381.842C331.474 370.638 351.404 357.884 369.828 343.961C376.981 338.555 383.793 332.395 391.634 328.024C391.991 328.877 391.643 347.123 391.642 349.726C391.635 370.533 382.417 483.704 368.12 498.192C353.298 513.215 339.935 495.599 330.422 485.87L306.862 462.022C294.984 450.094 274.639 431.564 264.795 419.094Z" />
             <path
-              d="M265.838 423.742L281.529 407.491C294.148 394.606 297.099 394.956 312.735 386.278C333.042 375.01 353.129 362.184 371.698 348.182C378.907 342.745 385.773 336.55 393.675 332.155C394.035 333.012 393.685 351.362 393.684 353.98C393.677 374.905 384.386 488.719 369.977 503.289C355.037 518.397 341.57 500.681 331.982 490.897L308.236 466.914C296.264 454.918 275.759 436.283 265.838 423.742Z" />
+              d="M94.7251 251.024L110.884 235.333C123.696 222.714 123.349 219.763 131.978 204.127C143.182 183.82 155.936 163.733 169.859 145.164C175.264 137.955 181.424 131.089 185.795 123.187C184.942 122.827 166.696 123.177 164.093 123.179C143.286 123.186 30.1149 132.476 15.6272 146.885C0.604461 161.825 18.2207 175.292 27.9493 184.88L51.7971 208.626C63.7252 220.598 82.2549 241.103 94.7251 251.024Z" />
             <path
-              d="M120.808 511.798C110.322 513.76 99.769 507.464 97.336 496.906C94.0532 482.659 107.737 473.543 116.684 464.751L153.053 428.537C158.592 422.904 163.186 417.112 171.26 415.333C181.118 414.224 190.275 418.268 193.676 428.097C198.433 441.853 187.597 449.28 179.028 457.93L137.687 498.987C132.378 504.297 128.181 509.495 120.808 511.798Z" />
+              d="M124.521 511.671C114.142 513.614 103.696 507.382 101.288 496.932C98.0386 482.833 111.583 473.81 120.439 465.109L156.436 429.269C161.919 423.694 166.466 417.961 174.457 416.201C184.215 415.104 193.278 419.106 196.645 428.834C201.354 442.447 190.628 449.798 182.147 458.359L141.227 498.992C135.972 504.248 131.818 509.392 124.521 511.671Z" />
           </g>
           <defs>
             <clipPath id="clip0_232_1230">

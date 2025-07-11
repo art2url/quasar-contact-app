@@ -225,4 +225,37 @@ router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
+// PUT /api/messages/mark-read/:senderId - Mark all messages from a specific sender as read
+router.put('/mark-read/:senderId', authenticateToken, async (req: AuthRequest, res) => {
+  const receiverId = req.user!.userId;
+  const senderId = req.params.senderId;
+
+  if (!Types.ObjectId.isValid(senderId)) {
+    return res.status(400).json({ message: 'Invalid sender ID' });
+  }
+
+  try {
+    // Mark all unread messages from the sender as read
+    const result = await Message.updateMany(
+      { 
+        senderId: new Types.ObjectId(senderId), 
+        receiverId: new Types.ObjectId(receiverId), 
+        read: false,
+        deleted: false 
+      },
+      { read: true }
+    );
+
+    console.log(`[Messages] Marked ${result.modifiedCount} messages as read from ${senderId} to ${receiverId}`);
+    
+    res.json({ 
+      message: 'Messages marked as read', 
+      count: result.modifiedCount 
+    });
+  } catch (err) {
+    console.error('[Mark Read Error]', err);
+    res.status(500).json({ message: 'Server error while marking messages as read' });
+  }
+});
+
 export default router;

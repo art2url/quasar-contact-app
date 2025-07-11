@@ -30,6 +30,9 @@ export class NotificationService implements OnDestroy {
 
   // Add immediate update mechanism for badge resets
   private immediateUpdate$ = new Subject<void>();
+  
+  // Rate limiting for loadNotifications
+  private lastLoadTime = 0;
 
   constructor(
     private ws: WebSocketService,
@@ -41,26 +44,23 @@ export class NotificationService implements OnDestroy {
   }
 
   private setupEventHandlers(): void {
-    console.log('[NotificationService] Setting up event handlers');
-
     // Handle incoming messages
     this.ws.onReceiveMessage(this.handleIncomingMessage);
 
     // Handle message read events
     this.ws.onMessageRead(() => {
-      console.log('[NotificationService] Message read event received');
       this.refresh$.next();
     });
 
-    // Enhanced debounced refresh with immediate update support
+    // Enhanced debounced refresh with longer delays to reduce API calls
     this.subs.add(
-      this.refresh$.pipe(debounceTime(400)).subscribe(() => this.loadNotifications())
+      this.refresh$.pipe(debounceTime(3000)).subscribe(() => this.loadNotifications())
     );
 
-    // Add immediate update stream for badge resets
+    // Add immediate update stream for badge resets with longer debounce
     this.subs.add(
       this.immediateUpdate$
-        .pipe(debounceTime(100)) // Short debounce for immediate feel
+        .pipe(debounceTime(2000)) // Increased to 2 seconds to reduce API calls
         .subscribe(() => this.loadNotifications())
     );
 
@@ -69,7 +69,10 @@ export class NotificationService implements OnDestroy {
       this.router.events
         .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
         .subscribe(e => {
-          if (e.url === '/chat' || e.url.startsWith('/chat-room/')) {
+          if (e.url === '/chat') {
+            // When navigating to chat list, bypass rate limit to ensure notifications load
+            this.loadNotifications(true); // Bypass rate limit
+          } else if (e.url.startsWith('/chat-room/')) {
             this.loadNotifications();
           }
         })
@@ -79,8 +82,8 @@ export class NotificationService implements OnDestroy {
     this.subs.add(
       this.ws.isConnected$.subscribe(connected => {
         if (connected) {
-          // When reconnected, refresh notifications
-          setTimeout(() => this.loadNotifications(), 1000);
+          // When reconnected, refresh notifications with longer delay to avoid rate limiting
+          setTimeout(() => this.loadNotifications(), 5000);
         }
       })
     );
@@ -99,10 +102,6 @@ export class NotificationService implements OnDestroy {
     // Listen for messages read in chat rooms
     const messagesReadHandler = (event: CustomEvent) => {
       const { count, roomId } = event.detail;
-      console.log('[NotificationService] Messages read event received:', {
-        count,
-        roomId,
-      });
 
       // Use immediate update for faster badge reset
       this.ngZone.run(() => {
@@ -115,14 +114,9 @@ export class NotificationService implements OnDestroy {
     // Listen for chat room entry events
     const chatRoomEnteredHandler = (event: CustomEvent) => {
       const { roomId } = event.detail;
-      console.log('[NotificationService] Chat room entered event received:', roomId);
 
-      // Use immediate update for faster badge reset
-      this.ngZone.run(() => {
-        this.markUserMessagesAsRead(roomId);
-        // Trigger immediate update instead of regular refresh
-        this.immediateUpdate$.next();
-      });
+      // Don't mark messages as read immediately - wait for the chat room to do it
+      // when messages are actually visible to the user
     };
 
     window.addEventListener('messages-read', messagesReadHandler as EventListener);
@@ -144,12 +138,6 @@ export class NotificationService implements OnDestroy {
   private handleIncomingMessage = (message: IncomingSocketMessage): void => {
     const currentPath = this.router.url;
     const isInSenderChat = currentPath === `/chat-room/${message.fromUserId}`;
-
-    console.log('[NotificationService] Incoming message:', {
-      from: message.fromUserId,
-      currentPath,
-      isInSenderChat,
-    });
 
     if (!isInSenderChat) {
       // Use NgZone for proper mobile change detection
@@ -179,21 +167,23 @@ export class NotificationService implements OnDestroy {
     this.updateStreams();
   }
 
-  public loadNotifications(): void {
-    console.log('[NotificationService] Loading notifications from API');
-
+  public loadNotifications(bypassRateLimit = false): void {
+    
     // Check if we should load notifications (JWT is now in HttpOnly cookies)
-    const username = localStorage.getItem('username');
     const userId = localStorage.getItem('userId');
-    if (!username || !userId) {
-      console.log('[NotificationService] No auth data found, skipping notification load');
+    if (!localStorage.getItem('username') || !userId) {
       return;
     }
 
+    // Rate limiting: prevent more than 1 call per 5 seconds (unless bypassed)
+    const now = Date.now();
+    if (!bypassRateLimit && this.lastLoadTime && (now - this.lastLoadTime < 5000)) {
+      return;
+    }
+    this.lastLoadTime = now;
+
     this.messages.getOverviews().subscribe({
       next: (overviews: MessageOverview[]) => {
-        console.log('[NotificationService] Received overviews:', overviews);
-
         // Use NgZone for proper mobile change detection
         this.ngZone.run(() => {
           // Clear current notifications
@@ -202,9 +192,6 @@ export class NotificationService implements OnDestroy {
           // Process each overview
           overviews.forEach(overview => {
             if (overview.unread > 0) {
-              console.log(
-                `[NotificationService] Adding notification for user ${overview.peerId}: ${overview.unread} unread`
-              );
               this.notificationsMap.set(overview.peerId, {
                 userId: overview.peerId,
                 unreadCount: overview.unread,
@@ -213,14 +200,11 @@ export class NotificationService implements OnDestroy {
             }
           });
 
-          console.log(
-            '[NotificationService] Final notifications after processing:',
-            Array.from(this.notificationsMap.keys())
-          );
+          // Final notifications processed
           this.updateStreams();
         });
       },
-      error: error => {
+      error: (error: unknown) => {
         console.error('[NotificationService] Failed to load notifications:', error);
       },
     });
@@ -230,17 +214,10 @@ export class NotificationService implements OnDestroy {
     const notifications = Array.from(this.notificationsMap.values());
     const totalUnread = notifications.reduce((sum, n) => sum + n.unreadCount, 0);
 
-    console.log('[NotificationService] Updating streams:', {
-      totalUnread,
-      notifications: notifications.length,
-      notificationMap: Array.from(this.notificationsMap.keys()),
-    });
-
     // Ensure change detection happens properly on mobile
     this.ngZone.run(() => {
       this.chatNotifications$.next(notifications);
       this.totalUnread$.next(totalUnread);
-      console.log('[NotificationService] Badge count updated to:', totalUnread);
     });
   }
 
@@ -249,43 +226,34 @@ export class NotificationService implements OnDestroy {
    * This should be called when user opens a chat room
    */
   public markUserMessagesAsRead(userId: string): void {
-    console.log('[NotificationService] Marking messages as read for user:', userId);
-
     // Use NgZone for proper mobile change detection
     this.ngZone.run(() => {
       // Check if user had notifications before clearing
       const hadNotifications = this.notificationsMap.has(userId);
-      const previousCount = this.notificationsMap.get(userId)?.unreadCount || 0;
 
-      // Remove from local state immediately
+      // Remove from local state immediately for instant UI update
       this.notificationsMap.delete(userId);
 
       if (hadNotifications) {
-        console.log(
-          `[NotificationService] Cleared ${previousCount} notifications for user ${userId}`
-        );
         this.updateStreams();
-        console.log('[NotificationService] Immediately updated badge for mobile');
-      } else {
-        console.log(`[NotificationService] No notifications found for user ${userId}`);
       }
     });
 
-    // Use immediate update for faster badge reset, then regular refresh for server sync
-    setTimeout(() => {
-      console.log(
-        '[NotificationService] Triggering immediate update after marking messages read'
-      );
-      this.immediateUpdate$.next();
-    }, 50);
-
-    // Also trigger regular refresh after a longer delay to ensure server state is updated
-    setTimeout(() => {
-      console.log(
-        '[NotificationService] Refreshing from server after marking messages read'
-      );
-      this.refresh$.next();
-    }, 500);
+    // Call server to actually mark messages as read
+    this.messages.markMessagesAsRead(userId).subscribe({
+      next: (response) => {
+        // Don't immediately refresh from server to avoid rate limiting
+        // The local state has already been updated above for instant UI feedback
+        // Trust that the server has processed the request correctly
+      },
+      error: (error) => {
+        console.error('[NotificationService] Failed to mark messages as read:', error);
+        
+        // Only refresh on error to restore correct state
+        // Use the debounced refresh to avoid immediate API call
+        this.refresh$.next();
+      }
+    });
   }
 
   /**
@@ -299,7 +267,6 @@ export class NotificationService implements OnDestroy {
    * Force refresh notifications from server
    */
   public refreshNotifications(): void {
-    console.log('[NotificationService] Force refreshing notifications');
     this.loadNotifications();
   }
 
@@ -307,7 +274,6 @@ export class NotificationService implements OnDestroy {
    * Enhanced refresh with immediate update option
    */
   public refreshNotificationsImmediate(): void {
-    console.log('[NotificationService] Force refreshing notifications (immediate)');
     this.immediateUpdate$.next();
   }
 
@@ -315,19 +281,13 @@ export class NotificationService implements OnDestroy {
    * Debug method to check current state
    */
   public debugCurrentState(): void {
-    console.log('[NotificationService] Current state:', {
-      notificationsMapSize: this.notificationsMap.size,
-      notificationsMap: Array.from(this.notificationsMap.entries()),
-      currentTotalUnread: this.totalUnread$.value,
-    });
+    // Debug method - intentionally empty after console log removal
   }
 
   /**
    * Clear all notifications (for logout, etc.)
    */
   public clearAllNotifications(): void {
-    console.log('[NotificationService] Clearing all notifications');
-
     // Use NgZone for proper mobile change detection
     this.ngZone.run(() => {
       this.notificationsMap.clear();
@@ -336,7 +296,6 @@ export class NotificationService implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    console.log('[NotificationService] Service destroying');
     this.subs.unsubscribe();
     this.refresh$.complete();
     this.immediateUpdate$.complete(); // Clean up immediate update stream

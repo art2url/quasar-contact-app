@@ -10,9 +10,11 @@ export interface DmRoomResponse {
 
 // Response from GET /api/keys/:userId
 export interface KeyBundleResponse {
-  publicKeyBundle: string;
+  publicKeyBundle: string | null;
   username: string;
   avatarUrl: string;
+  hasPublicKey: boolean;
+  isKeyMissing: boolean;
 }
 
 // Response from GET /messages/history/:id

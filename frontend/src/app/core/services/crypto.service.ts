@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import type { VaultService } from './vault.service';
 
 @Injectable({ providedIn: 'root' })
 export class CryptoService {
@@ -35,6 +36,13 @@ export class CryptoService {
     return await crypto.subtle.exportKey('pkcs8', this.keyPair.privateKey);
   }
 
+  /** Export the current public key as Base64 string */
+  async exportCurrentPublicKey(): Promise<string> {
+    if (!this.keyPair?.publicKey) throw new Error('No key pair loaded');
+    const spki = await crypto.subtle.exportKey('spki', this.keyPair.publicKey);
+    return this.arrayBufferToBase64(spki);
+  }
+
   /**
    * Import a private key from ArrayBuffer or Base64 string.
    * Returns the SHA‑256 fingerprint (hex pairs joined by `:`).
@@ -66,11 +74,18 @@ export class CryptoService {
       // Store the private key for direct access
       this.privateKey = privateKey;
 
-      if (!this.keyPair) {
-        this.keyPair = { privateKey, publicKey: null! };
-      } else {
-        this.keyPair.privateKey = privateKey;
+      // Try to derive the public key, but don't fail if it doesn't work
+      let publicKey: CryptoKey;
+      try {
+        publicKey = await this.derivePublicKeyFromPrivate(privateKey);
+      } catch (error) {
+        console.warn('[CryptoService] Failed to derive public key, using private key for both:', error);
+        // Use the private key as a fallback (this is mainly for the keyPair structure)
+        publicKey = privateKey;
       }
+
+      // Set up the key pair with both keys
+      this.keyPair = { privateKey, publicKey };
 
       // Return the SHA-256 fingerprint
       const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', raw));
@@ -85,6 +100,59 @@ export class CryptoService {
         }`
       );
     }
+  }
+
+  /**
+   * Derive the public key from a private key
+   */
+  private async derivePublicKeyFromPrivate(privateKey: CryptoKey): Promise<CryptoKey> {
+    // Export the private key to get the key material
+    const privateKeyData = await crypto.subtle.exportKey('pkcs8', privateKey);
+    
+    // Create a temporary key pair to extract the public key
+    const tempKeyPair = await crypto.subtle.generateKey(
+      {
+        name: 'RSA-OAEP',
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: 'SHA-256',
+      },
+      true,
+      ['encrypt', 'decrypt']
+    );
+
+    // Re-import the private key to get access to the algorithm parameters
+    const reimportedPrivateKey = await crypto.subtle.importKey(
+      'pkcs8',
+      privateKeyData,
+      { name: 'RSA-OAEP', hash: 'SHA-256' },
+      true,
+      ['decrypt']
+    );
+
+    // Use the jwk format to extract the public key components from the private key
+    const jwkPrivateKey = await crypto.subtle.exportKey('jwk', reimportedPrivateKey);
+    
+    // Create a public key JWK from the private key JWK
+    const jwkPublicKey = {
+      kty: jwkPrivateKey.kty,
+      use: jwkPrivateKey.use,
+      key_ops: ['encrypt'],
+      alg: jwkPrivateKey.alg,
+      n: jwkPrivateKey.n,
+      e: jwkPrivateKey.e,
+    };
+
+    // Import the public key
+    const publicKey = await crypto.subtle.importKey(
+      'jwk',
+      jwkPublicKey,
+      { name: 'RSA-OAEP', hash: 'SHA-256' },
+      true,
+      ['encrypt']
+    );
+
+    return publicKey;
   }
 
   /* ═══════════ Encryption helpers ═══════════ */
@@ -133,8 +201,8 @@ export class CryptoService {
     string,
     { count: number; lastAttempt: number }
   >();
-  private readonly MAX_LOGGED_FAILURES = 3;
-  private readonly FAILURE_RESET_TIME = 30000; // 30 seconds
+  private readonly MAX_LOGGED_FAILURES = 1; // Reduce spam
+  private readonly FAILURE_RESET_TIME = 60000; // 1 minute
 
   async decryptMessage(cipherTextBase64: string): Promise<string> {
     // Use the direct privateKey property
@@ -149,7 +217,10 @@ export class CryptoService {
         { name: 'RSA-OAEP' },
         this.privateKey,
         this.b64ToBuf(k)
-      );
+      ).catch(error => {
+        // Silently re-throw RSA decryption errors - these are expected for old messages
+        throw error;
+      });
       const aesKey = await crypto.subtle.importKey(
         'raw',
         rawAes,
@@ -178,23 +249,20 @@ export class CryptoService {
   }
 
   /**
-   * Log decryption errors with throttling to prevent console spam
+   * Track decryption errors silently - no console logging since these are expected for old messages
    */
-  private logDecryptionError(cipherTextBase64: string, error: unknown): void {
+  private logDecryptionError(cipherTextBase64: string, _error: unknown): void {
     const failureKey = this.getFailureKey(cipherTextBase64);
     const now = Date.now();
     const existing = this.decryptionFailureCount.get(failureKey);
 
     if (!existing) {
-      // First failure - log it
+      // First failure - track it silently
       this.decryptionFailureCount.set(failureKey, {
         count: 1,
         lastAttempt: now,
       });
-      console.warn(
-        '[CryptoService] Decryption failed - this may indicate corrupted data or key mismatch:',
-        error
-      );
+      // No logging - these are expected decryption failures for old messages
     } else {
       // Check if we should reset the counter
       if (now - existing.lastAttempt > this.FAILURE_RESET_TIME) {
@@ -202,29 +270,12 @@ export class CryptoService {
           count: 1,
           lastAttempt: now,
         });
-        console.warn(
-          '[CryptoService] Decryption failed (first failure after reset):',
-          error
-        );
+        // No logging - silent tracking only
       } else {
-        // Update the count
+        // Update the count silently
         existing.count++;
         existing.lastAttempt = now;
-
-        // Only log if under the threshold
-        if (existing.count <= this.MAX_LOGGED_FAILURES) {
-          console.warn(
-            `[CryptoService] Decryption failed (${existing.count}/${this.MAX_LOGGED_FAILURES}):`,
-            error
-          );
-        } else if (existing.count === this.MAX_LOGGED_FAILURES + 1) {
-          console.warn(
-            `[CryptoService] Decryption failures exceeded threshold. Further failures for this message will be suppressed for ${
-              this.FAILURE_RESET_TIME / 1000
-            }s`
-          );
-        }
-        // After threshold, don't log anything
+        // No logging - these errors are expected for messages encrypted with previous keys
       }
     }
   }
@@ -267,5 +318,35 @@ export class CryptoService {
   // Check if private key is available
   hasPrivateKey(): boolean {
     return !!this.privateKey;
+  }
+
+  // Check if private key is available in vault (for persistent check across reloads)
+  async hasPrivateKeyInVault(vault: VaultService, userId: string): Promise<boolean> {
+    try {
+      const { VAULT_KEYS } = await import('./vault.service');
+      
+      
+      // Ensure vault is set up with user ID - USE READ-ONLY MODE to prevent automatic AES key generation
+      await vault.setCurrentUser(userId, true); // true = read-only mode
+      await vault.waitUntilReady();
+      
+      
+      const privateKeyData = await vault.get(VAULT_KEYS.PRIVATE_KEY) as ArrayBuffer;
+      const hasKey = !!privateKeyData;
+      
+      
+      return hasKey;
+    } catch (error) {
+      console.error('🔑 [VAULT CHECK] Error (this is expected if vault/keys are missing):', error);
+      // If vault fails to open in read-only mode, it means the AES key is missing
+      // which indicates the vault is corrupted/missing, so no private key exists
+      return false;
+    }
+  }
+
+  // Clear private key state to force clean import
+  clearPrivateKey(): void {
+    this.privateKey = null;
+    this.keyPair = null;
   }
 }
