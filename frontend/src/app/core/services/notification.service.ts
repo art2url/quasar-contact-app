@@ -52,15 +52,15 @@ export class NotificationService implements OnDestroy {
       this.refresh$.next();
     });
 
-    // Enhanced debounced refresh with immediate update support
+    // Enhanced debounced refresh with longer delays to reduce API calls
     this.subs.add(
-      this.refresh$.pipe(debounceTime(1000)).subscribe(() => this.loadNotifications())
+      this.refresh$.pipe(debounceTime(3000)).subscribe(() => this.loadNotifications())
     );
 
-    // Add immediate update stream for badge resets
+    // Add immediate update stream for badge resets with longer debounce
     this.subs.add(
       this.immediateUpdate$
-        .pipe(debounceTime(500)) // Increased from 100ms to 500ms to reduce API calls
+        .pipe(debounceTime(2000)) // Increased to 2 seconds to reduce API calls
         .subscribe(() => this.loadNotifications())
     );
 
@@ -69,7 +69,10 @@ export class NotificationService implements OnDestroy {
       this.router.events
         .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
         .subscribe(e => {
-          if (e.url === '/chat' || e.url.startsWith('/chat-room/')) {
+          if (e.url === '/chat') {
+            // When navigating to chat list, bypass rate limit to ensure notifications load
+            this.loadNotifications(true); // Bypass rate limit
+          } else if (e.url.startsWith('/chat-room/')) {
             this.loadNotifications();
           }
         })
@@ -79,8 +82,8 @@ export class NotificationService implements OnDestroy {
     this.subs.add(
       this.ws.isConnected$.subscribe(connected => {
         if (connected) {
-          // When reconnected, refresh notifications
-          setTimeout(() => this.loadNotifications(), 1000);
+          // When reconnected, refresh notifications with longer delay to avoid rate limiting
+          setTimeout(() => this.loadNotifications(), 5000);
         }
       })
     );
@@ -112,12 +115,8 @@ export class NotificationService implements OnDestroy {
     const chatRoomEnteredHandler = (event: CustomEvent) => {
       const { roomId } = event.detail;
 
-      // Use immediate update for faster badge reset
-      this.ngZone.run(() => {
-        this.markUserMessagesAsRead(roomId);
-        // Trigger immediate update instead of regular refresh
-        this.immediateUpdate$.next();
-      });
+      // Don't mark messages as read immediately - wait for the chat room to do it
+      // when messages are actually visible to the user
     };
 
     window.addEventListener('messages-read', messagesReadHandler as EventListener);
@@ -168,17 +167,17 @@ export class NotificationService implements OnDestroy {
     this.updateStreams();
   }
 
-  public loadNotifications(): void {
+  public loadNotifications(bypassRateLimit = false): void {
+    
     // Check if we should load notifications (JWT is now in HttpOnly cookies)
     const userId = localStorage.getItem('userId');
     if (!localStorage.getItem('username') || !userId) {
       return;
     }
 
-    // Rate limiting: prevent more than 1 call per 2 seconds
+    // Rate limiting: prevent more than 1 call per 5 seconds (unless bypassed)
     const now = Date.now();
-    if (this.lastLoadTime && (now - this.lastLoadTime < 2000)) {
-      console.log('[NotificationService] Rate limiting: skipping loadNotifications call');
+    if (!bypassRateLimit && this.lastLoadTime && (now - this.lastLoadTime < 5000)) {
       return;
     }
     this.lastLoadTime = now;
@@ -231,9 +230,8 @@ export class NotificationService implements OnDestroy {
     this.ngZone.run(() => {
       // Check if user had notifications before clearing
       const hadNotifications = this.notificationsMap.has(userId);
-      const previousCount = this.notificationsMap.get(userId)?.unreadCount || 0;
 
-      // Remove from local state immediately
+      // Remove from local state immediately for instant UI update
       this.notificationsMap.delete(userId);
 
       if (hadNotifications) {
@@ -241,15 +239,21 @@ export class NotificationService implements OnDestroy {
       }
     });
 
-    // Use immediate update for faster badge reset, then regular refresh for server sync
-    setTimeout(() => {
-      this.immediateUpdate$.next();
-    }, 50);
-
-    // Also trigger regular refresh after a longer delay to ensure server state is updated
-    setTimeout(() => {
-      this.refresh$.next();
-    }, 500);
+    // Call server to actually mark messages as read
+    this.messages.markMessagesAsRead(userId).subscribe({
+      next: (response) => {
+        // Don't immediately refresh from server to avoid rate limiting
+        // The local state has already been updated above for instant UI feedback
+        // Trust that the server has processed the request correctly
+      },
+      error: (error) => {
+        console.error('[NotificationService] Failed to mark messages as read:', error);
+        
+        // Only refresh on error to restore correct state
+        // Use the debounced refresh to avoid immediate API call
+        this.refresh$.next();
+      }
+    });
   }
 
   /**

@@ -637,7 +637,7 @@ export class ChatSessionService implements OnDestroy {
             } else if (fromMe) {
               text = await this.findCachedMessageText(serverMsg);
             } else {
-              text = await this.tryDecrypt(serverMsg.ciphertext);
+              text = await this.tryDecrypt(serverMsg.ciphertext, serverMsg.senderId);
               // Mark as read since we're catching up
               if (!serverMsg.read) {
                 this.ws.markMessageRead(serverMsg._id);
@@ -1040,7 +1040,7 @@ export class ChatSessionService implements OnDestroy {
           } else if (fromMe) {
             text = await this.findCachedMessageText(m);
           } else {
-            text = await this.tryDecrypt(m.ciphertext);
+            text = await this.tryDecrypt(m.ciphertext, m.senderId);
             if (!m.read) {
               this.ws.markMessageRead(m._id);
             }
@@ -1179,7 +1179,7 @@ export class ChatSessionService implements OnDestroy {
       if (idx === -1) return;
 
       const plain =
-        list[idx].sender === 'You' ? list[idx].text : await this.tryDecrypt(m.ciphertext);
+        list[idx].sender === 'You' ? list[idx].text : await this.tryDecrypt(m.ciphertext, this.roomId);
 
       const patched: ChatMsg = {
         ...list[idx],
@@ -1228,7 +1228,7 @@ export class ChatSessionService implements OnDestroy {
     if (m.fromUserId !== this.roomId) return;
 
     try {
-      const decryptedText = await this.tryDecrypt(m.ciphertext);
+      const decryptedText = await this.tryDecrypt(m.ciphertext, m.fromUserId);
       const messageAvatar = m.avatarUrl?.trim()
         ? m.avatarUrl
         : this.partnerAvatar || 'assets/images/avatars/01.svg';
@@ -1284,10 +1284,16 @@ export class ChatSessionService implements OnDestroy {
   // Track vault corruption detection
   private vaultCorruptionDetected = false;
 
-  private async tryDecrypt(ct: string): Promise<string> {
+  private async tryDecrypt(ct: string, senderId?: string): Promise<string> {
     // Check if we've already failed to decrypt this ciphertext
     if (this.failedDecryptions.has(ct)) {
-      return '🔒 Encrypted message (from partner)';
+      // Check if this is a message from the current user (indicating old key)
+      const currentUserId = localStorage.getItem('userId');
+      if (senderId === currentUserId) {
+        return '🔐 Message encrypted with previous keys (unreadable after key regeneration)';
+      } else {
+        return '🔒 Encrypted message (from partner)';
+      }
     }
 
     try {
@@ -1305,7 +1311,13 @@ export class ChatSessionService implements OnDestroy {
         entries.slice(-50).forEach(entry => this.failedDecryptions.add(entry));
       }
 
-      return '🔒 Encrypted message (from partner)';
+      // Check if this is a message from the current user (indicating old key)
+      const currentUserId = localStorage.getItem('userId');
+      if (senderId === currentUserId) {
+        return '🔐 Message encrypted with previous keys (unreadable after key regeneration)';
+      } else {
+        return '🔒 Encrypted message (from partner)';
+      }
     }
   }
 

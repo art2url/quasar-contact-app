@@ -253,7 +253,7 @@ export class CryptoService {
         lastAttempt: now,
       });
       console.warn(
-        '[CryptoService] Decryption failed - this may indicate corrupted data or key mismatch:',
+        '[CryptoService] Decryption failed - this may indicate corrupted data, key mismatch, or messages encrypted with previous keys after key regeneration:',
         error
       );
     } else {
