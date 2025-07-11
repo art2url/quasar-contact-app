@@ -66,6 +66,30 @@
   padding: var(--spacing-lg);
 }
 
+.rate-limit-message {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-top: var(--spacing-sm);
+}
+
+.rate-limit-icon {
+  font-size: 48px !important;
+  width: 48px !important;
+  height: 48px !important;
+  margin: 0 auto 20px !important;
+  display: block !important;
+  color: var(--primary-color) !important;
+}
+
+.rate-limit-loading-icon {
+  font-size: 30px !important;
+  width: 30px !important;
+  height: 30px !important;
+  margin: 0 auto 20px !important;
+  display: block !important;
+  color: var(--text-secondary) !important;
+}
+
 /* Find someone to chat with button styling */
 .find-contact-button {
   margin: 0 auto var(--spacing-md) auto;

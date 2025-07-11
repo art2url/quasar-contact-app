@@ -118,6 +118,9 @@ export class ChatRoomComponent
   // Track if we should show the cache info banner
   showCacheInfoBanner = false;
 
+  // Track if messages have been marked as read to avoid duplicate calls
+  private hasMarkedMessagesAsRead = false;
+
   // New scroll management properties with scroll direction tracking
   private isUserAtBottom = true;
   private shouldAutoScroll = true;
@@ -178,6 +181,9 @@ export class ChatRoomComponent
 
   async ngOnInit(): Promise<void> {
     document.body.classList.add('chat-room-page');
+    
+    // Reset the flag for this chat room
+    this.hasMarkedMessagesAsRead = false;
 
     this.receiverId = this.route.snapshot.paramMap.get('id')!;
 
@@ -208,30 +214,29 @@ export class ChatRoomComponent
    * Emit event when entering chat room for immediate header updates
    */
   private emitChatRoomEnteredEvent(): void {
-    // Directly call NotificationService to ensure badge is cleared immediately
-    this.notificationService.markUserMessagesAsRead(this.receiverId);
-
-    // Emit events immediately
+    // Don't mark messages as read immediately - wait until messages are loaded and visible
+    // Just emit the chat room entered event for now
     const emitEvent = () => {
       window.dispatchEvent(
         new CustomEvent('chat-room-entered', {
           detail: { roomId: this.receiverId },
         })
       );
-
-      window.dispatchEvent(
-        new CustomEvent('messages-read', {
-          detail: { count: 0, roomId: this.receiverId },
-        })
-      );
     };
 
     // Emit immediately
     emitEvent();
-    
-    // Set flags for Angular hooks to handle delayed operations
-    this.needsSecondaryEventEmit = true;
-    this.needsNotificationRefresh = true;
+  }
+
+  /**
+   * Mark messages as read when they are actually loaded and visible to the user
+   */
+  private markMessagesAsReadWhenVisible(): void {
+    // Mark messages as read in the notification service
+    this.notificationService.markUserMessagesAsRead(this.receiverId);
+
+    // Don't emit custom events - they cause duplicate markUserMessagesAsRead calls
+    // The notification service handles the state updates directly
   }
 
   /**
@@ -263,6 +268,9 @@ export class ChatRoomComponent
             setTimeout(() => {
               this.scrollToBottom(true);
             }, 100);
+
+            // Don't mark messages as read just because they loaded
+            // Only mark as read when user actually sees them (after scroll)
           }
         })
       );
@@ -340,40 +348,7 @@ export class ChatRoomComponent
                   this.reported.add(m.id!);
                 });
 
-                // Enhanced header counter update with immediate effect
-
-                // Emit event to header and notification service immediately
-                window.dispatchEvent(
-                  new CustomEvent('messages-read', {
-                    detail: {
-                      count: unreadFromPartner.length,
-                      roomId: this.receiverId,
-                    },
-                  })
-                );
-
-                //  Emit multiple times to ensure all services receive the event
-                setTimeout(() => {
-                  window.dispatchEvent(
-                    new CustomEvent('messages-read', {
-                      detail: {
-                        count: 0, // This triggers a refresh
-                        roomId: this.receiverId,
-                      },
-                    })
-                  );
-                }, 500);
-
-                setTimeout(() => {
-                  window.dispatchEvent(
-                    new CustomEvent('messages-read', {
-                      detail: {
-                        count: 0, // This triggers a refresh
-                        roomId: this.receiverId,
-                      },
-                    })
-                  );
-                }, 1000);
+                // Messages are now handled directly without custom events
               }
             }
           },
@@ -581,11 +556,7 @@ export class ChatRoomComponent
               detail: { roomId: this.receiverId },
             })
           );
-          window.dispatchEvent(
-            new CustomEvent('messages-read', {
-              detail: { count: 0, roomId: this.receiverId },
-            })
-          );
+          // Messages are now handled directly without custom events
         });
       });
       this.needsSecondaryEventEmit = false;
@@ -670,6 +641,14 @@ export class ChatRoomComponent
     // Reset new messages counter if user scrolled to bottom
     if (isNearBottom && this.newMessagesCount > 0) {
       this.newMessagesCount = 0;
+    }
+
+    // Mark messages as read when user manually scrolls to bottom
+    if (isNearBottom && !this.hasMarkedMessagesAsRead) {
+      this.hasMarkedMessagesAsRead = true; // Set immediately to prevent multiple calls
+      setTimeout(() => {
+        this.markMessagesAsReadWhenVisible();
+      }, 500); // Wait a bit to ensure user actually sees the messages
     }
   }
 
@@ -949,14 +928,9 @@ export class ChatRoomComponent
     this.shouldAutoScroll = true;
     this.newMessagesCount = 0;
     this.showScrollToBottomButton = false;
-    this.scrollToBottom(true);
+    this.scrollToBottom(true, true); // Mark as read when user explicitly scrolls
 
-    // Update header counter since we're now at bottom
-    window.dispatchEvent(
-      new CustomEvent('messages-read', {
-        detail: { count: this.newMessagesCount, roomId: this.receiverId },
-      })
-    );
+    // Messages are now handled directly without custom events
   }
 
   /**
@@ -989,7 +963,7 @@ export class ChatRoomComponent
   /**
    * Improved scroll to bottom with smooth scrolling option
    */
-  private scrollToBottom(smooth = false) {
+  private scrollToBottom(smooth = false, markAsRead = false) {
     try {
       const el = this.messageContainer?.nativeElement;
       if (el) {
@@ -1006,6 +980,14 @@ export class ChatRoomComponent
         if (this.scrollTimeout) {
           clearTimeout(this.scrollTimeout);
           this.scrollTimeout = null;
+        }
+
+        // Only mark messages as read if explicitly requested (user action)
+        if (markAsRead && !this.hasMarkedMessagesAsRead) {
+          this.hasMarkedMessagesAsRead = true; // Set immediately to prevent multiple calls
+          setTimeout(() => {
+            this.markMessagesAsReadWhenVisible();
+          }, 300); // Wait for scroll to complete
         }
       }
     } catch (error) {
@@ -1207,6 +1189,9 @@ export class ChatRoomComponent
 
   ngOnDestroy() {
     document.body.classList.remove('chat-room-page');
+    
+    // Reset the flag for next visit
+    this.hasMarkedMessagesAsRead = false;
 
     // Remove event listeners from input element
     if (this.messageInput?.nativeElement) {
