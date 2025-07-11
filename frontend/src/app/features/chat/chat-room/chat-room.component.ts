@@ -91,7 +91,6 @@ export class ChatRoomComponent
   // More reliable swipe detection for mobile
   @HostListener('swiperight')
   onSwipeRight() {
-    console.log('Swipe right detected, navigating to chat list');
     this.navigateToList();
   }
 
@@ -119,6 +118,9 @@ export class ChatRoomComponent
   // Track if we should show the cache info banner
   showCacheInfoBanner = false;
 
+  // Track if messages have been marked as read to avoid duplicate calls
+  private hasMarkedMessagesAsRead = false;
+
   // New scroll management properties with scroll direction tracking
   private isUserAtBottom = true;
   private shouldAutoScroll = true;
@@ -134,6 +136,11 @@ export class ChatRoomComponent
   // Loading state tracking
   isLoadingMessages = true;
   private hasInitiallyScrolled = false;
+  
+  // Flags for Angular hook-based operations (instead of setTimeout)
+  private needsSecondaryEventEmit = false;
+  private needsNotificationRefresh = false;
+  private needsDebugState = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -144,7 +151,12 @@ export class ChatRoomComponent
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
     private notificationService: NotificationService
-  ) {}
+  ) {
+    // Expose debug methods globally for testing
+    (window as any).debugFixMutualBlocking = () => this.debugFixMutualBlocking();
+    (window as any).debugClearAllMissingFlags = () => this.debugClearAllMissingFlags();
+    (window as any).debugRegeneratePublicKey = () => this.debugRegeneratePublicKey();
+  }
 
   @HostListener('window:resize')
   onResize() {
@@ -153,15 +165,29 @@ export class ChatRoomComponent
     }
   }
 
+  @HostListener('window:focus')
+  onWindowFocus() {
+    // When user returns to the app, check if partner key status changed
+    this.chat.manuallyCheckKeyStatus();
+  }
+
+  @HostListener('window:visibilitychange')
+  onVisibilityChange() {
+    // When tab becomes visible again, check for key changes
+    if (!document.hidden) {
+      this.chat.manuallyCheckKeyStatus();
+    }
+  }
+
   async ngOnInit(): Promise<void> {
     document.body.classList.add('chat-room-page');
+    
+    // Reset the flag for this chat room
+    this.hasMarkedMessagesAsRead = false;
 
-    console.log('[ChatRoom] Component initializing');
     this.receiverId = this.route.snapshot.paramMap.get('id')!;
-    console.log('[ChatRoom] Chat room ID:', this.receiverId);
 
     if (!this.receiverId) {
-      console.error('[ChatRoom] No receiverId found in URL');
       this.navigateToList();
       return;
     }
@@ -169,17 +195,13 @@ export class ChatRoomComponent
     // Emit chat room entered event for header badge updates
     this.emitChatRoomEnteredEvent();
 
-    // Debug notification state
-    console.log('[ChatRoom] Debugging notification state after entering room');
-    setTimeout(() => {
-      this.notificationService.debugCurrentState();
-    }, 500);
+    // Debug notification state (set flag for Angular hook)
+    this.needsDebugState = true;
 
     // Initialize once only
     try {
       await this.initializeOnce();
     } catch (error) {
-      console.error('[ChatRoom] Initialization failed:', error);
       this.loadingService.hide('init-error');
       this.navigateToList();
     }
@@ -192,41 +214,29 @@ export class ChatRoomComponent
    * Emit event when entering chat room for immediate header updates
    */
   private emitChatRoomEnteredEvent(): void {
-    console.log('[ChatRoom] Emitting chat room entered event for room:', this.receiverId);
-
-    // Directly call NotificationService to ensure badge is cleared immediately
-    console.log(
-      '[ChatRoom] Directly calling NotificationService to mark messages as read'
-    );
-    this.notificationService.markUserMessagesAsRead(this.receiverId);
-
-    // Multiple immediate badge reset triggers for better reliability
+    // Don't mark messages as read immediately - wait until messages are loaded and visible
+    // Just emit the chat room entered event for now
     const emitEvent = () => {
       window.dispatchEvent(
         new CustomEvent('chat-room-entered', {
           detail: { roomId: this.receiverId },
         })
       );
-
-      window.dispatchEvent(
-        new CustomEvent('messages-read', {
-          detail: { count: 0, roomId: this.receiverId },
-        })
-      );
     };
 
     // Emit immediately
     emitEvent();
+  }
 
-    // Emit again after short delays to ensure all services receive the event
-    setTimeout(emitEvent, 100);
-    setTimeout(emitEvent, 250);
-    setTimeout(emitEvent, 500);
+  /**
+   * Mark messages as read when they are actually loaded and visible to the user
+   */
+  private markMessagesAsReadWhenVisible(): void {
+    // Mark messages as read in the notification service
+    this.notificationService.markUserMessagesAsRead(this.receiverId);
 
-    // Force immediate notification refresh
-    setTimeout(() => {
-      this.notificationService.refreshNotificationsImmediate();
-    }, 50);
+    // Don't emit custom events - they cause duplicate markUserMessagesAsRead calls
+    // The notification service handles the state updates directly
   }
 
   /**
@@ -234,27 +244,23 @@ export class ChatRoomComponent
    */
   private async initializeOnce(): Promise<void> {
     if (this.isInitialized) {
-      console.log('[ChatRoom] Already initialized, skipping');
       return;
     }
 
-    console.log('[ChatRoom] Starting one-time initialization');
     this.loadingService.show('chat-room-init');
 
     try {
       // Initialize chat session ONCE
       await this.chat.init(this.receiverId);
-      console.log('[ChatRoom] Chat session initialized successfully');
+      
 
       // Subscribe to loading state first
       this.subs.add(
         this.chat.messagesLoading$.subscribe(loading => {
-          console.log('[ChatRoom] Messages loading state:', loading);
           this.isLoadingMessages = loading;
 
           // Only allow autoscroll after initial loading is complete
           if (!loading && !this.hasInitiallyScrolled) {
-            console.log('[ChatRoom] Initial loading complete, enabling autoscroll');
             this.hasInitiallyScrolled = true;
             this.shouldAutoScroll = true;
 
@@ -262,6 +268,9 @@ export class ChatRoomComponent
             setTimeout(() => {
               this.scrollToBottom(true);
             }, 100);
+
+            // Don't mark messages as read just because they loaded
+            // Only mark as read when user actually sees them (after scroll)
           }
         })
       );
@@ -269,8 +278,6 @@ export class ChatRoomComponent
       // Subscribe to message updates ONCE
       this.subs.add(
         this.chat.messages$.subscribe(messages => {
-          console.log('[ChatRoom] Messages updated, count:', messages.length);
-
           // Check if we should show the cache info banner
           this.checkForCacheIssues(messages);
 
@@ -290,7 +297,6 @@ export class ChatRoomComponent
       // Set up connection status subscription ONCE
       this.subs.add(
         this.ws.isConnected$.subscribe(connected => {
-          console.log('[ChatRoom] WebSocket connection status:', connected);
         })
       );
 
@@ -300,8 +306,27 @@ export class ChatRoomComponent
       // Get partner's avatar ONCE
       this.subs.add(
         this.chat.theirAvatar$.subscribe(avatar => {
-          console.log('[ChatRoom] Partner avatar updated:', avatar);
           this.partnerAvatar = avatar;
+        })
+      );
+
+      // DEBUG: Monitor observable states for recovery UI debugging
+      this.subs.add(
+        this.chat.keyLoading$.subscribe(loading => {
+        })
+      );
+      
+      this.subs.add(
+        this.chat.myPrivateKeyMissing$.subscribe(missing => {
+          if (missing === true && !this.chat.keyLoading$.value) {
+            // Only mark keys as missing if this is genuine key loss, not artificial blocking
+            if (!this.chat.isArtificialKeyMissingState) {
+              this.chat.ensureKeysMissingFlagSet();
+            }
+            
+            // Force change detection
+            setTimeout(() => this.cdr.detectChanges(), 0);
+          }
         })
       );
 
@@ -317,56 +342,13 @@ export class ChatRoomComponent
               );
 
               if (unreadFromPartner.length > 0) {
-                console.log(
-                  '[ChatRoom] Marking',
-                  unreadFromPartner.length,
-                  'messages as read'
-                );
 
                 unreadFromPartner.forEach(m => {
                   this.ws.markMessageRead(m.id!);
                   this.reported.add(m.id!);
                 });
 
-                // Enhanced header counter update with immediate effect
-                console.log(
-                  '[ChatRoom] Emitting messages-read event for',
-                  unreadFromPartner.length,
-                  'messages'
-                );
-
-                // Emit event to header and notification service immediately
-                window.dispatchEvent(
-                  new CustomEvent('messages-read', {
-                    detail: {
-                      count: unreadFromPartner.length,
-                      roomId: this.receiverId,
-                    },
-                  })
-                );
-
-                //  Emit multiple times to ensure all services receive the event
-                setTimeout(() => {
-                  window.dispatchEvent(
-                    new CustomEvent('messages-read', {
-                      detail: {
-                        count: 0, // This triggers a refresh
-                        roomId: this.receiverId,
-                      },
-                    })
-                  );
-                }, 500);
-
-                setTimeout(() => {
-                  window.dispatchEvent(
-                    new CustomEvent('messages-read', {
-                      detail: {
-                        count: 0, // This triggers a refresh
-                        roomId: this.receiverId,
-                      },
-                    })
-                  );
-                }, 1000);
+                // Messages are now handled directly without custom events
               }
             }
           },
@@ -375,7 +357,6 @@ export class ChatRoomComponent
       );
 
       this.isInitialized = true;
-      console.log('[ChatRoom] Initialization completed successfully');
     } finally {
       this.loadingService.hide('chat-room-init');
     }
@@ -407,7 +388,6 @@ export class ChatRoomComponent
     });
 
     this.messageGroups = groups;
-    console.log('[ChatRoom] Grouped messages into', groups.length, 'date groups');
   }
 
   /**
@@ -415,7 +395,6 @@ export class ChatRoomComponent
    */
   private handleMessagesUpdate(messages: ChatMsg[]): void {
     if (this.isLoadingMessages) {
-      console.log('[ChatRoom] Skipping message update handling - still loading');
       return;
     }
 
@@ -430,7 +409,6 @@ export class ChatRoomComponent
         this.newMessagesCount += newMessageCount;
         // REMOVED: this.showScrollToBottomButton = true;
         // Let handleScroll method control button visibility based on scroll position
-        console.log('[ChatRoom] New messages while scrolled up:', newMessageCount);
       } else {
         // User is at bottom, reset counter and auto-scroll
         this.newMessagesCount = 0;
@@ -446,10 +424,6 @@ export class ChatRoomComponent
    * Enhanced partner online status tracking
    */
   private setupOnlineStatusTracking(): void {
-    console.log(
-      '[ChatRoom] Setting up enhanced online status tracking for partner:',
-      this.receiverId
-    );
 
     // Subscribe to main online users list
     this.subs.add(
@@ -460,9 +434,6 @@ export class ChatRoomComponent
           : false;
 
         if (wasOnline !== this.isPartnerOnline) {
-          console.log(
-            `[ChatRoom] Partner ${this.receiverId} status changed: ${wasOnline} -> ${this.isPartnerOnline}`
-          );
         }
       })
     );
@@ -471,7 +442,6 @@ export class ChatRoomComponent
     this.subs.add(
       this.ws.userOnline$.subscribe(userId => {
         if (userId === this.receiverId) {
-          console.log(`[ChatRoom] Partner ${this.receiverId} came online`);
           this.isPartnerOnline = true;
         }
       })
@@ -481,7 +451,6 @@ export class ChatRoomComponent
     this.subs.add(
       this.ws.userOffline$.subscribe(userId => {
         if (userId === this.receiverId) {
-          console.log(`[ChatRoom] Partner ${this.receiverId} went offline`);
           this.isPartnerOnline = false;
         }
       })
@@ -491,14 +460,10 @@ export class ChatRoomComponent
     this.subs.add(
       this.ws.isConnected$.subscribe(connected => {
         if (!connected) {
-          console.log('[ChatRoom] WebSocket disconnected, marking partner as offline');
           this.isPartnerOnline = false;
         } else {
           // When reconnected, check current status
           const currentStatus = this.ws.isUserOnline(this.receiverId);
-          console.log(
-            `[ChatRoom] WebSocket reconnected, partner status: ${currentStatus}`
-          );
           this.isPartnerOnline = currentStatus;
         }
       })
@@ -506,23 +471,17 @@ export class ChatRoomComponent
 
     // Set initial status
     this.isPartnerOnline = this.ws.isUserOnline(this.receiverId);
-    console.log(`[ChatRoom] Initial partner status: ${this.isPartnerOnline}`);
   }
 
   /**
    * Set up subscription to typing indicator with proper change detection
    */
   private setupTypingIndicatorSubscription(): void {
-    console.log('[ChatRoom] Setting up typing indicator subscription');
-
     this.subs.add(
       this.chat.partnerTyping$.subscribe(isTyping => {
-        console.log('[ChatRoom] Partner typing status changed:', isTyping);
-
         // Use NgZone to ensure Angular detects the change
         this.ngZone.run(() => {
           this.isPartnerTyping = isTyping;
-          console.log('[ChatRoom] Updated isPartnerTyping to:', this.isPartnerTyping);
         });
       })
     );
@@ -540,7 +499,6 @@ export class ChatRoomComponent
     if (now - this.lastTypingEvent > this.TYPING_THROTTLE) {
       this.lastTypingEvent = now;
 
-      console.log('[ChatRoom] User typing, sending indicator');
       this.chat.sendTyping();
 
       // Clear any existing throttle
@@ -559,8 +517,6 @@ export class ChatRoomComponent
     // Set up input event listeners for typing detection
     setTimeout(() => {
       if (this.messageInput?.nativeElement) {
-        console.log('[ChatRoom] Setting up input listeners for typing detection');
-
         // Use more reliable input events to detect typing
         this.messageInput.nativeElement.addEventListener(
           'input',
@@ -570,11 +526,73 @@ export class ChatRoomComponent
           'keydown',
           this.handleKeydown.bind(this)
         );
+        
+        // Re-check partner key status when user focuses on chat input
+        this.messageInput.nativeElement.addEventListener(
+          'focus',
+          this.handleChatInputFocus.bind(this)
+        );
       }
     }, 100);
 
     // Set up scroll listener for intelligent scrolling
     this.setupScrollListener();
+    
+    // Handle delayed operations using Angular hook instead of setTimeout
+    this.handleDelayedOperations();
+  }
+  
+  /**
+   * Handle delayed operations using Angular lifecycle instead of setTimeout
+   */
+  private handleDelayedOperations(): void {
+    // Secondary event emit (replaces setTimeout(emitEvent, 300))
+    if (this.needsSecondaryEventEmit) {
+      this.ngZone.runOutsideAngular(() => {
+        // Use requestAnimationFrame for better performance than setTimeout
+        requestAnimationFrame(() => {
+          window.dispatchEvent(
+            new CustomEvent('chat-room-entered', {
+              detail: { roomId: this.receiverId },
+            })
+          );
+          // Messages are now handled directly without custom events
+        });
+      });
+      this.needsSecondaryEventEmit = false;
+    }
+    
+    // Notification refresh (replaces setTimeout for notification refresh)
+    if (this.needsNotificationRefresh) {
+      this.ngZone.runOutsideAngular(() => {
+        // Use requestAnimationFrame chain for delayed execution
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            this.ngZone.run(() => {
+              this.notificationService.refreshNotificationsImmediate();
+            });
+          });
+        });
+      });
+      this.needsNotificationRefresh = false;
+    }
+    
+    // Debug state (replaces setTimeout for debug state)
+    if (this.needsDebugState) {
+      this.ngZone.runOutsideAngular(() => {
+        // Use requestAnimationFrame chain for delayed execution
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              this.ngZone.run(() => {
+                this.notificationService.debugCurrentState();
+              });
+            });
+          });
+        });
+      });
+      this.needsDebugState = false;
+    }
   }
 
   /**
@@ -583,8 +601,6 @@ export class ChatRoomComponent
   private setupScrollListener(): void {
     setTimeout(() => {
       if (this.messageContainer?.nativeElement) {
-        console.log('[ChatRoom] Setting up scroll listener');
-
         this.messageContainer.nativeElement.addEventListener(
           'scroll',
           this.handleScroll.bind(this),
@@ -626,6 +642,14 @@ export class ChatRoomComponent
     if (isNearBottom && this.newMessagesCount > 0) {
       this.newMessagesCount = 0;
     }
+
+    // Mark messages as read when user manually scrolls to bottom
+    if (isNearBottom && !this.hasMarkedMessagesAsRead) {
+      this.hasMarkedMessagesAsRead = true; // Set immediately to prevent multiple calls
+      setTimeout(() => {
+        this.markMessagesAsReadWhenVisible();
+      }, 500); // Wait a bit to ensure user actually sees the messages
+    }
   }
 
   private handleTyping(): void {
@@ -634,7 +658,6 @@ export class ChatRoomComponent
     // Only send typing event if enough time has passed
     if (now - this.lastTypingEvent > this.TYPING_THROTTLE) {
       this.lastTypingEvent = now;
-      console.log('[ChatRoom] User typing, sending indicator');
 
       // Send typing event to chat session
       this.chat.sendTyping();
@@ -706,14 +729,9 @@ export class ChatRoomComponent
   }
 
   send(): void {
-    console.log('[ChatRoom] Send button clicked');
-
     if (!this.newMessage || !this.newMessage.trim()) {
-      console.log('[ChatRoom] Empty message, not sending');
       return;
     }
-
-    console.log('[ChatRoom] Sending message:', this.newMessage);
 
     // Store message content before sending
     const messageContent = this.newMessage;
@@ -737,8 +755,6 @@ export class ChatRoomComponent
     this.chat
       .send('', messageContent)
       .then(() => {
-        console.log('[ChatRoom] Message sent successfully');
-
         // Re-focus the input after sending
         setTimeout(() => {
           if (this.messageInput?.nativeElement) {
@@ -758,7 +774,6 @@ export class ChatRoomComponent
   }
 
   onType(): void {
-    console.log('[ChatRoom] onType called');
     this.handleTyping();
 
     // Auto-resize the textarea
@@ -826,7 +841,6 @@ export class ChatRoomComponent
    */
   onAvatarError(event: Event): void {
     const img = event.target as HTMLImageElement;
-    console.warn('[ChatRoom] Avatar failed to load:', img.src);
     img.src = 'assets/images/avatars/01.svg';
   }
 
@@ -835,7 +849,6 @@ export class ChatRoomComponent
    */
   onMessageAvatarError(event: Event, message: ChatMsg): void {
     const img = event.target as HTMLImageElement;
-    console.warn('[ChatRoom] Message avatar failed to load:', img.src);
 
     // Set fallback based on message sender
     if (message.sender === 'You') {
@@ -862,7 +875,6 @@ export class ChatRoomComponent
     );
 
     if (hasUnreadableSentMessages && !this.showCacheInfoBanner) {
-      console.log('[ChatRoom] Detected unreadable sent messages, showing info banner');
       this.showCacheInfoBanner = true;
     }
   }
@@ -912,19 +924,13 @@ export class ChatRoomComponent
    * Scroll to bottom button handler
    */
   scrollToBottomClick(): void {
-    console.log('[ChatRoom] Scroll to bottom button clicked');
     this.isUserAtBottom = true;
     this.shouldAutoScroll = true;
     this.newMessagesCount = 0;
     this.showScrollToBottomButton = false;
-    this.scrollToBottom(true);
+    this.scrollToBottom(true, true); // Mark as read when user explicitly scrolls
 
-    // Update header counter since we're now at bottom
-    window.dispatchEvent(
-      new CustomEvent('messages-read', {
-        detail: { count: this.newMessagesCount, roomId: this.receiverId },
-      })
-    );
+    // Messages are now handled directly without custom events
   }
 
   /**
@@ -942,7 +948,6 @@ export class ChatRoomComponent
       this.router
         .navigate(['/chat'])
         .then(() => {
-          console.log('Successfully navigated to chat list');
           this.loadingService.hide('navigation');
         })
         .catch(err => {
@@ -958,7 +963,7 @@ export class ChatRoomComponent
   /**
    * Improved scroll to bottom with smooth scrolling option
    */
-  private scrollToBottom(smooth = false) {
+  private scrollToBottom(smooth = false, markAsRead = false) {
     try {
       const el = this.messageContainer?.nativeElement;
       if (el) {
@@ -976,6 +981,14 @@ export class ChatRoomComponent
           clearTimeout(this.scrollTimeout);
           this.scrollTimeout = null;
         }
+
+        // Only mark messages as read if explicitly requested (user action)
+        if (markAsRead && !this.hasMarkedMessagesAsRead) {
+          this.hasMarkedMessagesAsRead = true; // Set immediately to prevent multiple calls
+          setTimeout(() => {
+            this.markMessagesAsReadWhenVisible();
+          }, 300); // Wait for scroll to complete
+        }
       }
     } catch (error) {
       console.error('Error scrolling to bottom:', error);
@@ -985,7 +998,6 @@ export class ChatRoomComponent
   beginEdit(m: ChatMsg) {
     // Check if message can be edited
     if (!this.canEditMessage(m)) {
-      console.log('[ChatRoom] Cannot edit unreadable message');
       alert('Cannot edit this message - original text is no longer available.');
       return;
     }
@@ -1026,7 +1038,6 @@ export class ChatRoomComponent
 
     // Check if message can be deleted
     if (!this.canEditMessage(m)) {
-      console.log('[ChatRoom] Cannot delete unreadable message');
       alert('Cannot delete this message - original text is no longer available.');
       return;
     }
@@ -1037,10 +1048,150 @@ export class ChatRoomComponent
     }
   }
 
+
+
+  /**
+   * Handle private key regeneration when user's own key is missing
+   */
+  async regenerateEncryptionKeys(): Promise<void> {
+    if (confirm('Your encryption keys are missing. This will generate new keys, but you will lose access to previous messages. Continue?')) {
+      try {
+        await this.chat.regenerateKeys();
+      } catch (error) {
+        console.error('[ChatRoom] Failed to regenerate keys:', error);
+        alert('Failed to regenerate encryption keys. Please try again or contact support.');
+      }
+    }
+  }
+
+  /**
+   * Reload the page when partner regenerates keys
+   */
+  reloadPage(): void {
+    window.location.reload();
+  }
+
+  /**
+   * Manually check for updated partner keys
+   */
+  checkPartnerKeyStatus(): void {
+    // Use the new event-driven approach
+    this.chat.manuallyCheckKeyStatus();
+  }
+
+  /**
+   * Debug method to test partner key recovery notification
+   */
+  debugTestPartnerKeyRecovery(): void {
+  }
+
+  /**
+   * DEBUG METHOD: Force current user to lose their keys for testing
+   */
+  debugForceKeyLoss(): void {
+    this.chat.debugForceKeyLoss();
+  }
+
+  /**
+   * DEBUG METHOD: Clear artificial blocking state for testing
+   */
+  debugClearBlocking(): void {
+    this.chat.debugClearArtificialBlocking();
+  }
+
+  /**
+   * Debug method to test WebSocket connection and handlers
+   */
+  debugTestWebSocket(): void {
+    // Test if we can call WebSocket methods
+    try {
+      this.ws.debugOnlineStatus();
+    } catch (error) {
+      console.error('[ChatRoom] WebSocket debug error:', error);
+    }
+  }
+
+  /**
+   * Debug method to show room info
+   */
+  debugShowRoomInfo(): void {
+    this.chat.debugShowRoomInfo();
+  }
+
+
+  /**
+   * Check if chat is blocked due to various key issues
+   */
+  isChatBlocked(): boolean {
+    // Check if we're loading messages
+    if (this.isLoadingMessages) {
+      return true;
+    }
+    
+    // Check if WE have missing private keys (our own recovery UI is visible)
+    const myPrivateKeyMissing = this.chat.myPrivateKeyMissing$.value;
+    if (myPrivateKeyMissing) {
+      return true;
+    }
+    
+    // Check if partner's key is missing
+    const keyMissing = this.chat.keyMissing$.value;
+    if (keyMissing) {
+      return true;
+    }
+    
+    // Check if partner has regenerated keys and we need to reload
+    const partnerKeyRegenerated = this.chat.showPartnerKeyRegeneratedNotification$.value;
+    if (partnerKeyRegenerated) {
+      return true;
+    }
+    
+    // Chat not blocked - all checks passed
+    
+    return false;
+  }
+
+  /**
+   * Get appropriate placeholder text for chat input
+   */
+  getChatInputPlaceholder(): string {
+    if (this.isLoadingMessages) {
+      return 'Loading messages...';
+    }
+    
+    // Check if WE have missing private keys first
+    const myPrivateKeyMissing = this.chat.myPrivateKeyMissing$.value;
+    if (myPrivateKeyMissing) {
+      // Check if this is due to partner losing keys
+      const artificialState = this.chat.artificialKeyMissingState;
+      if (artificialState) {
+        const username = this.chat.theirUsername$.value || 'Your contact';
+        return `Chat blocked - ${username} has lost their keys and must regenerate them`;
+      } else {
+        return 'Cannot send messages - you need to regenerate your encryption keys';
+      }
+    }
+    
+    const partnerKeyRegenerated = this.chat.showPartnerKeyRegeneratedNotification$.value;
+    if (partnerKeyRegenerated) {
+      const username = this.chat.theirUsername$.value || 'your contact';
+      return `Chat blocked - ${username} is recovering their keys. Refresh to check status.`;
+    }
+    
+    const keyMissing = this.chat.keyMissing$.value;
+    if (keyMissing) {
+      const username = this.chat.theirUsername$.value || 'Your contact';
+      return `Cannot send messages - ${username} needs to set up encryption`;
+    }
+    
+    return 'Type a message...';
+  }
+
   ngOnDestroy() {
     document.body.classList.remove('chat-room-page');
-
-    console.log('[ChatRoom] Component destroying, cleaning up resources');
+    
+    // Reset the flag for next visit
+    this.hasMarkedMessagesAsRead = false;
 
     // Remove event listeners from input element
     if (this.messageInput?.nativeElement) {
@@ -1076,5 +1227,42 @@ export class ChatRoomComponent
     } catch (error) {
       console.warn('[ChatRoom] Error during cleanup:', error);
     }
+  }
+
+  /**
+   * DEBUG METHOD: Fix mutual blocking issue
+   */
+  debugFixMutualBlocking(): void {
+    console.log('[ChatRoom] DEBUG: Fixing mutual blocking issue...');
+    this.chat.debugFixBothUsersKeyFlags();
+  }
+
+  /**
+   * DEBUG METHOD: Emergency cleanup - clear ALL isKeyMissing flags
+   */
+  debugClearAllMissingFlags(): void {
+    console.log('[ChatRoom] DEBUG: Emergency cleanup - clearing all isKeyMissing flags...');
+    this.chat.debugClearAllMissingFlags();
+    
+    // Force page reload after a delay to get clean state
+    setTimeout(() => {
+      window.location.reload();
+    }, 2000);
+  }
+
+  /**
+   * DEBUG METHOD: Regenerate public key from existing private key
+   */
+  async debugRegeneratePublicKey(): Promise<void> {
+    console.log('[ChatRoom] DEBUG: Regenerating public key from existing private key...');
+    await this.chat.debugRegeneratePublicKey();
+  }
+
+  /**
+   * Handle chat input focus - re-check partner key status
+   */
+  private handleChatInputFocus(): void {
+    console.log('[ChatRoom] Chat input focused - re-checking partner key status');
+    this.chat.manuallyCheckKeyStatus();
   }
 }

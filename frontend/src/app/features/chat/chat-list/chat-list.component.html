@@ -44,14 +44,29 @@
 
   <!-- Empty state (only shown when loading is finished) -->
   <div *ngIf="!searchTerm && chatLoadingFinished && !chats.length" class="empty-hint">
-    <p>No conversations found.</p>
-    <button mat-raised-button color="primary" (click)="findNewContact()">Find someone to chat with</button>
+    <div *ngIf="isRateLimited; else normalEmptyState">
+      <mat-icon class="rate-limit-icon">schedule</mat-icon>
+      <h3>Please wait a moment</h3>
+      <p>We're experiencing high traffic. Your conversations will load shortly.</p>
+      <p class="rate-limit-message">This usually resolves within a minute.</p>
+    </div>
+    <ng-template #normalEmptyState>
+      <p>No conversations found.</p>
+      <button mat-raised-button class="find-contact-button" (click)="findNewContact()">Find someone to chat with</button>
+    </ng-template>
   </div>
 
   <!-- Loading state -->
   <div *ngIf="!searchTerm && !chatLoadingFinished && !chats.length" class="empty-hint">
-    <mat-spinner diameter="30" style="margin: 0 auto 20px"></mat-spinner>
-    <p>Loading your conversations...</p>
+    <div *ngIf="isRateLimited; else normalLoadingState">
+      <mat-icon class="rate-limit-loading-icon">schedule</mat-icon>
+      <p>Loading your conversations...</p>
+      <p class="rate-limit-message">We're experiencing high traffic. Please wait a moment while we load your chats.</p>
+    </div>
+    <ng-template #normalLoadingState>
+      <mat-spinner diameter="30" style="margin: 0 auto 20px"></mat-spinner>
+      <p>Loading your conversations...</p>
+    </ng-template>
   </div>
 
   <!-- chat list - ALWAYS SHOW IF CHATS EXIST -->

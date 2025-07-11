@@ -51,6 +51,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
   searchResults: UserSummary[] = [];
   chatLoadingFinished = false;
   isLoadingChats = false;
+  isRateLimited = false;
   showBackButton = false;
 
   // Add sorting control to prevent bouncing
@@ -62,6 +63,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
   // Private properties
   private subs = new Subscription();
   private readonly me = localStorage.getItem('userId')!;
+  private pendingNotifications: any[] = [];
 
   constructor(
     private http: HttpClient,
@@ -80,8 +82,6 @@ export class ChatListComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    console.log('=== ChatList ngOnInit START ===');
-
     // Determine if back button should be shown
     this.checkBackButtonVisibility();
 
@@ -97,7 +97,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
     // NEW: Subscribe to notification updates
     this.setupNotificationHandlers();
 
-    console.log('=== ChatList ngOnInit END ===');
+    // Router event handling removed - notification service handles refresh automatically
   }
 
   /**
@@ -117,46 +117,61 @@ export class ChatListComponent implements OnInit, OnDestroy {
     } else {
       this.showBackButton = false;
     }
-
-    console.log('[ChatList] Back button visibility:', this.showBackButton);
   }
 
   /**
    * Set up notification handlers to update chat badges
    */
   private setupNotificationHandlers(): void {
-    console.log('[ChatList] Setting up notification handlers');
-
     this.subs.add(
       this.notificationService.chatNotifications$.subscribe(notifications => {
-        console.log('[ChatList] Chat notifications updated:', notifications);
+        // If chats haven't loaded yet, store notifications for later application
+        if (this.chats.length === 0) {
+          this.pendingNotifications = notifications;
+          return;
+        }
 
         // Update unread counts for existing chats
         notifications.forEach(notification => {
           const chat = this.chats.find(c => c.id === notification.userId);
           if (chat) {
-            const oldUnread = chat.unread;
             chat.unread = notification.unreadCount;
+          }
+        });
 
-            if (oldUnread !== chat.unread) {
-              console.log(
-                `[ChatList] Updated unread count for ${chat.name}: ${oldUnread} -> ${chat.unread}`
-              );
+        // Only clear unread counts if we have a valid notifications array with actual data
+        // Don't clear if notifications is empty (might be due to rate limiting or timing issues)
+        if (notifications.length > 0) {
+          this.chats.forEach(chat => {
+            const hasNotification = notifications.some(n => n.userId === chat.id);
+            if (!hasNotification && chat.unread > 0) {
+              chat.unread = 0;
             }
-          }
-        });
-
-        // Clear unread counts for chats not in notifications
-        this.chats.forEach(chat => {
-          const hasNotification = notifications.some(n => n.userId === chat.id);
-          if (!hasNotification && chat.unread > 0) {
-            console.log(`[ChatList] Clearing unread count for ${chat.name}`);
-            chat.unread = 0;
-          }
-        });
+          });
+        }
+        // Preserve existing unread counts when notifications are empty
       })
     );
   }
+
+  /**
+   * Apply pending notifications that arrived before chats were loaded
+   */
+  private applyPendingNotifications(): void {
+    if (this.pendingNotifications.length > 0) {
+      this.pendingNotifications.forEach(notification => {
+        const chat = this.chats.find(c => c.id === notification.userId);
+        if (chat) {
+          chat.unread = notification.unreadCount;
+        }
+      });
+      
+      // Clear pending notifications
+      this.pendingNotifications = [];
+    }
+  }
+
+  // Router event handling removed - notification service handles refresh automatically after marking messages as read
 
   private setupEventHandlers(): void {
     this.ws.onReceiveMessage(this.handleIncomingMessage);
@@ -282,10 +297,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
 
   // Simple, direct method to load chats
   private loadChatsNow(): void {
-    console.log('=== loadChatsNow CALLED ===');
-
     if (this.isLoadingChats) {
-      console.log('Already loading, skipping');
       return;
     }
 
@@ -295,8 +307,6 @@ export class ChatListComponent implements OnInit, OnDestroy {
     // Load from API
     this.http.get<UserSummary[]>(`${environment.apiUrl}/rooms/my-dms`).subscribe({
       next: response => {
-        console.log('=== API Response received ===', response);
-
         const chatEntries: ChatEntry[] = [];
         const chatsList = Array.isArray(response)
           ? response
@@ -319,7 +329,9 @@ export class ChatListComponent implements OnInit, OnDestroy {
         this.chats = chatEntries;
         this.isLoadingChats = false;
         this.chatLoadingFinished = true;
-        console.log('=== Chats updated ===', this.chats.length);
+
+        // Apply any pending notifications that arrived before chats were loaded
+        this.applyPendingNotifications();
 
         // Load previews and apply status in batched operation
         this.loadAllMessagePreviewsBatched();
@@ -327,17 +339,23 @@ export class ChatListComponent implements OnInit, OnDestroy {
       error: error => {
         console.error('Failed to load chats:', error);
         this.isLoadingChats = false;
-        this.chatLoadingFinished = true;
 
-        // Try fallback
+        // Check if it's a rate limiting error
+        // The auth interceptor converts 429 to a generic Error with specific message
+        if (error.status === 429 || (error.message && error.message.includes('Rate limited'))) {
+          this.isRateLimited = true;
+        }
+        
+        // Always finish loading to show appropriate state
+        this.chatLoadingFinished = true;
+        
+        // Try fallback for all errors
         this.tryFallback();
       },
     });
   }
 
   private tryFallback(): void {
-    console.log('=== Trying fallback method ===');
-
     this.users.listMyDms().subscribe({
       next: chats => {
         if (chats && chats.length > 0) {
@@ -349,14 +367,29 @@ export class ChatListComponent implements OnInit, OnDestroy {
             online: false, // Will be updated by online status handler
           }));
 
-          console.log('=== Fallback successful ===', this.chats.length);
+          // Reset rate limiting state on success
+          this.isRateLimited = false;
+          this.chatLoadingFinished = true;
+          this.isLoadingChats = false;
+
+          // Apply any pending notifications that arrived before chats were loaded
+          this.applyPendingNotifications();
 
           // Load previews and apply status in batched operation
           this.loadAllMessagePreviewsBatched();
         }
       },
       error: error => {
-        console.error('=== Fallback failed ===', error);
+        console.error('Fallback failed:', error);
+        
+        // Check if fallback also hit rate limiting
+        if (error.status === 429 || (error.message && error.message.includes('Rate limited'))) {
+          this.isRateLimited = true;
+        }
+        
+        // If fallback also fails, show the empty state
+        this.chatLoadingFinished = true;
+        this.isLoadingChats = false;
       },
     });
   }
@@ -365,8 +398,6 @@ export class ChatListComponent implements OnInit, OnDestroy {
    * Load all message previews in batched operation to prevent multiple sorts
    */
   private async loadAllMessagePreviewsBatched(): Promise<void> {
-    console.log('[ChatList] Loading message previews in batched operation');
-
     // Set sorting in progress to prevent intermediate sorts
     this.sortingInProgress = true;
     this.pendingSortOperations = this.chats.length;
@@ -376,18 +407,16 @@ export class ChatListComponent implements OnInit, OnDestroy {
 
     try {
       await Promise.all(previewPromises);
-      console.log('[ChatList] All message previews loaded');
     } catch (error) {
-      console.error('[ChatList] Error loading some message previews:', error);
+      console.error('Error loading some message previews:', error);
     }
 
     // Apply online status after all previews are loaded
     const currentOnlineUsers = this.ws.getCurrentOnlineUsers();
-    console.log('[ChatList] Applying initial online status:', currentOnlineUsers);
     this.applyOnlineStatus(currentOnlineUsers);
 
-    // Trigger notification service to update badge counts
-    this.notificationService.refreshNotifications();
+    // Don't trigger immediate refresh to avoid rate limiting
+    // The notification service will handle updates through WebSocket events
 
     // Perform final sort once all data is loaded
     this.sortingInProgress = false;
@@ -581,12 +610,9 @@ export class ChatListComponent implements OnInit, OnDestroy {
 
       const existingChat = this.chats.find(chat => chat.id === user._id);
       if (existingChat) {
-        // Mark messages as read when opening existing chat
-        console.log(
-          '[ChatList] Opening existing chat, marking messages as read:',
-          user._id
-        );
-        this.notificationService.markUserMessagesAsRead(user._id);
+        // Don't mark messages as read here - let the chat room component handle it
+        // when the user actually sees the messages
+        console.log('[ChatList] Opening existing chat:', user._id);
         this.clearSearch();
 
         await this.router.navigate(['/chat-room', existingChat.id]);
@@ -616,9 +642,9 @@ export class ChatListComponent implements OnInit, OnDestroy {
   public navigateToChatRoom(chatId: string, event: Event): void {
     event.preventDefault();
 
-    // Mark messages as read when navigating to chat room
-    console.log('[ChatList] Navigating to chat room, marking messages as read:', chatId);
-    this.notificationService.markUserMessagesAsRead(chatId);
+    // Don't mark messages as read here - let the chat room component handle it
+    // when the user actually sees the messages
+    console.log('[ChatList] Navigating to chat room:', chatId);
 
     this.router.navigate(['/chat-room', chatId]);
   }
@@ -632,7 +658,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
     }, 100);
   }
 
-  public trackByChatId(index: number, chat: ChatEntry): string {
+  public trackByChatId(_index: number, chat: ChatEntry): string {
     return chat.id;
   }
 
