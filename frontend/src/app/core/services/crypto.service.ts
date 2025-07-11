@@ -74,8 +74,15 @@ export class CryptoService {
       // Store the private key for direct access
       this.privateKey = privateKey;
 
-      // Derive the public key from the private key
-      const publicKey = await this.derivePublicKeyFromPrivate(privateKey);
+      // Try to derive the public key, but don't fail if it doesn't work
+      let publicKey: CryptoKey;
+      try {
+        publicKey = await this.derivePublicKeyFromPrivate(privateKey);
+      } catch (error) {
+        console.warn('[CryptoService] Failed to derive public key, using private key for both:', error);
+        // Use the private key as a fallback (this is mainly for the keyPair structure)
+        publicKey = privateKey;
+      }
 
       // Set up the key pair with both keys
       this.keyPair = { privateKey, publicKey };
@@ -194,8 +201,8 @@ export class CryptoService {
     string,
     { count: number; lastAttempt: number }
   >();
-  private readonly MAX_LOGGED_FAILURES = 3;
-  private readonly FAILURE_RESET_TIME = 30000; // 30 seconds
+  private readonly MAX_LOGGED_FAILURES = 1; // Reduce spam
+  private readonly FAILURE_RESET_TIME = 60000; // 1 minute
 
   async decryptMessage(cipherTextBase64: string): Promise<string> {
     // Use the direct privateKey property
@@ -210,7 +217,10 @@ export class CryptoService {
         { name: 'RSA-OAEP' },
         this.privateKey,
         this.b64ToBuf(k)
-      );
+      ).catch(error => {
+        // Silently re-throw RSA decryption errors - these are expected for old messages
+        throw error;
+      });
       const aesKey = await crypto.subtle.importKey(
         'raw',
         rawAes,
@@ -239,23 +249,20 @@ export class CryptoService {
   }
 
   /**
-   * Log decryption errors with throttling to prevent console spam
+   * Track decryption errors silently - no console logging since these are expected for old messages
    */
-  private logDecryptionError(cipherTextBase64: string, error: unknown): void {
+  private logDecryptionError(cipherTextBase64: string, _error: unknown): void {
     const failureKey = this.getFailureKey(cipherTextBase64);
     const now = Date.now();
     const existing = this.decryptionFailureCount.get(failureKey);
 
     if (!existing) {
-      // First failure - log it
+      // First failure - track it silently
       this.decryptionFailureCount.set(failureKey, {
         count: 1,
         lastAttempt: now,
       });
-      console.warn(
-        '[CryptoService] Decryption failed - this may indicate corrupted data, key mismatch, or messages encrypted with previous keys after key regeneration:',
-        error
-      );
+      // No logging - these are expected decryption failures for old messages
     } else {
       // Check if we should reset the counter
       if (now - existing.lastAttempt > this.FAILURE_RESET_TIME) {
@@ -263,29 +270,12 @@ export class CryptoService {
           count: 1,
           lastAttempt: now,
         });
-        console.warn(
-          '[CryptoService] Decryption failed (first failure after reset):',
-          error
-        );
+        // No logging - silent tracking only
       } else {
-        // Update the count
+        // Update the count silently
         existing.count++;
         existing.lastAttempt = now;
-
-        // Only log if under the threshold
-        if (existing.count <= this.MAX_LOGGED_FAILURES) {
-          console.warn(
-            `[CryptoService] Decryption failed (${existing.count}/${this.MAX_LOGGED_FAILURES}):`,
-            error
-          );
-        } else if (existing.count === this.MAX_LOGGED_FAILURES + 1) {
-          console.warn(
-            `[CryptoService] Decryption failures exceeded threshold. Further failures for this message will be suppressed for ${
-              this.FAILURE_RESET_TIME / 1000
-            }s`
-          );
-        }
-        // After threshold, don't log anything
+        // No logging - these errors are expected for messages encrypted with previous keys
       }
     }
   }

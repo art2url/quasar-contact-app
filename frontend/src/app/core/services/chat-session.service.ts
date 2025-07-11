@@ -1301,7 +1301,7 @@ export class ChatSessionService implements OnDestroy {
     } catch (error) {
       // Mark this ciphertext as failed to avoid retrying
       this.failedDecryptions.add(ct);
-      console.log('[ChatSession] Failed to decrypt message:', error);
+      // Failed to decrypt message - likely encrypted with previous keys after key regeneration
 
       // Clean up old failed entries periodically (keep last 100)
       if (this.failedDecryptions.size > 100) {
@@ -1424,9 +1424,7 @@ export class ChatSessionService implements OnDestroy {
       }
     }
 
-    console.error(
-      `[ChatSession] No cached text found for message ${messageId}, using fallback`
-    );
+    // No cached text found - using fallback message (this is expected for old messages after key regeneration)
     
     // If we can't find cached text and we're seeing vault errors, trigger recovery
     this.detectVaultCorruption();

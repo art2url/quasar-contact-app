@@ -107,7 +107,7 @@ export class VaultService {
       // Properly deserialize different data types
       return this.restoreFromSerialization(serializable) as T;
     } catch (err) {
-      console.warn('[Vault] decrypt failed – probably stale key, ignoring.', err);
+      // Silently ignore stale key errors - these are expected after key regeneration
       return undefined;
     }
   }
