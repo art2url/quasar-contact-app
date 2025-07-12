@@ -15,6 +15,7 @@ Originally developed as a separate repository:
 - **End-to-end encryption** key exchange support
 - **Rate limiting** and security middleware
 - **Code quality tools** with ESLint and Prettier
+- **Clean production code** with debug middleware and console logs removed
 
 ## 🚀 Quick Start
 
@@ -50,6 +51,7 @@ npm run typecheck  # TypeScript check
 
 - `POST /api/keys/upload` - Upload public key
 - `GET /api/keys/:userId` - Get user's public key
+- `POST /api/keys/mark-missing` - Mark user keys as missing (rate limited)
 
 ### Messaging
 
