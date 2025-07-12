@@ -20,7 +20,6 @@ import { HttpClient } from '@angular/common/http';
 import { catchError, firstValueFrom, timeout, TimeoutError, Subscription } from 'rxjs';
 
 import { AuthService } from '@services/auth.service';
-import { LoadingService } from '@services/loading.service';
 import { RecaptchaService } from '@services/recaptcha.service';
 import { ThemeService } from '@services/theme.service';
 import { HoneypotService } from '@services/honeypot.service';
@@ -64,7 +63,6 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
   constructor(
     private auth: AuthService,
     private router: Router,
-    private loadingService: LoadingService,
     private http: HttpClient,
     private recaptchaService: RecaptchaService,
     private themeService: ThemeService,
@@ -76,7 +74,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
     const navigation = this.router.getCurrentNavigation();
     const state = navigation?.extras?.state as { message?: string };
     if (state?.message) {
-      console.log('Registration success:', state.message);
+      // Registration success message available
     }
     
     // Initialize honeypot fields
@@ -85,28 +83,28 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    console.log('ngAfterViewInit called');
+    // Component view initialized
     this.setupThemeSubscription();
     this.initializeRecaptcha();
   }
 
   private setupThemeSubscription(): void {
-    console.log('Setting up theme subscription...');
+    // Setting up theme subscription
     let isFirstEmission = true;
 
-    this.themeSubscription = this.themeService.theme$.subscribe(theme => {
-      console.log('Theme subscription triggered with theme:', theme);
+    this.themeSubscription = this.themeService.theme$.subscribe(() => {
+      // Theme subscription triggered
 
       if (isFirstEmission) {
         isFirstEmission = false;
-        console.log('Skipping first emission');
+        // Skipping first emission
         return;
       }
 
-      console.log('reCAPTCHA widget ID:', this.recaptchaWidgetId);
+      // reCAPTCHA widget ID available
 
       if (this.recaptchaWidgetId !== undefined) {
-        console.log('Re-rendering reCAPTCHA for theme:', theme);
+        // Re-rendering reCAPTCHA for theme change
 
         // Reset the widget first
         this.recaptchaService.resetRecaptcha(this.recaptchaWidgetId);
@@ -119,7 +117,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
           const newElement = document.createElement('div');
           newElement.id = 'recaptcha-login';
           parent.replaceChild(newElement, recaptchaElement);
-          console.log('Recreated reCAPTCHA DOM element');
+          // Recreated reCAPTCHA DOM element
         }
 
         // Re-render with delay
@@ -132,7 +130,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.error = '';
               }
             );
-            console.log('New reCAPTCHA widget ID:', this.recaptchaWidgetId);
+            // New reCAPTCHA widget created
           } catch (error) {
             console.error('Failed to re-render reCAPTCHA after theme change:', error);
             // Don't show error to user for theme switching failures
@@ -156,10 +154,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
             this.error = ''; // Clear any reCAPTCHA-related errors
           }
         );
-        console.log(
-          'reCAPTCHA initialized successfully with widget ID:',
-          this.recaptchaWidgetId
-        );
+        // reCAPTCHA initialized successfully
       } catch (error) {
         console.error(
           'Failed to initialize reCAPTCHA (attempt',
@@ -169,11 +164,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
         );
 
         if (retryCount < maxRetries) {
-          console.log(
-            'Retrying reCAPTCHA initialization in',
-            (retryCount + 1) * 1000,
-            'ms'
-          );
+          // Retrying reCAPTCHA initialization
           setTimeout(
             () => {
               this.initializeRecaptcha(retryCount + 1);
@@ -218,11 +209,11 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
     this.error = '';
     this.isLoading = true;
 
-    console.log('[Login] Starting login process...');
+    // Starting login process
 
     try {
       await this.checkBackendAvailability();
-      console.log('[Login] Authenticating with server...');
+      // Authenticating with server
 
       // Prepare form data with honeypot fields
       const formData = this.honeypotService.prepareFormDataWithHoneypot({
@@ -234,7 +225,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
       await firstValueFrom(
         this.auth.loginWithHoneypot(formData)
       );
-      console.log('[Login] Login successful! Navigating...');
+      // Login successful, navigating
 
       await this.router.navigate(['/chat']);
     } catch (error) {
@@ -261,7 +252,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private async checkBackendAvailability(): Promise<void> {
     try {
-      console.log('[Login] Checking backend availability...');
+      // Checking backend availability
       await firstValueFrom(
         this.http.get(`${environment.apiUrl}/health`).pipe(
           timeout(5000),
@@ -274,7 +265,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
           })
         )
       );
-      console.log('[Login] Backend is available');
+      // Backend is available
     } catch (error) {
       console.error('[Login] Backend availability check failed:', error);
       throw error;

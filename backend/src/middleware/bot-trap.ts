@@ -61,7 +61,7 @@ export const setupBotTraps = (app: any): void => {
           </html>
         `);
         },
-        Math.random() * 3000 + 2000
+        Math.random() * 3000 + 2000,
       ); // 2-5 second delay
     });
   });

@@ -109,17 +109,6 @@ export class CryptoService {
     // Export the private key to get the key material
     const privateKeyData = await crypto.subtle.exportKey('pkcs8', privateKey);
     
-    // Create a temporary key pair to extract the public key
-    const tempKeyPair = await crypto.subtle.generateKey(
-      {
-        name: 'RSA-OAEP',
-        modulusLength: 2048,
-        publicExponent: new Uint8Array([1, 0, 1]),
-        hash: 'SHA-256',
-      },
-      true,
-      ['encrypt', 'decrypt']
-    );
 
     // Re-import the private key to get access to the algorithm parameters
     const reimportedPrivateKey = await crypto.subtle.importKey(
@@ -243,7 +232,7 @@ export class CryptoService {
       return new TextDecoder().decode(plainBuf);
     } catch (error) {
       // Throttle error logging to prevent console spam
-      this.logDecryptionError(cipherTextBase64, error);
+      this.logDecryptionError(cipherTextBase64);
       throw error;
     }
   }
@@ -251,7 +240,7 @@ export class CryptoService {
   /**
    * Track decryption errors silently - no console logging since these are expected for old messages
    */
-  private logDecryptionError(cipherTextBase64: string, _error: unknown): void {
+  private logDecryptionError(cipherTextBase64: string): void {
     const failureKey = this.getFailureKey(cipherTextBase64);
     const now = Date.now();
     const existing = this.decryptionFailureCount.get(failureKey);

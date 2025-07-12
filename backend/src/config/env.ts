@@ -79,9 +79,7 @@ const validateEnv = () => {
         '  SMTP_PASS=your-email-password',
     );
   } else {
-    console.log(
-      `[EmailService] email configured: ${env.SMTP_USER}@${env.SMTP_HOST}:${env.SMTP_PORT}`,
-    );
+    // Email service configured successfully
   }
 
   return true;

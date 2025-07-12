@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 export const securityHeaders = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   // Remove server header
   res.removeHeader('X-Powered-By');
@@ -19,7 +19,7 @@ export const securityHeaders = (
   if (process.env.NODE_ENV === 'production') {
     res.setHeader(
       'Strict-Transport-Security',
-      'max-age=31536000; includeSubDomains; preload'
+      'max-age=31536000; includeSubDomains; preload',
     );
   }
 
@@ -27,7 +27,7 @@ export const securityHeaders = (
   if (req.path.startsWith('/api/')) {
     res.setHeader(
       'Content-Security-Policy',
-      "default-src 'none'; frame-ancestors 'none'"
+      'default-src \'none\'; frame-ancestors \'none\'',
     );
   }
 

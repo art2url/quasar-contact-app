@@ -106,7 +106,7 @@ export class VaultService {
 
       // Properly deserialize different data types
       return this.restoreFromSerialization(serializable) as T;
-    } catch (err) {
+    } catch {
       // Silently ignore stale key errors - these are expected after key regeneration
       return undefined;
     }
@@ -225,30 +225,4 @@ export class VaultService {
     }
   }
 
-  // Temporary debugging method
-  async debugVaultContents(): Promise<void> {
-    if (!this.userId) {
-      return;
-    }
-
-
-    try {
-      // List all keys
-      const allKeys = await this.keysStartingWith('');
-
-      // Check specifically for private key
-      const privateKey = await this.get<ArrayBuffer>(VAULT_KEYS.PRIVATE_KEY);
-
-      // Test storing and retrieving a simple value
-      const testValue = new Uint8Array([1, 2, 3, 4, 5]).buffer;
-      await this.set('test_arraybuffer', testValue);
-      const retrieved = await this.get<ArrayBuffer>('test_arraybuffer');
-
-
-      // Clean up test
-      await this.set('test_arraybuffer', null);
-    } catch (error) {
-      console.error('[Vault Debug] Error:', error);
-    }
-  }
 }

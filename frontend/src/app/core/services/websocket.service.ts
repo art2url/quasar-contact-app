@@ -11,7 +11,6 @@ import {
   MessageEditedEvent,
   MessageDeletedEvent,
   KeyRegeneratedPayload,
-  PartnerKeyRecoveryStartedPayload,
 } from 'app/core/models/socket.model';
 
 // Enhanced debugging
@@ -49,8 +48,6 @@ export class WebSocketService {
   private messageHandlers: ((msg: IncomingSocketMessage) => void)[] = [];
   private messageSentHandlers: ((ack: AckPayload) => void)[] = [];
   private messageReadHandlers: ((payload: ReadPayload) => void)[] = [];
-  private messageEditedHandlers: ((event: MessageEditedEvent) => void)[] = [];
-  private messageDeletedHandlers: ((event: MessageDeletedEvent) => void)[] = [];
   private keyRegeneratedHandlers: ((payload: KeyRegeneratedPayload) => void)[] = [];
   // Removed: Partner key recovery now handled via database flag
 

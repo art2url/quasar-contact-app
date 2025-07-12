@@ -39,6 +39,18 @@
     </div>
 
     <div class="nav-links" [class.open]="menuOpen">
+      <!-- Theme toggle button (desktop) - First on auth pages -->
+      <button
+        *ngIf="!authService.isAuthenticated() && isAuthPage()"
+        class="desktop-theme-toggle"
+        (click)="toggleTheme()"
+        [title]="isDarkTheme() ? 'Switch to light theme' : 'Switch to dark theme'"
+        aria-label="Toggle theme"
+        mat-button>
+        <mat-icon>{{ isDarkTheme() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+        <span class="mobile-hidden">{{ isDarkTheme() ? 'Light' : 'Dark' }}</span>
+      </button>
+
       <!-- Auth navigation buttons (only when not authenticated and on auth pages) -->
       <ng-container *ngIf="!authService.isAuthenticated() && isAuthPage()">
         <button *ngIf="router.url !== '/auth/register'" mat-button routerLink="/auth/register" (click)="closeMenu()">
@@ -84,8 +96,9 @@
         <span class="mobile-hidden">Settings</span>
       </button>
 
-      <!-- Theme toggle button (desktop only) -->
+      <!-- Theme toggle button (desktop only) - For authenticated users -->
       <button
+        *ngIf="authService.isAuthenticated()"
         class="desktop-theme-toggle"
         (click)="toggleTheme()"
         [title]="isDarkTheme() ? 'Switch to light theme' : 'Switch to dark theme'"
