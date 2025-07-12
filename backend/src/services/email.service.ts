@@ -43,8 +43,8 @@ class EmailService {
         connectionTimeout: 60000,
         greetingTimeout: 30000,
         socketTimeout: 60000,
-        debug: env.NODE_ENV === 'development',
-        logger: env.NODE_ENV === 'development',
+        debug: false,
+        logger: false,
       });
 
       this.isConfigured = true;
