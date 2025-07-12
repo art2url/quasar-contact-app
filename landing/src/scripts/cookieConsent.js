@@ -107,8 +107,9 @@ class CookieConsentManager {
           events: eventsToSend,
         }),
       });
-      console.log(`Analytics batch sent: ${eventsToSend.length} events`);
+      // Analytics batch sent successfully
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Analytics batch error:', error);
       // Re-queue events on failure (optional)
       // this.eventQueue.unshift(...eventsToSend);
@@ -117,7 +118,7 @@ class CookieConsentManager {
 
   enableAnalytics() {
     this.analyticsEnabled = true;
-    console.log('Analytics enabled');
+    // Analytics enabled
 
     // Send page view
     this.sendEvent('page_view');
@@ -164,7 +165,7 @@ class CookieConsentManager {
 
   disableAnalytics() {
     this.analyticsEnabled = false;
-    console.log('Analytics disabled');
+    // Analytics disabled
   }
 
   // Cookie management

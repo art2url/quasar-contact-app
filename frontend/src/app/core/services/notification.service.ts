@@ -101,7 +101,7 @@ export class NotificationService implements OnDestroy {
   private setupCustomEventListeners(): void {
     // Listen for messages read in chat rooms
     const messagesReadHandler = (event: CustomEvent) => {
-      const { count, roomId } = event.detail;
+      const { roomId } = event.detail;
 
       // Use immediate update for faster badge reset
       this.ngZone.run(() => {
@@ -111,26 +111,12 @@ export class NotificationService implements OnDestroy {
       });
     };
 
-    // Listen for chat room entry events
-    const chatRoomEnteredHandler = (event: CustomEvent) => {
-      const { roomId } = event.detail;
-
-      // Don't mark messages as read immediately - wait for the chat room to do it
-      // when messages are actually visible to the user
-    };
-
     window.addEventListener('messages-read', messagesReadHandler as EventListener);
-
-    window.addEventListener('chat-room-entered', chatRoomEnteredHandler as EventListener);
 
     // Clean up event listeners on destroy
     this.subs.add({
       unsubscribe: () => {
         window.removeEventListener('messages-read', messagesReadHandler as EventListener);
-        window.removeEventListener(
-          'chat-room-entered',
-          chatRoomEnteredHandler as EventListener
-        );
       },
     });
   }
@@ -241,7 +227,7 @@ export class NotificationService implements OnDestroy {
 
     // Call server to actually mark messages as read
     this.messages.markMessagesAsRead(userId).subscribe({
-      next: (response) => {
+      next: () => {
         // Don't immediately refresh from server to avoid rate limiting
         // The local state has already been updated above for instant UI feedback
         // Trust that the server has processed the request correctly
@@ -277,12 +263,6 @@ export class NotificationService implements OnDestroy {
     this.immediateUpdate$.next();
   }
 
-  /**
-   * Debug method to check current state
-   */
-  public debugCurrentState(): void {
-    // Debug method - intentionally empty after console log removal
-  }
 
   /**
    * Clear all notifications (for logout, etc.)

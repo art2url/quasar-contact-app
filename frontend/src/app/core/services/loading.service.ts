@@ -32,7 +32,7 @@ export class LoadingService implements OnDestroy {
       .subscribe((event: NavigationEnd) => {
         if (event.url.includes('/auth/login')) {
           this.isAuthenticated = false;
-          this.forceHideLoading('navigation-to-login');
+          this.forceHideLoading();
         }
       });
   }
@@ -48,7 +48,7 @@ export class LoadingService implements OnDestroy {
     if (!isAuthenticated) {
       // Use setTimeout to prevent change detection error
       setTimeout(() => {
-        this.forceHideLoading('auth-state-unauthenticated');
+        this.forceHideLoading();
       }, 0);
     }
   }
@@ -89,7 +89,7 @@ export class LoadingService implements OnDestroy {
   /**
    * Hide loading - with proper change detection
    */
-  hide(source = 'unknown'): void {
+  hide(): void {
     // Use setTimeout to prevent change detection errors
     setTimeout(() => {
       this.clearCurrentTimeout();
@@ -112,14 +112,14 @@ export class LoadingService implements OnDestroy {
     // Set timeout to prevent infinite loading
     this.currentTimeout = setTimeout(() => {
       console.error(`[Loading] Timeout for ${source} (${timeoutMs}ms)`);
-      this.forceHideLoading(`timeout-${source}`);
+      this.forceHideLoading();
     }, timeoutMs);
   }
 
   /**
    * Force hide loading - with proper async handling
    */
-  forceHideLoading(source = 'force'): void {
+  forceHideLoading(): void {
     // Use setTimeout to prevent change detection errors
     setTimeout(() => {
       this.clearCurrentTimeout();

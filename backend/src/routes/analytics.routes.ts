@@ -1,5 +1,5 @@
 // ─── Analytics Routes ─────────────────────────────────────
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
 
 const router = Router();
 
@@ -36,7 +36,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     // Log analytics batch (remove in production if needed)
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`📊 Analytics batch: ${events.length} events from ${req.ip}`);
+      // Analytics batch processed
     }
 
     // Send to Google Analytics Measurement Protocol
@@ -46,7 +46,7 @@ router.post('/', async (req: Request, res: Response) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ client_id, events }),
-      }
+      },
     );
 
     if (!gaResponse.ok) {

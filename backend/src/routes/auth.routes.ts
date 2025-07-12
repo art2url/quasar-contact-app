@@ -1,26 +1,26 @@
 // Note: All encryption/decryption for chat messages is performed on the frontend using crypto.subtle.
 // The backend handles only user authentication (via JWT) and data storage.
 
+import axios from 'axios';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { Router, type Request, type Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
-import axios from 'axios';
-import User from '../models/User';
-import Message from '../models/Message';
-import PasswordReset from '../models/PasswordReset';
-import { authLimiter } from '../config/ratelimits';
 import env from '../config/env';
-import emailService from '../services/email.service';
-import {
-  setAuthCookie,
-  clearAuthCookie,
-  generateCSRFToken,
-  setCSRFCookie,
-} from '../utils/cookie.utils';
+import { authLimiter } from '../config/ratelimits';
 import { validateCSRF } from '../middleware/csrf.middleware';
 import { validateHoneypot } from '../middleware/honeypot-captcha';
+import Message from '../models/Message';
+import PasswordReset from '../models/PasswordReset';
+import User from '../models/User';
+import emailService from '../services/email.service';
+import {
+  clearAuthCookie,
+  generateCSRFToken,
+  setAuthCookie,
+  setCSRFCookie,
+} from '../utils/cookie.utils';
 
 const router = Router();
 
@@ -48,7 +48,7 @@ async function verifyRecaptcha(recaptchaToken: string): Promise<boolean> {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-      }
+      },
     );
 
     const { success } = response.data;
@@ -56,10 +56,10 @@ async function verifyRecaptcha(recaptchaToken: string): Promise<boolean> {
     // For reCAPTCHA v2, check if success is true
     // For reCAPTCHA v3, you might also want to check the score (score >= 0.5)
     if (success) {
-      console.log('[reCAPTCHA] Verification successful');
+      // reCAPTCHA verification successful
       return true;
     } else {
-      console.log('[reCAPTCHA] Verification failed:', response.data);
+      console.error('[reCAPTCHA] Verification failed:', response.data);
       return false;
     }
   } catch (error) {
@@ -130,7 +130,7 @@ router.post(
       console.error('[Register Error]', error);
       res.status(500).json({ message: 'Server error during registration.' });
     }
-  }
+  },
 );
 
 // POST /api/auth/login
@@ -167,18 +167,15 @@ router.post(
         $or: [{ username }, { email: username }],
       });
       if (!user) {
-        // Consider removing these console.logs in production
-        console.log('User not found for:', username);
+        // User not found for login attempt
         return res.status(401).json({ message: 'Invalid credentials.' });
       }
 
-      // Consider removing these console.logs in production - they expose sensitive info
-      console.log('Received password:', password);
-      console.log('Stored hash:', user.passwordHash);
+      // Password verification in progress
 
       const isMatch = await bcrypt.compare(password, user.passwordHash);
       if (!isMatch) {
-        console.log('Password mismatch for user:', username);
+        // Password mismatch for user
         return res.status(401).json({ message: 'Invalid credentials.' });
       }
 
@@ -189,7 +186,7 @@ router.post(
           avatarUrl: user.avatarUrl,
         },
         env.JWT_SECRET,
-        { expiresIn: '7d' }
+        { expiresIn: '7d' },
       );
 
       // Generate CSRF token for additional security
@@ -212,7 +209,7 @@ router.post(
       console.error('[Login Error]', error);
       res.status(500).json({ message: 'Server error during login.' });
     }
-  }
+  },
 );
 
 // POST /api/auth/forgot-password
@@ -248,7 +245,7 @@ router.post(
 
       // Always return success to prevent email enumeration
       if (!user) {
-        console.log('[Forgot Password] No user found for email:', email);
+        // No user found for password reset email
         return res.status(200).json({
           message:
             'If an account exists with this email, you will receive password reset instructions.',
@@ -263,7 +260,7 @@ router.post(
       });
 
       if (recentReset) {
-        console.log('[Forgot Password] Recent reset request exists for:', email);
+        // Recent password reset request exists
         return res.status(200).json({
           message:
             'If an account exists with this email, you will receive password reset instructions.',
@@ -285,7 +282,7 @@ router.post(
       // Send email with just the token (email service will build the URL)
       await emailService.sendPasswordResetEmail(user.email, resetToken);
 
-      console.log('[Forgot Password] Reset email sent to:', email);
+      // Password reset email sent
 
       res.status(200).json({
         message:
@@ -295,7 +292,7 @@ router.post(
       console.error('[Forgot Password Error]', error);
       res.status(500).json({ message: 'Server error during password reset request.' });
     }
-  }
+  },
 );
 
 // GET /api/auth/reset-password/validate
@@ -386,8 +383,8 @@ router.post(
         $or: [{ senderId: user._id }, { receiverId: user._id }],
       });
 
-      console.log('[Reset Password] Password reset successful for user:', user.username);
-      console.log('[Reset Password] Deleted all messages for user:', user._id);
+      // Password reset successful
+      // Deleted all messages for user
 
       // Send confirmation e-mail
       await emailService.sendPasswordResetConfirmation(user.email);
@@ -399,7 +396,7 @@ router.post(
       console.error('[Reset Password Error]', error);
       res.status(500).json({ message: 'Server error during password reset.' });
     }
-  }
+  },
 );
 
 // POST /api/auth/logout
