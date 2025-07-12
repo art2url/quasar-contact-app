@@ -264,15 +264,13 @@ document.addEventListener('DOMContentLoaded', function () {
   const criticalImages = ['/assets/images/logo.svg'];
 
   criticalImages.forEach(src => {
-    const img = new Image();
-    img.src = src;
+    new Image().src = src;
   });
 
   // Initialize particles or background effects (if needed)
   function initBackgroundEffects() {
     // This could be extended for particle systems or other visual effects
-    const mainContent = document.querySelector('.main-content');
-    if (mainContent && window.innerWidth > 768) {
+    if (window.innerWidth > 768) {
       // Add subtle background effects for desktop only
       // Implementation would go here
     }
