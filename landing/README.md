@@ -9,6 +9,7 @@ Static landing pages built with Astro 4.0 for SEO-optimized marketing site.
 - **Fast loading** with minimal JavaScript
 - **Responsive design** for all devices
 - **Code quality tools** with ESLint, Prettier, and Stylelint
+- **Clean JavaScript** with no console logs or debug statements
 
 ## 🚀 Quick Start
 

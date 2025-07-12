@@ -80,7 +80,9 @@ conversations remain completely private with zero data logging and client-side e
 - **Build Tools**: TypeScript, Webpack
 - **Package Manager**: npm
 - **Code Quality**: ESLint, Prettier, Stylelint, Husky pre-commit hooks
-- **Linting**: Comprehensive linting for Angular, Node.js, and Astro
+- **Linting**: Comprehensive linting for Angular, Node.js, and Astro with strict unused variable
+  checking
+- **Debug-Free Production Code**: Clean production builds with all debug code removed
 
 ### Project Structure
 
@@ -417,6 +419,8 @@ Contributions are welcome! Please follow these steps:
 - Use ESLint and Prettier for code formatting
 - Write meaningful commit messages
 - Add comments for complex logic
+- Maintain clean code with no unused variables or debug statements
+- Remove all console.log statements except for legitimate error logging
 
 ### GPL-3.0 License Implications
 
@@ -434,17 +438,20 @@ details.
 
 ### What this means:
 
-- ✅ **Freedom to use** - Use for any purpose, including commercial
+- ✅ **Freedom to use** - Use for any purpose, including commercial (with conditions)
 - ✅ **Freedom to study** - Access and study the source code
 - ✅ **Freedom to share** - Copy and distribute the software
 - ✅ **Freedom to improve** - Modify and distribute your modifications
 
-### Requirements:
+### Important Requirements for Commercial Use:
 
-- 📋 Any distributed modifications must also be GPL-3.0
-- 📋 Must include original copyright and license notices
-- 📋 Must disclose source code when distributing
-- 📋 Changes must be documented
+- 📋 **Copyleft requirement** - Any distributed modifications must also be GPL-3.0
+- 📋 **Source code disclosure** - Must provide source code when distributing
+- 📋 **Copyright notices** - Must include original copyright and license notices
+- 📋 **Document changes** - Changes must be clearly documented
+- ⚠️ **No proprietary derivatives** - Cannot create closed-source commercial versions
+- ⚠️ **Network use clause** - If you modify and offer as network service, must provide source to
+  users
 
 ## 💡 Acknowledgments
 
