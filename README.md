@@ -65,7 +65,7 @@ conversations remain completely private with zero data logging and client-side e
 
 #### Backend
 
-- **Runtime**: Node.js 18+
+- **Runtime**: Node.js 22+
 - **Framework**: Express.js
 - **WebSocket**: Socket.IO
 - **Database**: MongoDB with Mongoose ODM
@@ -142,7 +142,7 @@ quasar-contact-app/
 
 ### Prerequisites
 
-- Node.js 18+ and npm 9+
+- Node.js 22+ and npm 10+
 - MongoDB instance (local or cloud)
 - Git
 
