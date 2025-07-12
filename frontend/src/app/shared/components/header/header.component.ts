@@ -95,7 +95,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.subs.add(
       this.router.events
         .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
-        .subscribe(e => {
+        .subscribe(() => {
           // Close mobile menu when navigating
           this.closeMenu();
         })
@@ -127,11 +127,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
       .navigate(['/auth/login'])
       .then(() => {
         // Ensure loading is hidden after navigation completes
-        this.loadingService.forceHideLoading('header.navigation.complete');
+        this.loadingService.forceHideLoading();
       })
       .catch(error => {
         console.error('[Header] Navigation to login failed:', error);
-        this.loadingService.forceHideLoading('header.navigation.error');
+        this.loadingService.forceHideLoading();
       });
   }
 

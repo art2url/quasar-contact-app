@@ -14,7 +14,6 @@ import {
   accessLogger,
   analyzeAttackPatterns,
 } from './middleware/request-logger';
-import { debugMiddleware } from './middleware/debug';
 
 // ─── Route Imports ─────────────────────────────────────────
 import authRoutes from './routes/auth.routes';
@@ -27,10 +26,6 @@ import analyticsRoutes from './routes/analytics.routes';
 // ─── App Initialization ────────────────────────────────────
 const app = express();
 
-// ─── DEBUG: to see ALL requests ────────────
-if (process.env.NODE_ENV !== 'production') {
-  app.use(debugMiddleware);
-}
 
 // ─── SECURITY LAYER 1: HTTPS Redirect ──────────────────────
 app.use((req, res, next) => {
@@ -82,7 +77,7 @@ app.get('/health', (_req, res) =>
     secure: process.env.NODE_ENV === 'production',
     stage: process.env.NODE_ENV === 'production' ? 'production' : 'alpha',
     security: 'enhanced',
-  })
+  }),
 );
 
 // ─── SECURITY LAYER 5: Helmet ──────────────────────────────
@@ -98,7 +93,7 @@ app.use(
     noSniff: true,
     xssFilter: true,
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-  })
+  }),
 );
 
 // ─── CORS ──────────────────────────────────────────────────
@@ -184,7 +179,7 @@ app.get('/api/health', (_req, res) =>
     secure: process.env.NODE_ENV === 'production',
     stage: process.env.NODE_ENV === 'production' ? 'production' : 'alpha',
     security: 'enhanced',
-  })
+  }),
 );
 
 // ─── API Routes with Rate Limiting ────────────────────────

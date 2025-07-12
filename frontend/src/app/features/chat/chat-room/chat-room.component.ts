@@ -140,7 +140,6 @@ export class ChatRoomComponent
   // Flags for Angular hook-based operations (instead of setTimeout)
   private needsSecondaryEventEmit = false;
   private needsNotificationRefresh = false;
-  private needsDebugState = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -152,10 +151,6 @@ export class ChatRoomComponent
     private ngZone: NgZone,
     private notificationService: NotificationService
   ) {
-    // Expose debug methods globally for testing
-    (window as any).debugFixMutualBlocking = () => this.debugFixMutualBlocking();
-    (window as any).debugClearAllMissingFlags = () => this.debugClearAllMissingFlags();
-    (window as any).debugRegeneratePublicKey = () => this.debugRegeneratePublicKey();
   }
 
   @HostListener('window:resize')
@@ -195,14 +190,12 @@ export class ChatRoomComponent
     // Emit chat room entered event for header badge updates
     this.emitChatRoomEnteredEvent();
 
-    // Debug notification state (set flag for Angular hook)
-    this.needsDebugState = true;
 
     // Initialize once only
     try {
       await this.initializeOnce();
-    } catch (error) {
-      this.loadingService.hide('init-error');
+    } catch {
+      this.loadingService.hide();
       this.navigateToList();
     }
   }
@@ -296,7 +289,8 @@ export class ChatRoomComponent
 
       // Set up connection status subscription ONCE
       this.subs.add(
-        this.ws.isConnected$.subscribe(connected => {
+        this.ws.isConnected$.subscribe(() => {
+          // Connection status changed
         })
       );
 
@@ -312,7 +306,8 @@ export class ChatRoomComponent
 
       // DEBUG: Monitor observable states for recovery UI debugging
       this.subs.add(
-        this.chat.keyLoading$.subscribe(loading => {
+        this.chat.keyLoading$.subscribe(() => {
+          // Key loading state changed
         })
       );
       
@@ -358,7 +353,7 @@ export class ChatRoomComponent
 
       this.isInitialized = true;
     } finally {
-      this.loadingService.hide('chat-room-init');
+      this.loadingService.hide();
     }
   }
 
@@ -434,6 +429,7 @@ export class ChatRoomComponent
           : false;
 
         if (wasOnline !== this.isPartnerOnline) {
+          // Partner online status changed
         }
       })
     );
@@ -577,22 +573,6 @@ export class ChatRoomComponent
       this.needsNotificationRefresh = false;
     }
     
-    // Debug state (replaces setTimeout for debug state)
-    if (this.needsDebugState) {
-      this.ngZone.runOutsideAngular(() => {
-        // Use requestAnimationFrame chain for delayed execution
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              this.ngZone.run(() => {
-                this.notificationService.debugCurrentState();
-              });
-            });
-          });
-        });
-      });
-      this.needsDebugState = false;
-    }
   }
 
   /**
@@ -948,11 +928,11 @@ export class ChatRoomComponent
       this.router
         .navigate(['/chat'])
         .then(() => {
-          this.loadingService.hide('navigation');
+          this.loadingService.hide();
         })
         .catch(err => {
           console.error('Navigation to chat list failed:', err);
-          this.loadingService.hide('navigation');
+          this.loadingService.hide();
 
           // Fallback for stubborn mobile browsers
           window.location.href = '/chat';
@@ -1079,44 +1059,7 @@ export class ChatRoomComponent
     this.chat.manuallyCheckKeyStatus();
   }
 
-  /**
-   * Debug method to test partner key recovery notification
-   */
-  debugTestPartnerKeyRecovery(): void {
-  }
 
-  /**
-   * DEBUG METHOD: Force current user to lose their keys for testing
-   */
-  debugForceKeyLoss(): void {
-    this.chat.debugForceKeyLoss();
-  }
-
-  /**
-   * DEBUG METHOD: Clear artificial blocking state for testing
-   */
-  debugClearBlocking(): void {
-    this.chat.debugClearArtificialBlocking();
-  }
-
-  /**
-   * Debug method to test WebSocket connection and handlers
-   */
-  debugTestWebSocket(): void {
-    // Test if we can call WebSocket methods
-    try {
-      this.ws.debugOnlineStatus();
-    } catch (error) {
-      console.error('[ChatRoom] WebSocket debug error:', error);
-    }
-  }
-
-  /**
-   * Debug method to show room info
-   */
-  debugShowRoomInfo(): void {
-    this.chat.debugShowRoomInfo();
-  }
 
 
   /**
@@ -1229,40 +1172,13 @@ export class ChatRoomComponent
     }
   }
 
-  /**
-   * DEBUG METHOD: Fix mutual blocking issue
-   */
-  debugFixMutualBlocking(): void {
-    console.log('[ChatRoom] DEBUG: Fixing mutual blocking issue...');
-    this.chat.debugFixBothUsersKeyFlags();
-  }
 
-  /**
-   * DEBUG METHOD: Emergency cleanup - clear ALL isKeyMissing flags
-   */
-  debugClearAllMissingFlags(): void {
-    console.log('[ChatRoom] DEBUG: Emergency cleanup - clearing all isKeyMissing flags...');
-    this.chat.debugClearAllMissingFlags();
-    
-    // Force page reload after a delay to get clean state
-    setTimeout(() => {
-      window.location.reload();
-    }, 2000);
-  }
 
-  /**
-   * DEBUG METHOD: Regenerate public key from existing private key
-   */
-  async debugRegeneratePublicKey(): Promise<void> {
-    console.log('[ChatRoom] DEBUG: Regenerating public key from existing private key...');
-    await this.chat.debugRegeneratePublicKey();
-  }
 
   /**
    * Handle chat input focus - re-check partner key status
    */
   private handleChatInputFocus(): void {
-    console.log('[ChatRoom] Chat input focused - re-checking partner key status');
     this.chat.manuallyCheckKeyStatus();
   }
 }
