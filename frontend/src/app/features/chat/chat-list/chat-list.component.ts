@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { RouterModule, Router } from '@angular/router';
@@ -22,7 +22,7 @@ import { CryptoService } from '@services/crypto.service';
 import { VaultService } from '@services/vault.service';
 import { LoadingService } from '@services/loading.service';
 import { AuthService } from '@services/auth.service';
-import { NotificationService } from '@services/notification.service';
+import { NotificationService, ChatNotification } from '@services/notification.service';
 
 import { UserSummary } from '@models/user.model';
 import { ChatEntry } from '@models/chat.model';
@@ -63,7 +63,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
   // Private properties
   private subs = new Subscription();
   private readonly me = localStorage.getItem('userId')!;
-  private pendingNotifications: any[] = [];
+  private pendingNotifications: ChatNotification[] = [];
 
   constructor(
     private http: HttpClient,
@@ -76,7 +76,6 @@ export class ChatListComponent implements OnInit, OnDestroy {
     private loadingService: LoadingService,
     public authService: AuthService,
     private cdr: ChangeDetectorRef,
-    private ngZone: NgZone,
     private notificationService: NotificationService,
     private location: Location
   ) {}
@@ -182,67 +181,50 @@ export class ChatListComponent implements OnInit, OnDestroy {
    * Enhanced WebSocket handlers for better online status tracking with debugging
    */
   private setupWebSocketHandlers(): void {
-    console.log('[ChatList] Setting up enhanced WebSocket handlers for online status');
-
-    // Subscribe to the main online users list with better debugging
+    // Subscribe to the main online users list
     this.subs.add(
       this.ws.onlineUsers$.subscribe(onlineUsers => {
-        console.log('[ChatList] Online users list updated:', onlineUsers);
         this.applyOnlineStatus(onlineUsers);
       })
     );
 
-    // Subscribe to individual user online events with debugging
+    // Subscribe to individual user online events
     this.subs.add(
       this.ws.userOnline$.subscribe(userId => {
-        console.log('[ChatList] User came online:', userId);
         const chat = this.chats.find(c => c.id === userId);
         if (chat && !chat.online) {
-          console.log(`[ChatList] Marking ${chat.name} as online`);
           chat.online = true;
           this.cdr.detectChanges();
         }
       })
     );
 
-    // Subscribe to individual user offline events with debugging
+    // Subscribe to individual user offline events
     this.subs.add(
       this.ws.userOffline$.subscribe(userId => {
-        console.log('[ChatList] User went offline:', userId);
         const chat = this.chats.find(c => c.id === userId);
         if (chat && chat.online) {
-          console.log(`[ChatList] Marking ${chat.name} as offline`);
           chat.online = false;
           this.cdr.detectChanges();
         }
       })
     );
 
-    // Handle WebSocket connection status changes with debugging
+    // Handle WebSocket connection status changes
     this.subs.add(
       this.ws.isConnected$.subscribe(connected => {
-        console.log('[ChatList] WebSocket connection status:', connected);
         if (!connected) {
           // When disconnected, mark all users as offline
-          console.log('[ChatList] WebSocket disconnected, marking all users as offline');
           this.chats.forEach(chat => {
             chat.online = false;
           });
           this.cdr.detectChanges();
         } else {
           // When reconnected, get fresh online status
-          console.log('[ChatList] WebSocket reconnected, requesting fresh online status');
-
           // Wait a moment for the connection to stabilize
           setTimeout(() => {
             const currentOnlineUsers = this.ws.getCurrentOnlineUsers();
-            console.log(
-              '[ChatList] Applying online status after reconnect:',
-              currentOnlineUsers
-            );
             this.applyOnlineStatus(currentOnlineUsers);
-
-            // Also debug the WebSocket state
             this.ws.debugOnlineStatus();
           }, 1000);
         }
@@ -255,19 +237,12 @@ export class ChatListComponent implements OnInit, OnDestroy {
    */
   private applyOnlineStatus(onlineUsers: string[]): void {
     if (!Array.isArray(onlineUsers)) {
-      console.log('[ChatList] Invalid online users data:', onlineUsers);
       return;
     }
 
     if (!this.chats.length) {
-      console.log('[ChatList] No chats to apply online status to');
       return;
     }
-
-    console.log('[ChatList] Applying online status:', {
-      onlineUsers,
-      chatsCount: this.chats.length,
-    });
 
     let changesDetected = false;
 
@@ -276,22 +251,14 @@ export class ChatListComponent implements OnInit, OnDestroy {
       const isOnline = onlineUsers.includes(chat.id);
 
       if (wasOnline !== isOnline) {
-        console.log(
-          `[ChatList] Status change for ${chat.name} (${chat.id}): ${wasOnline} -> ${isOnline}`
-        );
         chat.online = isOnline;
         changesDetected = true;
       }
     });
 
     if (changesDetected) {
-      console.log(
-        '[ChatList] Online status changes detected, triggering change detection'
-      );
       // Force change detection
       this.cdr.detectChanges();
-    } else {
-      console.log('[ChatList] No online status changes detected');
     }
   }
 
@@ -498,7 +465,6 @@ export class ChatListComponent implements OnInit, OnDestroy {
 
     this.lastSortTime = now;
 
-    console.log('[ChatList] Performing final sort of chats');
     this.chats.sort((a, b) => (b.lastTs || 0) - (a.lastTs || 0));
 
     // Force change detection after final sort
@@ -569,7 +535,6 @@ export class ChatListComponent implements OnInit, OnDestroy {
 
   // Public methods
   public reloadChats(): void {
-    console.log('=== Manual reload triggered ===');
     this.chats = [];
     this.chatLoadingFinished = false;
     this.sortingInProgress = false;
@@ -612,11 +577,10 @@ export class ChatListComponent implements OnInit, OnDestroy {
       if (existingChat) {
         // Don't mark messages as read here - let the chat room component handle it
         // when the user actually sees the messages
-        console.log('[ChatList] Opening existing chat:', user._id);
         this.clearSearch();
 
         await this.router.navigate(['/chat-room', existingChat.id]);
-        this.loadingService.hide('starting-chat');
+        this.loadingService.hide();
         return;
       }
 
@@ -635,7 +599,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error('Error starting chat:', error);
     } finally {
-      this.loadingService.hide('starting-chat');
+      this.loadingService.hide();
     }
   }
 
@@ -644,8 +608,6 @@ export class ChatListComponent implements OnInit, OnDestroy {
 
     // Don't mark messages as read here - let the chat room component handle it
     // when the user actually sees the messages
-    console.log('[ChatList] Navigating to chat room:', chatId);
-
     this.router.navigate(['/chat-room', chatId]);
   }
 
@@ -667,7 +629,6 @@ export class ChatListComponent implements OnInit, OnDestroy {
   }
 
   public forceRefresh(): void {
-    console.log('=== Force refresh triggered ===');
     this.notificationService.refreshNotifications();
   }
 
@@ -684,8 +645,6 @@ export class ChatListComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    console.log('[ChatList] Component destroying');
-
     // Clear timeouts
     if (this.sortTimeout) {
       clearTimeout(this.sortTimeout);

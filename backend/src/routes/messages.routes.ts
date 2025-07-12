@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
-import Message from '../models/Message';
 import jwt from 'jsonwebtoken';
 import { Types } from 'mongoose';
 import env from '../config/env';
+import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
+import Message from '../models/Message';
 
 /*
   Note: This backend route handles only storing and retrieving encrypted data.
@@ -108,10 +108,9 @@ router.get('/history/:userId', authenticateToken, async (req: AuthRequest, res) 
       .sort({ timestamp: 1 })
       .select(
         // Include timestamp in select
-        'senderId receiverId ciphertext timestamp read avatarUrl editedAt deleted deletedAt createdAt'
+        'senderId receiverId ciphertext timestamp read avatarUrl editedAt deleted deletedAt createdAt',
       );
 
-    console.log('[History Route] Sample message from DB:', docs[0]);
 
     // Properly map timestamp field
     res.json({
@@ -185,7 +184,7 @@ router.patch('/:id', authenticateToken, async (req: AuthRequest, res) => {
     const msg = await Message.findOneAndUpdate(
       { _id: id, senderId: req.user!.userId },
       { ciphertext, avatarUrl, editedAt: new Date() },
-      { new: true }
+      { new: true },
     );
 
     if (!msg) return res.status(404).json({ message: 'Message not found' });
@@ -214,7 +213,7 @@ router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
     const msg = await Message.findOneAndUpdate(
       { _id: id, senderId: req.user!.userId, deleted: false },
       { deleted: true, deletedAt: new Date(), ciphertext: '' },
-      { new: true }
+      { new: true },
     );
     if (!msg) return res.status(404).json({ message: 'Message not found' });
 
@@ -237,20 +236,20 @@ router.put('/mark-read/:senderId', authenticateToken, async (req: AuthRequest, r
   try {
     // Mark all unread messages from the sender as read
     const result = await Message.updateMany(
-      { 
-        senderId: new Types.ObjectId(senderId), 
-        receiverId: new Types.ObjectId(receiverId), 
+      {
+        senderId: new Types.ObjectId(senderId),
+        receiverId: new Types.ObjectId(receiverId),
         read: false,
-        deleted: false 
+        deleted: false,
       },
-      { read: true }
+      { read: true },
     );
 
-    console.log(`[Messages] Marked ${result.modifiedCount} messages as read from ${senderId} to ${receiverId}`);
-    
-    res.json({ 
-      message: 'Messages marked as read', 
-      count: result.modifiedCount 
+    // Successfully marked messages as read (count available in response)
+
+    res.json({
+      message: 'Messages marked as read',
+      count: result.modifiedCount,
     });
   } catch (err) {
     console.error('[Mark Read Error]', err);

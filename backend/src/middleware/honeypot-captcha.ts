@@ -1,16 +1,16 @@
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 
 // ─── Honeypot Field Names ─────────────────────────────────────
 // These field names should be generic enough that bots might fill them
 // but obvious enough that they're fake to developers
 const HONEYPOT_FIELDS = [
-  'website',     // Common fake field that bots often fill
-  'url',         // Another common trap field
-  'phone',       // Fake phone field (when not expected)
-  'address',     // Fake address field
-  'company',     // Fake company field
-  'firstname',   // Misspelled or unexpected field
-  'lastname',    // Common fake field
+  'website', // Common fake field that bots often fill
+  'url', // Another common trap field
+  'phone', // Fake phone field (when not expected)
+  'address', // Fake address field
+  'company', // Fake company field
+  'firstname', // Misspelled or unexpected field
+  'lastname', // Common fake field
 ];
 
 // ─── Time-based Validation ────────────────────────────────────
@@ -54,7 +54,7 @@ export const validateHoneypot = (options: HoneypotValidationOptions = {}) => {
           if (body[field] && body[field].trim() !== '') {
             if (logAttempts) {
               console.log(
-                `🍯 HONEYPOT TRIGGERED: Bot filled field '${field}' with value '${body[field]}' from ${clientIP}`
+                `🍯 HONEYPOT TRIGGERED: Bot filled field '${field}' with value '${body[field]}' from ${clientIP}`,
               );
               console.log(`   User-Agent: ${userAgent}`);
               console.log(`   Request body keys: ${Object.keys(body).join(', ')}`);
@@ -80,7 +80,7 @@ export const validateHoneypot = (options: HoneypotValidationOptions = {}) => {
         if (timeDiff < MIN_FORM_TIME) {
           if (logAttempts) {
             console.log(
-              `⚡ FAST SUBMISSION: Form filled in ${timeDiff}ms (min: ${MIN_FORM_TIME}ms) from ${clientIP}`
+              `⚡ FAST SUBMISSION: Form filled in ${timeDiff}ms (min: ${MIN_FORM_TIME}ms) from ${clientIP}`,
             );
             console.log(`   User-Agent: ${userAgent}`);
           }
@@ -97,7 +97,7 @@ export const validateHoneypot = (options: HoneypotValidationOptions = {}) => {
         if (timeDiff > MAX_FORM_TIME) {
           if (logAttempts) {
             console.log(
-              `🐌 SLOW SUBMISSION: Form took ${timeDiff}ms (max: ${MAX_FORM_TIME}ms) from ${clientIP}`
+              `🐌 SLOW SUBMISSION: Form took ${timeDiff}ms (max: ${MAX_FORM_TIME}ms) from ${clientIP}`,
             );
           }
 
@@ -110,7 +110,7 @@ export const validateHoneypot = (options: HoneypotValidationOptions = {}) => {
       }
 
       // ─── Additional Bot Detection ─────────────────────────────
-      
+
       // Check for suspicious patterns in form data
       const allValues = Object.values(body).join(' ').toLowerCase();
       const suspiciousPatterns = [
@@ -118,16 +118,16 @@ export const validateHoneypot = (options: HoneypotValidationOptions = {}) => {
         /bot[_\-]?test/i,
         /admin[_\-]?test/i,
         /http[s]?:\/\//i, // URLs in unexpected fields
-        /<script.*>/i,    // Script tags
-        /\{.*\}/,         // JSON-like structures
-        /\[.*\]/,         // Array-like structures
+        /<script.*>/i, // Script tags
+        /\{.*\}/, // JSON-like structures
+        /\[.*\]/, // Array-like structures
       ];
 
       for (const pattern of suspiciousPatterns) {
         if (pattern.test(allValues)) {
           if (logAttempts) {
             console.log(
-              `🔍 SUSPICIOUS PATTERN: Detected pattern '${pattern}' from ${clientIP}`
+              `🔍 SUSPICIOUS PATTERN: Detected pattern '${pattern}' from ${clientIP}`,
             );
             console.log(`   Content: ${allValues.substring(0, 100)}...`);
           }
@@ -141,13 +141,15 @@ export const validateHoneypot = (options: HoneypotValidationOptions = {}) => {
       }
 
       // Check for identical repeated values (common bot behavior)
-      const values = Object.values(body).filter(v => typeof v === 'string' && v.length > 0);
+      const values = Object.values(body).filter(
+        v => typeof v === 'string' && v.length > 0,
+      );
       const uniqueValues = new Set(values);
-      
+
       if (values.length > 3 && uniqueValues.size === 1) {
         if (logAttempts) {
           console.log(
-            `🔄 REPEATED VALUES: All fields have same value '${values[0]}' from ${clientIP}`
+            `🔄 REPEATED VALUES: All fields have same value '${values[0]}' from ${clientIP}`,
           );
         }
 
@@ -160,11 +162,10 @@ export const validateHoneypot = (options: HoneypotValidationOptions = {}) => {
 
       // ─── All Validations Passed ────────────────────────────────
       if (logAttempts && process.env.NODE_ENV === 'development') {
-        console.log(`✅ HONEYPOT PASSED: Legitimate user from ${clientIP}`);
+        // Honeypot validation passed for legitimate user
       }
 
       next();
-
     } catch (error) {
       console.error('Honeypot validation error:', error);
       // On error, continue to avoid breaking legitimate users
@@ -176,8 +177,9 @@ export const validateHoneypot = (options: HoneypotValidationOptions = {}) => {
 // ─── Generate Honeypot Fields HTML ─────────────────────────────
 // This helper can be used to generate the HTML for frontend
 export const generateHoneypotFieldsHTML = (): string => {
-  return HONEYPOT_FIELDS.map(field => 
-    `<input type="text" name="${field}" value="" style="position: absolute; left: -9999px; opacity: 0; pointer-events: none;" tabindex="-1" autocomplete="off" />`
+  return HONEYPOT_FIELDS.map(
+    field =>
+      `<input type="text" name="${field}" value="" style="position: absolute; left: -9999px; opacity: 0; pointer-events: none;" tabindex="-1" autocomplete="off" />`,
   ).join('\n');
 };
 
@@ -187,7 +189,7 @@ export const getHoneypotFieldNames = (): string[] => {
 };
 
 // ─── Middleware Factory for Specific Routes ────────────────────
-export const createHoneypotValidator = (routeName: string) => {
+export const createHoneypotValidator = (_routeName: string) => {
   return validateHoneypot({
     checkTimeValidation: true,
     checkHoneypotFields: true,

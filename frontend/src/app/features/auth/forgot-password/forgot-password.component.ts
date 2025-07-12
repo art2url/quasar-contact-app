@@ -1,6 +1,5 @@
 import {
   Component,
-  OnInit,
   OnDestroy,
   AfterViewInit,
   ElementRef,
@@ -39,7 +38,7 @@ import { RecaptchaService } from '@services/recaptcha.service';
   templateUrl: './forgot-password.component.html',
   styleUrls: ['./forgot-password.component.css'],
 })
-export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit {
+export class ForgotPasswordComponent implements OnDestroy, AfterViewInit {
   @ViewChild('recaptchaElement', { static: false })
   recaptchaElement!: ElementRef;
 
@@ -61,10 +60,6 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
     private themeService: ThemeService
   ) {}
 
-  ngOnInit(): void {
-    // Initialize form validation and reCAPTCHA when component loads
-    console.log('[ForgotPassword] Component initialized');
-  }
 
   ngAfterViewInit(): void {
     this.initializeRecaptcha();
@@ -91,22 +86,22 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
   }
 
   private setupThemeSubscription(): void {
-    console.log('[ForgotPassword] Setting up theme subscription...');
+    // Setting up theme subscription
     let isFirstEmission = true;
 
-    this.themeSubscription = this.themeService.theme$.subscribe(theme => {
-      console.log('[ForgotPassword] Theme subscription triggered with theme:', theme);
+    this.themeSubscription = this.themeService.theme$.subscribe(() => {
+      // Theme subscription triggered
 
       if (isFirstEmission) {
         isFirstEmission = false;
-        console.log('[ForgotPassword] Skipping first emission');
+        // Skipping first emission
         return;
       }
 
-      console.log('[ForgotPassword] reCAPTCHA widget ID:', this.recaptchaWidgetId);
+      // reCAPTCHA widget ID available
 
       if (this.recaptchaWidgetId !== undefined) {
-        console.log('[ForgotPassword] Re-rendering reCAPTCHA for theme:', theme);
+        // Re-rendering reCAPTCHA for theme change
 
         // Reset the widget first
         this.recaptchaService.resetRecaptcha(this.recaptchaWidgetId);
@@ -119,7 +114,7 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
           const newElement = document.createElement('div');
           newElement.id = 'recaptcha-forgot-password';
           parent.replaceChild(newElement, recaptchaElement);
-          console.log('[ForgotPassword] Recreated reCAPTCHA DOM element');
+          // Recreated reCAPTCHA DOM element
         }
 
         // Re-render with delay
@@ -132,10 +127,7 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
                 this.error = '';
               }
             );
-            console.log(
-              '[ForgotPassword] New reCAPTCHA widget ID:',
-              this.recaptchaWidgetId
-            );
+            // New reCAPTCHA widget created
           } catch (error) {
             console.error(
               '[ForgotPassword] Failed to re-render reCAPTCHA after theme change:',
@@ -254,6 +246,6 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
       this.themeSubscription.unsubscribe();
     }
 
-    console.log('[ForgotPassword] Component destroyed, cleaned up resources');
+    // Component destroyed, cleaned up resources
   }
 }
