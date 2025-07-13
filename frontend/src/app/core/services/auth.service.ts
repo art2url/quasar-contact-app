@@ -1,15 +1,15 @@
-import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { environment } from '@environments/environment';
 import { BehaviorSubject, firstValueFrom, Observable, throwError } from 'rxjs';
 import { catchError, switchMap, tap } from 'rxjs/operators';
-import { environment } from '@environments/environment';
 
-import { LoadingService } from '@services/loading.service';
-import { WebSocketService } from '@services/websocket.service';
-import { VaultService, VAULT_KEYS } from '@services/vault.service';
+import { LoginResponse, RegisterResponse } from '@models/auth.model';
 import { CryptoService } from '@services/crypto.service';
 import { CsrfService } from '@services/csrf.service';
-import { LoginResponse, RegisterResponse } from '@models/auth.model';
+import { LoadingService } from '@services/loading.service';
+import { VAULT_KEYS, VaultService } from '@services/vault.service';
+import { WebSocketService } from '@services/websocket.service';
 import { getApiPath } from '@utils/api-paths.util';
 
 @Injectable({ providedIn: 'root' })
@@ -44,8 +44,6 @@ export class AuthService {
     password: string,
     recaptchaToken?: string
   ): Observable<LoginResponse> {
-    console.log('[Auth] Starting login for:', username);
-
     // Build login data with optional reCAPTCHA token
     interface LoginData {
       username: string;
@@ -81,22 +79,18 @@ export class AuthService {
           }
 
           // Setup vault and keys
-          console.log('[Auth] Setting up vault for user:', userId);
           await this.vault.setCurrentUser(userId);
           await this.vault.waitUntilReady();
-          console.log('[Auth] Vault is ready');
 
           // Smart key management - only generate new keys when needed
-          await this.ensurePrivateKey(userId);
+          await this.ensurePrivateKey();
 
-          console.log('[Auth] Connecting WebSocket');
           // WebSocket will use cookies for authentication now
           this.wsService.connect(); // Uses cookies for authentication
 
           return response;
         }),
         tap(() => {
-          console.log('[Auth] Login complete, updating auth state');
           this.authenticatedSubject.next(true);
           // Reset the post-password-reset flag
           this.isPostPasswordReset = false;
@@ -121,20 +115,14 @@ export class AuthService {
   }
 
   // Smart key management - reuse existing keys when possible
-  private async ensurePrivateKey(userId: string): Promise<void> {
+  private async ensurePrivateKey(): Promise<void> {
     try {
       // Check if we should force new key generation
       const shouldGenerateNewKeys =
         this.isPostPasswordReset || !(await this.tryLoadExistingKeys());
 
       if (shouldGenerateNewKeys) {
-        console.log(
-          '[Auth] Generating new keys because:',
-          this.isPostPasswordReset ? 'post-password-reset' : 'no valid existing keys'
-        );
-        await this.generateFreshKeyPair(userId);
-      } else {
-        console.log('[Auth] Successfully loaded existing keys from vault');
+        await this.generateFreshKeyPair();
       }
     } catch (error) {
       console.error('[Auth] Error in ensurePrivateKey:', error);
@@ -145,11 +133,8 @@ export class AuthService {
   // Try to load existing keys from vault
   private async tryLoadExistingKeys(): Promise<boolean> {
     try {
-      console.log('[Auth] Checking for existing keys in vault');
-
       // Check if crypto service already has keys
       if (this.crypto.hasPrivateKey()) {
-        console.log('[Auth] Crypto service already has private key');
         return true;
       }
 
@@ -157,12 +142,9 @@ export class AuthService {
       const existingKey = await this.vault.get<ArrayBuffer>(VAULT_KEYS.PRIVATE_KEY);
 
       if (existingKey && existingKey instanceof ArrayBuffer) {
-        console.log('[Auth] Found existing private key in vault, importing');
         await this.crypto.importPrivateKey(existingKey);
-        console.log('[Auth] Successfully imported existing private key');
         return true;
       } else {
-        console.log('[Auth] No valid private key found in vault');
         return false;
       }
     } catch (error) {
@@ -172,10 +154,8 @@ export class AuthService {
   }
 
   // Generate fresh key pair (only when needed)
-  private async generateFreshKeyPair(userId: string): Promise<void> {
+  private async generateFreshKeyPair(): Promise<void> {
     try {
-      console.log('[Auth] Generating fresh RSA key pair for user:', userId);
-
       // Clear existing keys first
       await this.vault.set(VAULT_KEYS.PRIVATE_KEY, null);
 
@@ -183,7 +163,6 @@ export class AuthService {
       const publicKeyB64 = await this.crypto.generateKeyPair();
       const privateKeyBuffer = await this.crypto.exportPrivateKey();
 
-      console.log('[Auth] Storing new private key in vault');
       await this.vault.set(VAULT_KEYS.PRIVATE_KEY, privateKeyBuffer);
 
       // Verify storage
@@ -192,17 +171,12 @@ export class AuthService {
         throw new Error('Failed to store private key in vault');
       }
 
-      console.log('[Auth] Private key stored successfully, size:', storedKey.byteLength);
-
       // Upload public key to server
-      console.log('[Auth] Uploading new public key to server');
       await firstValueFrom(
         this.http.post(`${environment.apiUrl}/keys/upload`, {
           publicKeyBundle: publicKeyB64,
         })
       );
-
-      console.log('[Auth] Fresh key pair generated and uploaded successfully');
     } catch (error) {
       console.error('[Auth] Error generating fresh key pair:', error);
       throw new Error(`Failed to setup encryption keys: ${error}`);
@@ -252,71 +226,63 @@ export class AuthService {
 
   // Login method with honeypot support
   loginWithHoneypot(formData: Record<string, unknown>): Observable<LoginResponse> {
-    return this.http
-      .post<LoginResponse>(getApiPath('auth/login'), formData)
-      .pipe(
-        switchMap(async response => {
-          // Store CSRF token from response
-          if (response.csrfToken) {
-            this.csrfService.setToken(response.csrfToken);
-          }
+    return this.http.post<LoginResponse>(getApiPath('auth/login'), formData).pipe(
+      switchMap(async response => {
+        // Store CSRF token from response
+        if (response.csrfToken) {
+          this.csrfService.setToken(response.csrfToken);
+        }
 
-          // Store user auth data (JWT token is now in HttpOnly cookies)
-          localStorage.setItem('username', formData['username'] as string);
+        // Store user auth data (JWT token is now in HttpOnly cookies)
+        localStorage.setItem('username', formData['username'] as string);
 
-          const userId = response.user?.id;
-          if (!userId) {
-            throw new Error('No userId available in response');
-          }
-          localStorage.setItem('userId', userId);
+        const userId = response.user?.id;
+        if (!userId) {
+          throw new Error('No userId available in response');
+        }
+        localStorage.setItem('userId', userId);
 
-          if (response.user?.avatarUrl) {
-            localStorage.setItem('myAvatar', response.user.avatarUrl);
-          }
+        if (response.user?.avatarUrl) {
+          localStorage.setItem('myAvatar', response.user.avatarUrl);
+        }
 
-          // Setup vault and keys
-          console.log('[Auth] Setting up vault for user:', userId);
-          await this.vault.setCurrentUser(userId);
-          await this.vault.waitUntilReady();
-          console.log('[Auth] Vault is ready');
+        // Setup vault and keys
+        await this.vault.setCurrentUser(userId);
+        await this.vault.waitUntilReady();
 
-          // Smart key management - only generate new keys when needed
-          await this.ensurePrivateKey(userId);
+        // Smart key management - only generate new keys when needed
+        await this.ensurePrivateKey();
 
-          console.log('[Auth] Connecting WebSocket');
-          // WebSocket will use cookies for authentication now
-          this.wsService.connect(); // Uses cookies for authentication
+        // WebSocket will use cookies for authentication now
+        this.wsService.connect(); // Uses cookies for authentication
 
-          return response;
-        }),
-        tap(() => {
-          console.log('[Auth] Login complete, updating auth state');
-          this.authenticatedSubject.next(true);
-          // Reset the post-password-reset flag
-          this.isPostPasswordReset = false;
-        }),
-        catchError((err: HttpErrorResponse) => {
-          console.error('[Auth] Login failed:', err);
-          this.clearAuthData();
+        return response;
+      }),
+      tap(() => {
+        this.authenticatedSubject.next(true);
+        // Reset the post-password-reset flag
+        this.isPostPasswordReset = false;
+      }),
+      catchError((err: HttpErrorResponse) => {
+        console.error('[Auth] Login failed:', err);
+        this.clearAuthData();
 
-          if (err.status === 401) {
-            return throwError(() => new Error('Invalid username or password'));
-          } else if (err.status === 400 && err.error?.message?.includes('recaptcha')) {
-            return throwError(
-              () => new Error('Security verification failed. Please try again.')
-            );
-          } else if (err.status === 0) {
-            return throwError(() => new Error('Cannot connect to server'));
-          } else {
-            return throwError(() => new Error(err.error?.message || 'Login failed'));
-          }
-        })
-      );
+        if (err.status === 401) {
+          return throwError(() => new Error('Invalid username or password'));
+        } else if (err.status === 400 && err.error?.message?.includes('recaptcha')) {
+          return throwError(
+            () => new Error('Security verification failed. Please try again.')
+          );
+        } else if (err.status === 0) {
+          return throwError(() => new Error('Cannot connect to server'));
+        } else {
+          return throwError(() => new Error(err.error?.message || 'Login failed'));
+        }
+      })
+    );
   }
 
   logout(): void {
-    console.log('[Auth] Logging out');
-
     if (!this.hasToken()) return;
 
     try {
@@ -327,7 +293,7 @@ export class AuthService {
       // Call backend logout to clear cookies
       this.http.post(`${environment.apiUrl}/auth/logout`, {}).subscribe({
         next: () => {
-          console.log('[Auth] Server logout successful');
+          // Successfully logged out from server
         },
         error: error => {
           console.error('[Auth] Server logout failed:', error);
@@ -338,8 +304,6 @@ export class AuthService {
       this.clearAuthData();
       // Note: We don't clear vault storage on normal logout
       // This preserves user's private keys for next login
-
-      console.log('[Auth] Logout complete');
     } catch (error) {
       console.error('[Auth] Logout error:', error);
     }
@@ -347,7 +311,6 @@ export class AuthService {
 
   // Method to mark that we're in post-password-reset state
   markPostPasswordReset(): void {
-    console.log('[Auth] Marking post-password-reset state');
     this.isPostPasswordReset = true;
 
     // Clear all local storage to ensure fresh start

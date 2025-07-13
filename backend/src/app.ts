@@ -14,7 +14,6 @@ import {
   accessLogger,
   analyzeAttackPatterns,
 } from './middleware/request-logger';
-import { debugMiddleware } from './middleware/debug';
 
 // ─── Route Imports ─────────────────────────────────────────
 import authRoutes from './routes/auth.routes';
@@ -27,10 +26,6 @@ import analyticsRoutes from './routes/analytics.routes';
 // ─── App Initialization ────────────────────────────────────
 const app = express();
 
-// ─── DEBUG: to see ALL requests ────────────
-if (process.env.NODE_ENV !== 'production') {
-  app.use(debugMiddleware);
-}
 
 // ─── SECURITY LAYER 1: HTTPS Redirect ──────────────────────
 app.use((req, res, next) => {
@@ -82,7 +77,7 @@ app.get('/health', (_req, res) =>
     secure: process.env.NODE_ENV === 'production',
     stage: process.env.NODE_ENV === 'production' ? 'production' : 'alpha',
     security: 'enhanced',
-  })
+  }),
 );
 
 // ─── SECURITY LAYER 5: Helmet ──────────────────────────────
@@ -98,7 +93,7 @@ app.use(
     noSniff: true,
     xssFilter: true,
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-  })
+  }),
 );
 
 // ─── CORS ──────────────────────────────────────────────────
@@ -184,7 +179,7 @@ app.get('/api/health', (_req, res) =>
     secure: process.env.NODE_ENV === 'production',
     stage: process.env.NODE_ENV === 'production' ? 'production' : 'alpha',
     security: 'enhanced',
-  })
+  }),
 );
 
 // ─── API Routes with Rate Limiting ────────────────────────
@@ -200,19 +195,78 @@ app.get('/app', (_req, res) => {
   res.redirect('/app/');
 });
 
-// ─── Angular Router fallback ───────────────────────────────
-app.get('/app/*', (_req, res) => {
+// ─── Angular Router - only serve valid routes ──────────────
+
+// Serve Angular app for valid routes
+app.get('/app/', (_req, res) => {
   res.sendFile(path.join(__dirname, '../../dist', 'index.html'));
+});
+
+app.get('/app/chat', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../../dist', 'index.html'));
+});
+
+app.get('/app/chat-room/:id', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../../dist', 'index.html'));
+});
+
+app.get('/app/settings', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../../dist', 'index.html'));
+});
+
+app.get('/app/auth/login', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../../dist', 'index.html'));
+});
+
+app.get('/app/auth/register', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../../dist', 'index.html'));
+});
+
+app.get('/app/auth/forgot-password', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../../dist', 'index.html'));
+});
+
+app.get('/app/auth/reset-password', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../../dist', 'index.html'));
+});
+
+// Handle invalid /app routes - serve 404 page
+app.get('/app/*', (_req, res) => {
+  res.status(404).sendFile(path.join(__dirname, '../../public/404.html'), (err) => {
+    if (err) {
+      console.error('404.html not found for /app route, falling back to JSON response');
+      res.status(404).json({
+        error: 'Not Found',
+        message: 'The requested resource does not exist',
+      });
+    }
+  });
 });
 
 // ─── 404 Handler ───────────────────────────────────────────
 app.use((req, res) => {
   // Log 404s as they might be scanning attempts
   console.log(`404: ${req.method} ${req.path} from ${req.ip}`);
-  res.status(404).json({
-    error: 'Not Found',
-    message: 'The requested resource does not exist',
-  });
+  
+  // For API routes, return JSON
+  if (req.path.startsWith('/api/')) {
+    res.status(404).json({
+      error: 'Not Found',
+      message: 'The requested resource does not exist',
+    });
+  } else {
+    // For landing site routes, serve the 404.html page
+    res.status(404).sendFile(path.join(__dirname, '../../public/404.html'), (err) => {
+      if (err) {
+        // Fallback if 404.html doesn't exist
+        console.error('404.html not found, falling back to JSON response');
+        res.status(404).json({
+          error: 'Not Found',
+          message: 'The requested resource does not exist',
+        });
+      }
+    });
+  }
 });
 
 // ─── Error Handler ─────────────────────────────────────────
@@ -221,7 +275,7 @@ app.use(
     err: unknown,
     req: express.Request,
     res: express.Response,
-    _next: express.NextFunction
+    _next: express.NextFunction,
   ) => {
     console.error('[ERROR]', {
       error: err,
@@ -242,7 +296,7 @@ app.use(
         message: err instanceof Error ? err.message : 'Unknown error',
       });
     }
-  }
+  },
 );
 
 // ─── Export App ────────────────────────────────────────────

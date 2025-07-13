@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
-import Message from '../models/Message';
 import jwt from 'jsonwebtoken';
 import { Types } from 'mongoose';
 import env from '../config/env';
+import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
+import Message from '../models/Message';
 
 /*
   Note: This backend route handles only storing and retrieving encrypted data.
@@ -108,10 +108,9 @@ router.get('/history/:userId', authenticateToken, async (req: AuthRequest, res) 
       .sort({ timestamp: 1 })
       .select(
         // Include timestamp in select
-        'senderId receiverId ciphertext timestamp read avatarUrl editedAt deleted deletedAt createdAt'
+        'senderId receiverId ciphertext timestamp read avatarUrl editedAt deleted deletedAt createdAt',
       );
 
-    console.log('[History Route] Sample message from DB:', docs[0]);
 
     // Properly map timestamp field
     res.json({
@@ -185,7 +184,7 @@ router.patch('/:id', authenticateToken, async (req: AuthRequest, res) => {
     const msg = await Message.findOneAndUpdate(
       { _id: id, senderId: req.user!.userId },
       { ciphertext, avatarUrl, editedAt: new Date() },
-      { new: true }
+      { new: true },
     );
 
     if (!msg) return res.status(404).json({ message: 'Message not found' });
@@ -214,7 +213,7 @@ router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
     const msg = await Message.findOneAndUpdate(
       { _id: id, senderId: req.user!.userId, deleted: false },
       { deleted: true, deletedAt: new Date(), ciphertext: '' },
-      { new: true }
+      { new: true },
     );
     if (!msg) return res.status(404).json({ message: 'Message not found' });
 
@@ -222,6 +221,39 @@ router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
   } catch (err) {
     console.error('[Message Delete Error]', err);
     res.status(500).json({ message: 'Server error while deleting message' });
+  }
+});
+
+// PUT /api/messages/mark-read/:senderId - Mark all messages from a specific sender as read
+router.put('/mark-read/:senderId', authenticateToken, async (req: AuthRequest, res) => {
+  const receiverId = req.user!.userId;
+  const senderId = req.params.senderId;
+
+  if (!Types.ObjectId.isValid(senderId)) {
+    return res.status(400).json({ message: 'Invalid sender ID' });
+  }
+
+  try {
+    // Mark all unread messages from the sender as read
+    const result = await Message.updateMany(
+      {
+        senderId: new Types.ObjectId(senderId),
+        receiverId: new Types.ObjectId(receiverId),
+        read: false,
+        deleted: false,
+      },
+      { read: true },
+    );
+
+    // Successfully marked messages as read (count available in response)
+
+    res.json({
+      message: 'Messages marked as read',
+      count: result.modifiedCount,
+    });
+  } catch (err) {
+    console.error('[Mark Read Error]', err);
+    res.status(500).json({ message: 'Server error while marking messages as read' });
   }
 });
 
