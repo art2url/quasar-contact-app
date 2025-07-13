@@ -35,11 +35,11 @@ export class VaultService {
   private aesKey!: CryptoKey;
   private ready$ = new BehaviorSubject<boolean>(false);
 
-  async setCurrentUser(uid: string): Promise<void> {
+  async setCurrentUser(uid: string, readOnly = false): Promise<void> {
     if (uid === this.userId && this.ready$.value) return;
     this.userId = uid;
     this.ready$.next(false);
-    await this.open();
+    await this.open(readOnly);
     this.ready$.next(true);
   }
 
@@ -106,8 +106,8 @@ export class VaultService {
 
       // Properly deserialize different data types
       return this.restoreFromSerialization(serializable) as T;
-    } catch (err) {
-      console.warn('[Vault] decrypt failed – probably stale key, ignoring.', err);
+    } catch {
+      // Silently ignore stale key errors - these are expected after key regeneration
       return undefined;
     }
   }
@@ -160,7 +160,7 @@ export class VaultService {
     }
   }
 
-  private async open(): Promise<void> {
+  private async open(readOnly = false): Promise<void> {
     if (!this.userId) throw new Error('VaultService: userId not set');
     const DB = `quasarVault-${this.userId}`;
 
@@ -192,16 +192,20 @@ export class VaultService {
         ['encrypt', 'decrypt']
       );
     } else {
-      this.aesKey = await crypto.subtle.generateKey(
-        { name: 'AES-GCM', length: 256 },
-        true,
-        ['encrypt', 'decrypt']
-      );
-      const exported = await crypto.subtle.exportKey('raw', this.aesKey);
+      if (readOnly) {
+        throw new Error('Vault AES key missing - read-only mode');
+      } else {
+        this.aesKey = await crypto.subtle.generateKey(
+          { name: 'AES-GCM', length: 256 },
+          true,
+          ['encrypt', 'decrypt']
+        );
+        const exported = await crypto.subtle.exportKey('raw', this.aesKey);
 
-      const tx = this.db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).put(Array.from(new Uint8Array(exported)), KEY_ID);
-      await txDone(tx);
+        const tx = this.db.transaction(STORE, 'readwrite');
+        tx.objectStore(STORE).put(Array.from(new Uint8Array(exported)), KEY_ID);
+        await txDone(tx);
+      }
     }
   }
 
@@ -214,55 +218,11 @@ export class VaultService {
     } catch (e: unknown) {
       const error = e as Error;
       if ((error?.name === 'InvalidStateError' || !this.db) && this.userId) {
-        console.warn('[Vault] DB handle lost – re-opening');
-        await this.open();
+        await this.open(false);
         return this.db!.transaction(STORE, mode);
       }
       throw e;
     }
   }
 
-  // Temporary debugging method
-  async debugVaultContents(): Promise<void> {
-    if (!this.userId) {
-      console.log('[Vault Debug] No user set');
-      return;
-    }
-
-    console.log('[Vault Debug] Current user:', this.userId);
-    console.log('[Vault Debug] Vault ready:', this.ready$.value);
-
-    try {
-      // List all keys
-      const allKeys = await this.keysStartingWith('');
-      console.log('[Vault Debug] All keys in vault:', allKeys);
-
-      // Check specifically for private key
-      const privateKey = await this.get<ArrayBuffer>(VAULT_KEYS.PRIVATE_KEY);
-      console.log('[Vault Debug] Private key check:', {
-        exists: !!privateKey,
-        type: typeof privateKey,
-        isArrayBuffer: privateKey instanceof ArrayBuffer,
-        size: privateKey instanceof ArrayBuffer ? privateKey.byteLength : 'N/A',
-      });
-
-      // Test storing and retrieving a simple value
-      const testValue = new Uint8Array([1, 2, 3, 4, 5]).buffer;
-      await this.set('test_arraybuffer', testValue);
-      const retrieved = await this.get<ArrayBuffer>('test_arraybuffer');
-
-      console.log('[Vault Debug] Test ArrayBuffer storage:', {
-        stored: testValue.byteLength,
-        retrieved: retrieved instanceof ArrayBuffer ? retrieved.byteLength : 'FAILED',
-        match:
-          retrieved instanceof ArrayBuffer &&
-          new Uint8Array(retrieved).toString() === new Uint8Array(testValue).toString(),
-      });
-
-      // Clean up test
-      await this.set('test_arraybuffer', null);
-    } catch (error) {
-      console.error('[Vault Debug] Error:', error);
-    }
-  }
 }

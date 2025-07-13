@@ -37,6 +37,20 @@ export interface AckPayload {
   timestamp: string | number;
 }
 
+// Key regeneration notification
+export interface KeyRegeneratedPayload {
+  fromUserId: string;
+  fromUsername: string;
+  timestamp: string;
+}
+
+// Partner key recovery started notification
+export interface PartnerKeyRecoveryStartedPayload {
+  fromUserId: string;
+  fromUsername: string;
+  timestamp: string;
+}
+
 // Backward-compat
 export type MessageDeletedEvent = DeletePayload;
 export type MessageEditedEvent = EditPayload;

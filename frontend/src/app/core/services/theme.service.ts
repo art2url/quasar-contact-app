@@ -42,12 +42,12 @@ export class ThemeService {
   }
 
   public setTheme(theme: Theme): void {
-    console.log('[ThemeService] Setting theme to:', theme);
+    // Setting theme
     this.currentTheme = theme;
     this.applyTheme(theme);
     this.saveTheme(theme);
     this.themeSubject.next(theme);
-    console.log('[ThemeService] Theme change emitted');
+    // Theme change emitted
   }
 
   private applyTheme(theme: Theme): void {

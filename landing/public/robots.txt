@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://quasar.contact/sitemap.xml
+
+# Block sensitive paths
+Disallow: /app/
+Disallow: /api/
+Disallow: /*.json
+Disallow: /assets/screenshots/

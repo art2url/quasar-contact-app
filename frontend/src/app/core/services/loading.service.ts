@@ -32,7 +32,7 @@ export class LoadingService implements OnDestroy {
       .subscribe((event: NavigationEnd) => {
         if (event.url.includes('/auth/login')) {
           this.isAuthenticated = false;
-          this.forceHideLoading('navigation-to-login');
+          this.forceHideLoading();
         }
       });
   }
@@ -48,7 +48,7 @@ export class LoadingService implements OnDestroy {
     if (!isAuthenticated) {
       // Use setTimeout to prevent change detection error
       setTimeout(() => {
-        this.forceHideLoading('auth-state-unauthenticated');
+        this.forceHideLoading();
       }, 0);
     }
   }
@@ -59,7 +59,6 @@ export class LoadingService implements OnDestroy {
   show(source = 'unknown'): void {
     // Don't show loading for unauthenticated users on protected routes
     if (!this.isAuthenticated && this.router.url.includes('/chat')) {
-      console.log(`[Loading] Skipping - unauthenticated user (${source})`);
       return;
     }
 
@@ -90,9 +89,7 @@ export class LoadingService implements OnDestroy {
   /**
    * Hide loading - with proper change detection
    */
-  hide(source = 'unknown'): void {
-    console.log(`[Loading] Hide: ${source} (was: ${this.lastSource})`);
-
+  hide(): void {
     // Use setTimeout to prevent change detection errors
     setTimeout(() => {
       this.clearCurrentTimeout();
@@ -108,24 +105,21 @@ export class LoadingService implements OnDestroy {
     this.clearCurrentTimeout();
 
     this.lastSource = source;
-    console.log(`[Loading] Show: ${source}`);
 
     // Set loading immediately
     this.loadingSubject.next(true);
 
     // Set timeout to prevent infinite loading
     this.currentTimeout = setTimeout(() => {
-      console.warn(`[Loading] Timeout for ${source} (${timeoutMs}ms)`);
-      this.forceHideLoading(`timeout-${source}`);
+      console.error(`[Loading] Timeout for ${source} (${timeoutMs}ms)`);
+      this.forceHideLoading();
     }, timeoutMs);
   }
 
   /**
    * Force hide loading - with proper async handling
    */
-  forceHideLoading(source = 'force'): void {
-    console.log(`[Loading] Force hide: ${source} (was: ${this.lastSource})`);
-
+  forceHideLoading(): void {
     // Use setTimeout to prevent change detection errors
     setTimeout(() => {
       this.clearCurrentTimeout();
@@ -137,7 +131,7 @@ export class LoadingService implements OnDestroy {
    * Emergency stop - clear everything
    */
   emergencyStop(reason = 'emergency'): void {
-    console.warn(`[Loading] Emergency stop: ${reason}`);
+    console.error(`[Loading] Emergency stop: ${reason}`);
     this.clearCurrentTimeout();
 
     // Use setTimeout for emergency stops to prevent cascading errors

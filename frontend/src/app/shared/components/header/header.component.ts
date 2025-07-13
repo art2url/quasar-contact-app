@@ -41,20 +41,17 @@ export class HeaderComponent implements OnInit, OnDestroy {
   ) {
     // Keep the header status in sync with WebSocket connection
     this.sub = this.wsService.isConnected$.subscribe(status => {
-      console.log('[Header] WebSocket connection status changed:', status);
       this.online = status;
     });
   }
 
   toggleMenu() {
     this.menuOpen = !this.menuOpen;
-    console.log('[Header] Menu toggled:', this.menuOpen);
   }
 
   // Close menu when navigation occurs
   closeMenu() {
     if (this.menuOpen) {
-      console.log('[Header] Closing mobile menu');
       this.menuOpen = false;
     }
   }
@@ -84,16 +81,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   /* ───────── lifecycle ─────────────────────────────── */
   ngOnInit(): void {
-    console.log('[Header] Component initializing');
-
     // Subscribe to NotificationService for badge count
     this.subs.add(
       this.notificationService.totalUnread$.subscribe(total => {
-        console.log('[Header] Unread total updated from NotificationService:', total);
-        console.log('[Header] Previous unread total was:', this.unreadTotal);
         this.ngZone.run(() => {
           this.unreadTotal = total;
-          console.log('[Header] Badge count set to:', this.unreadTotal);
           this.cdr.detectChanges(); // Ensure UI updates on mobile
         });
       })
@@ -103,8 +95,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.subs.add(
       this.router.events
         .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
-        .subscribe(e => {
-          console.log('[Header] Navigation to:', e.url);
+        .subscribe(() => {
           // Close mobile menu when navigating
           this.closeMenu();
         })
@@ -114,14 +105,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.subs.add(
       this.wsService.isConnected$.subscribe(connected => {
         this.online = connected;
-        console.log('[Header] Connection status updated:', connected);
       })
     );
   }
 
   logout(): void {
-    console.log('[Header] User initiated logout');
-
     // Close mobile menu first
     this.closeMenu();
 
@@ -138,14 +126,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.router
       .navigate(['/auth/login'])
       .then(() => {
-        console.log('[Header] Navigation to login complete');
-
         // Ensure loading is hidden after navigation completes
-        this.loadingService.forceHideLoading('header.navigation.complete');
+        this.loadingService.forceHideLoading();
       })
       .catch(error => {
         console.error('[Header] Navigation to login failed:', error);
-        this.loadingService.forceHideLoading('header.navigation.error');
+        this.loadingService.forceHideLoading();
       });
   }
 
@@ -161,7 +147,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   // Theme toggle methods
   toggleTheme(): void {
-    console.log('[Header] Theme toggle clicked');
     this.themeService.toggleTheme();
   }
 
@@ -170,7 +155,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    console.log('[Header] Component destroying');
     this.sub.unsubscribe();
     this.subs.unsubscribe();
   }

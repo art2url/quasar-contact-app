@@ -52,7 +52,7 @@ io.engine.on('connection_error', err => {
   });
 });
 
-// Monitor socket connections for debugging
+// Handle socket connections
 io.on('connection', socket => {
   console.log(`🔌 New socket connection: ${socket.id}`);
 

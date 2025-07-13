@@ -75,7 +75,7 @@ export class SettingsComponent {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      console.log('[Settings] Private key downloaded successfully');
+      // Private key downloaded successfully
     } catch (error) {
       console.error('[Settings] Error downloading private key:', error);
       alert('Failed to download private key. Please try again.');
@@ -109,15 +109,15 @@ export class SettingsComponent {
 
     try {
       const text = (await file.text()).trim();
-      console.log('[Settings] Importing private key from file');
+      // Importing private key from file
 
       // Import the key into the crypto service
       const fingerprint = await this.crypto.importPrivateKey(text);
-      console.log('[Settings] Private key imported successfully');
+      // Private key imported successfully
 
       // Store in vault using consistent naming
       await this.vault.set(VAULT_KEYS.PRIVATE_KEY, text);
-      console.log('[Settings] Private key stored in vault');
+      // Private key stored in vault
 
       alert(`Private key imported ✅\nFingerprint: ${fingerprint}`);
     } catch (err: unknown) {
@@ -147,7 +147,7 @@ export class SettingsComponent {
     // Persist on the backend
     this.users.updateMyAvatar(url).subscribe({
       next: () => {
-        console.log('[Settings] Avatar updated successfully');
+        // Avatar updated successfully
         alert('Avatar updated ✅');
       },
       error: error => {

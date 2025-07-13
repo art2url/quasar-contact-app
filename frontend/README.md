@@ -13,6 +13,7 @@ Originally developed as a separate repository:
 - **Responsive design** with mobile-optimized UI
 - **PWA support** for installable app experience
 - **Code quality tools** with ESLint, Prettier, and Stylelint
+- **Clean TypeScript code** with strict unused variable checking and no debug statements
 
 ## 🚀 Quick Start
 
@@ -41,7 +42,9 @@ npm run typecheck  # TypeScript check
 
 - **RSA-OAEP** key pair generation
 - **AES-GCM** message encryption
-- **Client-side key storage** in IndexedDB
+- **Client-side key storage** in IndexedDB with secure vault management
 - **Zero-knowledge architecture** - server never sees plaintext
+- **Automatic key recovery** and regeneration flows
+- **Real-time notification system** with unread message tracking
 
 See the [main README](../README.md) for full documentation and setup instructions.

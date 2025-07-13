@@ -1,5 +1,5 @@
 # Multi-stage Docker build
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -44,7 +44,7 @@ RUN cd landing && npm run build
 RUN cd backend && npm run build
 
 # Production stage
-FROM node:18-alpine AS production
+FROM node:22-alpine AS production
 
 WORKDIR /app
 
@@ -55,7 +55,7 @@ COPY --from=builder /app/frontend/dist/browser ./dist
 COPY --from=builder /app/landing/dist ./public
 
 # Install only production dependencies for backend
-RUN cd backend && npm ci --only=production && npm cache clean --force
+RUN cd backend && npm ci --omit=dev && npm cache clean --force
 
 # Expose port (Railway uses PORT env var)
 EXPOSE $PORT

@@ -77,7 +77,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit(): void {
     // Initialize form validation and reCAPTCHA when component loads
-    console.log('[Register] Component initialized');
+    // Component initialized
     
     // Initialize honeypot fields
     this.honeypotFields = this.honeypotService.createHoneypotData();
@@ -107,22 +107,22 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private setupThemeSubscription(): void {
-    console.log('[Register] Setting up theme subscription...');
+    // Setting up theme subscription
     let isFirstEmission = true;
 
-    this.themeSubscription = this.themeService.theme$.subscribe(theme => {
-      console.log('[Register] Theme subscription triggered with theme:', theme);
+    this.themeSubscription = this.themeService.theme$.subscribe(() => {
+      // Theme subscription triggered
 
       if (isFirstEmission) {
         isFirstEmission = false;
-        console.log('[Register] Skipping first emission');
+        // Skipping first emission
         return;
       }
 
-      console.log('[Register] reCAPTCHA widget ID:', this.recaptchaWidgetId);
+      // reCAPTCHA widget ID available
 
       if (this.recaptchaWidgetId !== undefined) {
-        console.log('[Register] Re-rendering reCAPTCHA for theme:', theme);
+        // Re-rendering reCAPTCHA for theme change
 
         // Reset the widget first
         this.recaptchaService.resetRecaptcha(this.recaptchaWidgetId);
@@ -135,7 +135,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
           const newElement = document.createElement('div');
           newElement.id = 'recaptcha-register';
           parent.replaceChild(newElement, recaptchaElement);
-          console.log('[Register] Recreated reCAPTCHA DOM element');
+          // Recreated reCAPTCHA DOM element
         }
 
         // Re-render with delay
@@ -148,7 +148,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.error = '';
               }
             );
-            console.log('[Register] New reCAPTCHA widget ID:', this.recaptchaWidgetId);
+            // New reCAPTCHA widget created
           } catch (error) {
             console.error(
               '[Register] Failed to re-render reCAPTCHA after theme change:',
@@ -256,7 +256,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
       .registerWithHoneypot(formData)
       .subscribe({
         next: () => {
-          console.log('[Register] Registration successful');
+          // Registration successful
           // Navigate to login page with success message
           this.router.navigate(['/auth/login'], {
             state: { message: 'Account created successfully! Please sign in.' },
@@ -267,7 +267,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
           this.resetRecaptcha(); // Reset reCAPTCHA on failed attempt
 
           this.isLoading = false;
-          this.loadingService.hide('register');
+          this.loadingService.hide();
 
           // Handle different error types
           if (err.status === 409) {
@@ -291,7 +291,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
         complete: () => {
           if (this.isLoading) {
             this.isLoading = false;
-            this.loadingService.hide('register');
+            this.loadingService.hide();
           }
         },
       });

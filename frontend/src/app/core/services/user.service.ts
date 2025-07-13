@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { catchError, Observable, of, tap } from 'rxjs';
+import { catchError, Observable, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@environments/environment';
 
@@ -20,8 +20,6 @@ export class UserService {
 
   /** List **all** users (admin / pick-contact screen) */
   listUsers(): Observable<UserSummary[]> {
-    console.log('[UserService] Fetching all users from:', `${environment.apiUrl}/users`);
-
     // Check if user is authenticated (JWT is now in HttpOnly cookies)
     const username = localStorage.getItem('username');
     const userId = localStorage.getItem('userId');
@@ -31,12 +29,7 @@ export class UserService {
     }
 
     // Headers handled automatically by HTTP interceptor with cookies
-
     return this.http.get<UserSummary[]>(`${environment.apiUrl}/users`).pipe(
-      tap(users => {
-        console.log('[UserService] Users response successful, count:', users.length);
-        console.log('[UserService] First few users:', users.slice(0, 3));
-      }),
       catchError(error => {
         console.error('[UserService] Error fetching users:', error);
 
@@ -64,8 +57,19 @@ export class UserService {
 
   /** Retrieve someone's public key bundle for E2E encryption */
   getPublicKey(userId: string): Observable<KeyBundleResponse> {
-    return this.http.get<KeyBundleResponse>(getApiPath(`keys/${userId}`));
+    return this.http.get<KeyBundleResponse>(getApiPath(`keys/${userId}`)).pipe(
+      catchError(error => {
+        // Re-throw the error to let the calling service handle it appropriately
+        throw error;
+      })
+    );
   }
+
+  /** Mark current user's keys as missing/lost */
+  markKeysAsMissing(): Observable<StandardResponse> {
+    return this.http.post<StandardResponse>(getApiPath('keys/mark-missing'), {});
+  }
+
 
   /* ───────── profile / avatar ───────── */
 
@@ -81,19 +85,16 @@ export class UserService {
   /** Search users by name */
   searchUsers(query: string): Observable<UserSummary[]> {
     if (!query || query.trim().length === 0) {
-      console.log('[UserService] Search query is empty:', query);
       return of([]);
     }
 
     const apiUrl = `${environment.apiUrl}/users`;
-    console.log('[UserService] Searching users with query:', query, 'URL:', apiUrl);
 
     return this.http
       .get<UserSummary[]>(apiUrl, {
         params: { query },
       })
       .pipe(
-        tap(users => console.log('[UserService] User search results:', users)),
         catchError(error => {
           console.error('[UserService] Error searching users:', error);
           return of([]);
@@ -115,20 +116,13 @@ export class UserService {
     const username = localStorage.getItem('username');
     const userId = localStorage.getItem('userId');
 
-    console.log('[UserService] Requesting DMs with:', {
-      apiUrl,
-      hasAuth: !!(username && userId),
-    });
-
     if (!username || !userId) {
       console.error('[UserService] No auth data available for DMs');
       return of([]);
     }
 
     // Headers handled automatically by HTTP interceptor with cookies
-
     return this.http.get<UserSummary[]>(apiUrl).pipe(
-      tap(response => console.log('[UserService] DM response:', response)),
       catchError(error => {
         console.error('[UserService] DM list error:', error);
 

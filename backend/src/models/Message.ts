@@ -26,7 +26,7 @@ const MessageSchema = new Schema<IMessage>(
     deleted: { type: Boolean, default: false },
     deletedAt: { type: Date, default: null },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const Message = mongoose.model<IMessage>('Message', MessageSchema);

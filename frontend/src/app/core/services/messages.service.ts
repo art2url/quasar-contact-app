@@ -95,4 +95,23 @@ export class MessagesService {
     // Check for user authentication data (JWT is now in HttpOnly cookies)
     return !!(localStorage.getItem('username') && localStorage.getItem('userId'));
   }
+
+  /** Mark all messages from a specific sender as read */
+  markMessagesAsRead(senderId: string): Observable<{message: string, count: number}> {
+    // Check authentication first
+    if (!this.isAuthenticated()) {
+      console.warn('Attempted to mark messages as read while not authenticated');
+      return of({message: 'Not authenticated', count: 0});
+    }
+
+    return this.http.put<{message: string, count: number}>(
+      getApiPath(`messages/mark-read/${senderId}`), 
+      {}
+    ).pipe(
+      catchError((error: HttpErrorResponse) => {
+        console.error('[MessagesService] Failed to mark messages as read:', error);
+        return of({message: 'Failed to mark messages as read', count: 0});
+      })
+    );
+  }
 }

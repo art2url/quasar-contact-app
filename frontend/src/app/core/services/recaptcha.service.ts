@@ -64,7 +64,7 @@ export class RecaptchaService {
         callback: callback,
         theme: recaptchaTheme,
         'expired-callback': () => {
-          console.log('reCAPTCHA token expired');
+          // reCAPTCHA token expired
         },
         'error-callback': () => {
           console.error('reCAPTCHA error occurred');
@@ -115,13 +115,13 @@ export class RecaptchaService {
     return new Promise(resolve => {
       // Reset the current widget if it exists
       if (currentWidgetId !== undefined) {
-        console.log('Resetting reCAPTCHA widget:', currentWidgetId);
+        // Resetting reCAPTCHA widget
         this.resetRecaptcha(currentWidgetId);
       }
 
       // Wait a bit for the reset to complete before rendering new widget
       setTimeout(() => {
-        console.log('Rendering new reCAPTCHA with theme');
+        // Rendering new reCAPTCHA with theme
         const newWidgetId = this.renderRecaptcha(elementId, callback);
         resolve(newWidgetId);
       }, 150);

@@ -43,12 +43,12 @@ class EmailService {
         connectionTimeout: 60000,
         greetingTimeout: 30000,
         socketTimeout: 60000,
-        debug: env.NODE_ENV === 'development',
-        logger: env.NODE_ENV === 'development',
+        debug: false,
+        logger: false,
       });
 
       this.isConfigured = true;
-      console.log('[EmailService] SMTP transporter configured successfully');
+      // SMTP transporter configured successfully
 
       // Verify the connection
       this.verifyConnection();
@@ -63,7 +63,7 @@ class EmailService {
 
     try {
       await this.transporter.verify();
-      console.log('[EmailService] SMTP connection verified successfully');
+      // SMTP connection verified successfully
     } catch (error) {
       console.error('[EmailService] SMTP connection verification failed:', error);
       this.isConfigured = false;
@@ -84,12 +84,8 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);
-      console.log('[EmailService] Email sent successfully:', {
-        to: options.to,
-        subject: options.subject,
-        messageId: result?.messageId || 'unknown',
-      });
+      await this.transporter.sendMail(mailOptions);
+      // Email sent successfully
     } catch (error) {
       console.error('[EmailService] Failed to send email:', error);
       throw new Error(

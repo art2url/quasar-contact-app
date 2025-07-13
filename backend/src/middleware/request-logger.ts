@@ -34,7 +34,7 @@ const formatDate = (): string => {
 export const logSuspiciousRequest = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   const startTime = Date.now();
 
@@ -60,14 +60,14 @@ export const logSuspiciousRequest = (
       // Console log for immediate visibility
       if (res.statusCode >= 400) {
         console.log(
-          `[${logEntry.timestamp}] ${logEntry.ip} - ${logEntry.method} ${logEntry.path} - ${logEntry.status} - ${logEntry.duration}`
+          `[${logEntry.timestamp}] ${logEntry.ip} - ${logEntry.method} ${logEntry.path} - ${logEntry.status} - ${logEntry.duration}`,
         );
       }
 
       // Write to file for analysis
       const logFile = path.join(
         logsDir,
-        `suspicious-${new Date().toISOString().split('T')[0]}.log`
+        `suspicious-${new Date().toISOString().split('T')[0]}.log`,
       );
       fs.appendFileSync(logFile, `${JSON.stringify(logEntry)}\n`);
     }
@@ -88,7 +88,7 @@ export const accessLogger = (req: Request, res: Response, next: NextFunction): v
 
     const accessLogFile = path.join(
       logsDir,
-      `access-${new Date().toISOString().split('T')[0]}.log`
+      `access-${new Date().toISOString().split('T')[0]}.log`,
     );
     fs.appendFileSync(accessLogFile, logLine);
   });

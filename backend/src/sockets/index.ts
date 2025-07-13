@@ -1,7 +1,7 @@
-import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
-import Message from '../models/Message';
+import { Server, Socket } from 'socket.io';
 import env from '../config/env';
+import Message from '../models/Message';
 
 type JwtPayload = {
   userId: string;
@@ -55,7 +55,7 @@ const queueEventForUser = (userId: string, eventType: string, data: any) => {
     queue.shift(); // Remove oldest event
   }
 
-  console.log(`📬 Queued ${eventType} event for offline user ${userId}`);
+  // Event queued for offline user
 };
 
 // Replay queued events when user reconnects
@@ -66,7 +66,7 @@ const replayQueuedEvents = (socket: Socket, userId: string) => {
   const now = Date.now();
   const validEvents = queue.filter(event => now - event.timestamp < EVENT_QUEUE_TTL);
 
-  console.log(`🔄 Replaying ${validEvents.length} queued events for user ${userId}`);
+  // Replaying queued events for reconnected user
 
   validEvents.forEach(event => {
     socket.emit(event.type, event.data);
@@ -81,11 +81,11 @@ const emitToUser = (io: Server, userId: string, eventType: string, data: any) =>
   const socketId = getSocketId(userId);
 
   if (socketId) {
-    console.log(`📤 Emitting ${eventType} to user ${userId} via socket ${socketId}`);
+    // Event emitted to user
     io.to(socketId).emit(eventType, data);
     return true;
   } else {
-    console.log(`📭 User ${userId} offline, queueing ${eventType} event`);
+    // User offline, event queued
     queueEventForUser(userId, eventType, data);
     return false;
   }
@@ -120,14 +120,14 @@ export const setupSocket = (io: Server) => {
     try {
       const { userId, username, avatarUrl } = jwt.verify(
         token,
-        env.JWT_SECRET
+        env.JWT_SECRET,
       ) as JwtPayload;
 
       socket.data.userId = userId;
       socket.data.username = username;
       socket.data.avatarUrl = avatarUrl;
 
-      console.log(`✅ Socket authenticated: ${username} (${userId})`);
+      // Socket authenticated successfully
       next();
     } catch (err) {
       console.error('❌ Socket auth failed:', err);
@@ -139,7 +139,7 @@ export const setupSocket = (io: Server) => {
     const userId = socket.data.userId as string;
     const username = socket.data.username as string;
 
-    console.log(`🔌 Socket ${socket.id} connected → ${username} (${userId})`);
+    // Socket connected for user
 
     // Enhanced connection tracking
     if (!userSockets.has(userId)) {
@@ -150,7 +150,7 @@ export const setupSocket = (io: Server) => {
 
     // Cancel offline timer if exists
     if (offlineTimers.has(userId)) {
-      console.log(`⏰ Cancelling offline timer for ${username}`);
+      // Offline timer cancelled for reconnected user
       clearTimeout(offlineTimers.get(userId)!);
       offlineTimers.delete(userId);
     }
@@ -160,17 +160,15 @@ export const setupSocket = (io: Server) => {
 
     // Send current online users to the new connection
     const currentOnlineUsers = [...userSockets.keys()];
-    console.log(`📤 Sending online users to ${username}:`, currentOnlineUsers);
+    // Sending online users list to connected user
     socket.emit('online-users', { userIds: currentOnlineUsers });
 
     // Broadcast user online (only if they weren't already online)
     if (userSockets.get(userId)!.size === 1) {
-      console.log(`📢 Broadcasting that ${username} is online to all other users`);
+      // Broadcasting user online status
       socket.broadcast.emit('user-online', { userId, username });
     } else {
-      console.log(
-        `👤 ${username} already had connections, not broadcasting online status`
-      );
+      // User already had connections, not broadcasting online status
     }
 
     // Enhanced message handling with better error recovery
@@ -186,7 +184,7 @@ export const setupSocket = (io: Server) => {
         avatarUrl?: string;
       }) => {
         try {
-          console.log(`💬 ${username} sending message to ${toUserId}`);
+          // Message being sent
 
           const messageData = {
             senderId: userId,
@@ -198,10 +196,7 @@ export const setupSocket = (io: Server) => {
           const saved = await Message.create(messageData);
           const timestamp = saved.timestamp || saved.createdAt;
 
-          console.log('[Socket] Message saved:', {
-            id: saved._id,
-            timestamp,
-          });
+          // Message saved to database with ID and timestamp
 
           // Always acknowledge to sender first
           socket.emit('message-sent', {
@@ -220,7 +215,7 @@ export const setupSocket = (io: Server) => {
           });
 
           if (!delivered) {
-            console.log(`📭 Message queued for offline user ${toUserId}`);
+            // Message queued for offline recipient
           }
         } catch (err) {
           console.error('[Socket] send-message error:', err);
@@ -229,12 +224,12 @@ export const setupSocket = (io: Server) => {
             details: err instanceof Error ? err.message : 'Unknown error',
           });
         }
-      }
+      },
     );
 
     // Enhanced typing indicator with better delivery
     socket.on('typing', ({ toUserId }: { toUserId: string }) => {
-      console.log(`⌨️ ${username} is typing to ${toUserId}`);
+      // Typing indicator sent
 
       // Don't queue typing events (they're ephemeral)
       const socketId = getSocketId(toUserId);
@@ -244,7 +239,7 @@ export const setupSocket = (io: Server) => {
           fromUsername: username,
         });
       } else {
-        console.log(`⌨️ User ${toUserId} offline, skipping typing indicator`);
+        // Recipient offline, skipping typing indicator
       }
     });
 
@@ -254,7 +249,7 @@ export const setupSocket = (io: Server) => {
         const updated = await Message.findByIdAndUpdate(
           messageId,
           { read: true, readAt: new Date() },
-          { new: true }
+          { new: true },
         );
 
         if (updated) {
@@ -282,7 +277,7 @@ export const setupSocket = (io: Server) => {
           const updated = await Message.findOneAndUpdate(
             { _id: messageId, senderId: userId },
             { ciphertext, avatarUrl, editedAt: new Date() },
-            { new: true }
+            { new: true },
           );
 
           if (!updated) {
@@ -311,7 +306,7 @@ export const setupSocket = (io: Server) => {
             error: 'Failed to edit message',
           });
         }
-      }
+      },
     );
 
     // Enhanced delete-message with better synchronization
@@ -320,7 +315,7 @@ export const setupSocket = (io: Server) => {
         const msg = await Message.findOneAndUpdate(
           { _id: messageId, senderId: userId },
           { deleted: true, deletedAt: new Date(), ciphertext: '' },
-          { new: true }
+          { new: true },
         );
 
         if (!msg) {
@@ -350,10 +345,8 @@ export const setupSocket = (io: Server) => {
     });
 
     // Enhanced disconnect handling
-    socket.on('disconnect', reason => {
-      console.log(
-        `❌ Socket ${socket.id} disconnected (user ${username}), reason: ${reason}`
-      );
+    socket.on('disconnect', _reason => {
+      // Socket disconnected, cleaning up user connection tracking
 
       // Clean up socket tracking
       socketToUser.delete(socket.id);
@@ -363,16 +356,14 @@ export const setupSocket = (io: Server) => {
         userSocketSet.delete(socket.id);
 
         if (userSocketSet.size === 0) {
-          console.log(
-            `👤 ${username} has no more active connections, starting offline timer`
-          );
+          // User has no more active connections, starting offline timer
           userSockets.delete(userId);
 
           const offlineTimer = setTimeout(() => {
-            console.log(`🛑 User ${username} considered offline after timeout`);
+            // User considered offline after timeout
             // FIXED: Emit to all clients that user went offline
             socket.broadcast.emit('user-offline', { userId });
-            console.log(`📢 Broadcasted that ${username} (${userId}) is offline`);
+            // Broadcasted user offline status to all clients
             offlineTimers.delete(userId);
 
             // Clean up old queued events
@@ -380,7 +371,7 @@ export const setupSocket = (io: Server) => {
             if (queue) {
               const now = Date.now();
               const validEvents = queue.filter(
-                event => now - event.timestamp < EVENT_QUEUE_TTL
+                event => now - event.timestamp < EVENT_QUEUE_TTL,
               );
 
               if (validEvents.length === 0) {
@@ -393,9 +384,7 @@ export const setupSocket = (io: Server) => {
 
           offlineTimers.set(userId, offlineTimer);
         } else {
-          console.log(
-            `👤 ${username} still has ${userSocketSet.size} active connection(s)`
-          );
+          // User still has active connections, not going offline
         }
       }
     });
@@ -409,18 +398,10 @@ export const setupSocket = (io: Server) => {
   // Enhanced monitoring for development
   if (process.env.NODE_ENV === 'development') {
     setInterval(() => {
-      console.log(`📊 Current connections: ${userSockets.size} users online`);
-      console.log(`📬 Queued events for ${eventQueue.size} offline users`);
-      console.log(`⏰ Active offline timers: ${offlineTimers.size}`);
-
-      for (const [userId, sockets] of userSockets.entries()) {
-        console.log(`  - User ${userId}: ${sockets.size} socket(s)`);
-      }
-
-      // Log offline timers for debugging
-      for (const [userId] of offlineTimers.entries()) {
-        console.log(`  - Offline timer for user ${userId}`);
-      }
+      // Connection monitoring: userSockets.size users online
+      // Queued events for eventQueue.size offline users
+      // Active offline timers: offlineTimers.size
+      // Per-user connection counts and offline timer tracking available for debugging
     }, 30000);
   }
 };

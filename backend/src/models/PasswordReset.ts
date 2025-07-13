@@ -24,6 +24,6 @@ PasswordResetSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 const PasswordReset = mongoose.model<IPasswordReset>(
   'PasswordReset',
-  PasswordResetSchema
+  PasswordResetSchema,
 );
 export default PasswordReset;
