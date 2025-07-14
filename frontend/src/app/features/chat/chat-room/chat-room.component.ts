@@ -35,6 +35,8 @@ import { NotificationService } from '@services/notification.service';
 
 // Import the cache info banner component
 import { CacheInfoBannerComponent } from '@shared/components/cache-info-banner/cache-info-banner.component';
+import { EmojiPickerComponent } from '@shared/components/emoji-picker/emoji-picker.component';
+// import { ImageAttachmentComponent, CompressedImage } from '@shared/components/image-attachment/image-attachment.component';
 
 // Import updated date utilities
 import { formatMessageTime, formatDateHeader, getStartOfDay } from '@utils/date.util';
@@ -68,6 +70,8 @@ export class MyHammerConfig extends HammerGestureConfig {
     MatProgressSpinnerModule,
     HammerModule,
     CacheInfoBannerComponent,
+    EmojiPickerComponent,
+    // ImageAttachmentComponent,
   ],
   providers: [
     ChatSessionService,
@@ -140,6 +144,10 @@ export class ChatRoomComponent
   // Flags for Angular hook-based operations (instead of setTimeout)
   private needsSecondaryEventEmit = false;
   private needsNotificationRefresh = false;
+
+  // Image attachment state - disabled for this iteration
+  // attachedImage: CompressedImage | null = null;
+
 
   constructor(
     private route: ActivatedRoute,
@@ -1181,4 +1189,68 @@ export class ChatRoomComponent
   private handleChatInputFocus(): void {
     this.chat.manuallyCheckKeyStatus();
   }
+
+  /**
+   * Handle emoji selection from picker
+   */
+  onEmojiSelected(emoji: string): void {
+    if (this.editing) {
+      this.editDraft += emoji;
+    } else {
+      this.newMessage += emoji;
+    }
+    
+    // Auto-resize the textarea after adding emoji
+    setTimeout(() => {
+      if (this.editing && this.editInput?.nativeElement) {
+        this.autoResizeTextarea(this.editInput.nativeElement);
+      } else if (this.messageInput?.nativeElement) {
+        this.autoResizeTextarea(this.messageInput.nativeElement);
+      }
+    }, 0);
+  }
+
+  // Image-related methods disabled for this iteration
+  /*
+  onImageSelected(compressedImage: CompressedImage): void {
+    console.log('Image selected:', {
+      originalSize: (compressedImage.originalSize / 1024).toFixed(1) + 'KB',
+      compressedSize: (compressedImage.compressedSize / 1024).toFixed(1) + 'KB',
+      compression: ((1 - compressedImage.compressedSize / compressedImage.originalSize) * 100).toFixed(1) + '%'
+    });
+
+    // Store the image for sending
+    this.attachedImage = compressedImage;
+    
+    // Add placeholder text to show attachment
+    const imageText = `📷 ${compressedImage.file.name}`;
+    
+    if (this.editing) {
+      this.editDraft = imageText;
+    } else {
+      this.newMessage = imageText;
+    }
+
+    // Auto-resize textarea
+    setTimeout(() => {
+      if (this.editing && this.editInput?.nativeElement) {
+        this.autoResizeTextarea(this.editInput.nativeElement);
+      } else if (this.messageInput?.nativeElement) {
+        this.autoResizeTextarea(this.messageInput.nativeElement);
+      }
+    }, 0);
+  }
+
+  removeAttachedImage(): void {
+    if (this.attachedImage) {
+      URL.revokeObjectURL(this.attachedImage.preview);
+      this.attachedImage = null;
+      this.newMessage = '';
+    }
+  }
+
+  openImageModal(imageUrl: string): void {
+    window.open(imageUrl, '_blank');
+  }
+  */
 }

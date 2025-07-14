@@ -411,12 +411,17 @@
   background-color: var(--input-background);
   color: var(--text-color);
   border-radius: 20px;
-  margin-right: var(--spacing-sm);
+  margin-right: var(--spacing-md);
   resize: none;
   max-height: 100px;
   overflow-y: auto;
   font-size: 16px;
   transition: opacity 0.2s ease;
+}
+
+/* Adjust emoji picker position when message input is dirty (expanded) */
+.chat-form:has(.message-input.ng-dirty) app-emoji-picker .emoji-picker {
+  bottom: calc(70px + var(--spacing-xl)) !important;
 }
 
 /* Disabled state styling for message input */
@@ -454,7 +459,7 @@
   cursor: pointer;
   min-height: 44px;
   min-width: 44px;
-  transition: opacity 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .send-button:disabled {
@@ -1193,6 +1198,11 @@
     box-sizing: border-box;
   }
 
+  /* Adjust emoji picker position when message input is dirty (expanded) - mobile */
+  .chat-form:has(.message-input.ng-dirty) app-emoji-picker .emoji-picker {
+    bottom: calc(90px + env(safe-area-inset-bottom, 0px) + var(--spacing-md)) !important;
+  }
+
   .avatar {
     width: 24px;
     height: 24px;
@@ -1370,5 +1380,120 @@
   /* Prevent zoom on input focus for iOS */
   .message-input {
     font-size: 16px;
+  }
+}
+
+/* Image attachment styles */
+.message-image {
+  margin-bottom: var(--spacing-xs);
+}
+
+.attached-image {
+  max-width: 300px;
+  max-height: 200px;
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  object-fit: cover;
+}
+
+.attached-image:hover {
+  transform: scale(1.02);
+}
+
+/* Attachment preview styles */
+.attachment-preview {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--input-background);
+  border-top: 1px solid var(--border-color);
+  position: relative;
+}
+
+.preview-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: var(--card-background);
+  padding: var(--spacing-sm);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  position: relative;
+}
+
+.preview-image {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.preview-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.preview-filename {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.preview-size {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.remove-preview {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--danger-color);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  transition: transform 0.2s ease;
+}
+
+.remove-preview:hover {
+  transform: scale(1.1);
+}
+
+/* Dark theme support */
+.dark-theme .attachment-preview {
+  background-color: var(--input-background);
+  border-color: var(--border-color);
+}
+
+.dark-theme .preview-content {
+  background: var(--card-background);
+  border-color: var(--border-color);
+}
+
+/* Mobile adjustments */
+@media (max-width: 599px) {
+  .attached-image {
+    max-width: 250px;
+    max-height: 150px;
+  }
+
+  .attachment-preview {
+    position: fixed;
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    left: 0;
+    right: 0;
+    z-index: 1002;
   }
 }

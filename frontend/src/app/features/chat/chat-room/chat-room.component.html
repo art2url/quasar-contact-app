@@ -178,6 +178,22 @@
             [class.unreadable]="isMessageUnreadable(m)"
             [class.encrypted]="isMessageEncrypted(m)">
             <div class="message-bubble">
+              <!-- Image display - disabled for this iteration -->
+              <!-- <div *ngIf="m.hasImage && m.imageUrl" class="message-image">
+                <img 
+                  [src]="m.imageUrl" 
+                  [alt]="'Image attachment'"
+                  class="attached-image"
+                  (click)="openImageModal(m.imageUrl)"
+                  (keydown.enter)="openImageModal(m.imageUrl)"
+                  (keydown.space)="openImageModal(m.imageUrl)"
+                  tabindex="0"
+                  role="button"
+                  [attr.aria-label]="'Open image in new tab'"
+                  loading="lazy">
+              </div> -->
+
+              <!-- Text content -->
               <p class="message-content">{{ m.text }}</p>
 
               <div class="message-meta">
@@ -238,8 +254,28 @@
       </span>
     </button>
 
+    <!-- Image attachment preview - disabled for this iteration -->
+    <!-- <div *ngIf="attachedImage" class="attachment-preview">
+      <div class="preview-content">
+        <img [src]="attachedImage.preview" alt="Image preview" class="preview-image">
+        <div class="preview-info">
+          <span class="preview-filename">📷 {{ attachedImage.file.name }}</span>
+          <span class="preview-size">{{ (attachedImage.compressedSize / 1024).toFixed(1) }}KB</span>
+        </div>
+        <button type="button" class="remove-preview" (click)="removeAttachedImage()" title="Remove image">
+          ✕
+        </button>
+      </div>
+    </div> -->
+
     <!-- Message form - keep inside container for desktop, fixed for mobile -->
     <form class="chat-form" (ngSubmit)="editing ? confirmEdit() : send()">
+      <!-- Image attachment disabled for this iteration -->
+      <!-- <app-image-attachment
+        [disabled]="isChatBlocked()"
+        (imageSelected)="onImageSelected($event)">
+      </app-image-attachment> -->
+
       <textarea
         *ngIf="!editing"
         class="message-input"
@@ -267,6 +303,11 @@
         (keydown.enter)="onKeydownEnterEdit($event)"
         (keydown.enter.control)="onKeydownCtrlEnterEdit($event)"
         (keydown.enter.meta)="onKeydownMetaEnterEdit($event)"></textarea>
+
+      <app-emoji-picker
+        [disabled]="isChatBlocked()"
+        (emojiSelected)="onEmojiSelected($event)">
+      </app-emoji-picker>
 
       <button
         type="submit"
@@ -309,5 +350,7 @@
         <mat-icon aria-hidden="true">close</mat-icon>
       </button>
     </form>
+
   </div>
+
 </div>
