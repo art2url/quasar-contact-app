@@ -86,7 +86,7 @@
             </span>
           </div>
           <p class="last-message">
-            {{ chat.lastMessage || '— no messages yet —' }}
+            {{ getDisplayMessage(chat.lastMessage) }}
             <span *ngIf="chat.unread" class="badge">{{ chat.unread }}</span>
           </p>
         </div>

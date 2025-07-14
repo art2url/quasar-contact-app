@@ -175,8 +175,7 @@ export class ChatSessionService implements OnDestroy {
         this.scheduleFallbackSync();
       }
 
-      // Always update vault storage
-      await this.updateVaultForSentMessage(messageId, timestamp);
+      // Vault storage is already updated by updatePendingMessage
       this.markPreviousMessagesAsRead();
     } catch (error) {
       console.error('[ChatSession] Error processing message sent ack:', error);
@@ -463,9 +462,58 @@ export class ChatSessionService implements OnDestroy {
       ...list.slice(bestMatchIdx + 1),
     ]);
 
-    // Update vault storage
-    await this.updateVaultForSentMessage(messageId, timestamp, patched.text);
+    // Update vault storage - pass the full message object to preserve image data
+    await this.updateVaultForSentMessage(messageId, timestamp, patched.text, patched.hasImage, patched.imageUrl);
     return true;
+  }
+
+  /**
+   * Store received message in vault for persistence
+   */
+  private async storeReceivedMessage(message: ChatMsg): Promise<void> {
+    try {
+      let imageData: string | undefined = undefined;
+      
+      // Extract base64 data from imageUrl if present
+      if (message.imageUrl && message.imageUrl.startsWith('data:image/jpeg;base64,')) {
+        imageData = message.imageUrl.split(',')[1];
+      }
+
+      const receivedCacheEntry = {
+        id: message.id!,
+        text: message.text,
+        ts: message.ts,
+        hasImage: message.hasImage || false,
+        imageData: imageData,
+        sender: message.sender,
+        avatarUrl: message.avatarUrl,
+        readAt: message.readAt
+      };
+
+      // Store with message ID key for retrieval
+      await this.vault.set(this.key(`received::${message.id}`), receivedCacheEntry);
+    } catch (err) {
+      console.error('[ChatSession] Error storing received message in vault:', err);
+    }
+  }
+
+  /**
+   * Retrieve received message from vault for persistence
+   */
+  private async findReceivedMessageData(messageId: string): Promise<{text: string, hasImage: boolean, imageData: string | undefined} | null> {
+    try {
+      const cached = await this.vault.get<{text: string, hasImage?: boolean, imageData?: string}>(this.key(`received::${messageId}`));
+      if (cached && cached.text) {
+        return {
+          text: cached.text,
+          hasImage: cached.hasImage || false,
+          imageData: cached.imageData || undefined
+        };
+      }
+    } catch (err) {
+      console.error('[ChatSession] Error retrieving received message from vault:', err);
+    }
+    return null;
   }
 
   /**
@@ -474,19 +522,36 @@ export class ChatSessionService implements OnDestroy {
   private async updateVaultForSentMessage(
     messageId: string,
     timestamp: string | number,
-    text?: string
+    text?: string,
+    hasImage?: boolean,
+    imageUrl?: string
   ): Promise<void> {
     try {
+      let messageText = text;
+      let messageHasImage = hasImage || false;
+      let imageData: string | undefined = undefined;
+
+      // Extract base64 data from imageUrl if provided
+      if (imageUrl && imageUrl.startsWith('data:image/jpeg;base64,')) {
+        imageData = imageUrl.split(',')[1];
+        messageHasImage = true;
+      }
+
       // If no text provided, try to find it from the pending message that was just acknowledged
-      if (!text) {
+      if (!messageText) {
         const messages = this.messages$.value;
         const message = messages.find(m => m.id === messageId);
         if (message) {
-          text = message.text;
+          messageText = message.text;
+          messageHasImage = message.hasImage || false;
+          // Extract base64 data from data URL if present
+          if (message.imageUrl && message.imageUrl.startsWith('data:image/jpeg;base64,')) {
+            imageData = message.imageUrl.split(',')[1];
+          }
         }
       }
 
-      if (!text) {
+      if (!messageText) {
         console.error(
           `[ChatSession] No text found for message ${messageId}, skipping vault update`
         );
@@ -496,8 +561,11 @@ export class ChatSessionService implements OnDestroy {
       const serverTimestamp = +new Date(timestamp);
       const cacheEntry: SentCacheEntry = {
         id: messageId,
-        text: text,
+        text: messageText,
         ts: serverTimestamp,
+        hasImage: messageHasImage,
+        imageData: imageData,
+        // imageType removed - all images are stored as JPEG
       };
 
       // Store with multiple keys for better retrieval
@@ -630,12 +698,29 @@ export class ChatSessionService implements OnDestroy {
             const sender = fromMe ? 'You' : this.theirUsername$.value || 'Unknown User';
 
             let text: string;
+            let hasImage = false;
+            let imageData: string | undefined = undefined;
+            
             if (serverMsg.deleted) {
               text = '⋯ message deleted ⋯';
             } else if (fromMe) {
-              text = await this.findCachedMessageText(serverMsg);
+              const cachedData = await this.findCachedMessageData(serverMsg);
+              text = cachedData.text;
+              hasImage = cachedData.hasImage;
+              imageData = cachedData.imageData;
             } else {
-              text = await this.tryDecrypt(serverMsg.ciphertext, serverMsg.senderId);
+              // Try to get received message from vault first
+              const receivedData = await this.findReceivedMessageData(serverMsg._id);
+              if (receivedData) {
+                text = receivedData.text;
+                hasImage = receivedData.hasImage;
+                imageData = receivedData.imageData;
+              } else {
+                // Fall back to decryption
+                text = await this.tryDecrypt(serverMsg.ciphertext, serverMsg.senderId);
+                hasImage = this.lastDecryptedHasImage;
+                imageData = this.lastDecryptedImageData;
+              }
               // Mark as read since we're catching up
               if (!serverMsg.read) {
                 this.ws.markMessageRead(serverMsg._id);
@@ -652,6 +737,8 @@ export class ChatSessionService implements OnDestroy {
               editedAt: serverMsg.editedAt ? toEpoch(serverMsg.editedAt) : undefined,
               deletedAt: serverMsg.deleted ? toEpoch(serverMsg.deletedAt!) : undefined,
               readAt: serverMsg.read ? toEpoch(serverMsg.createdAt) : undefined,
+              hasImage: hasImage,
+              imageUrl: imageData ? `data:image/jpeg;base64,${imageData}` : undefined,
             };
 
             currentMessages.push(newMessage);
@@ -1039,12 +1126,29 @@ export class ChatSessionService implements OnDestroy {
           }
 
           let text: string;
+          let hasImage = false;
+          let imageData: string | undefined = undefined;
+          
           if (m.deleted) {
             text = '⋯ message deleted ⋯';
           } else if (fromMe) {
-            text = await this.findCachedMessageText(m);
+            const cachedData = await this.findCachedMessageData(m);
+            text = cachedData.text;
+            hasImage = cachedData.hasImage;
+            imageData = cachedData.imageData;
           } else {
-            text = await this.tryDecrypt(m.ciphertext, m.senderId);
+            // Try to get received message from vault first
+            const receivedData = await this.findReceivedMessageData(m._id);
+            if (receivedData) {
+              text = receivedData.text;
+              hasImage = receivedData.hasImage;
+              imageData = receivedData.imageData;
+            } else {
+              // Fall back to decryption
+              text = await this.tryDecrypt(m.ciphertext, m.senderId);
+              hasImage = this.lastDecryptedHasImage;
+              imageData = this.lastDecryptedImageData;
+            }
             if (!m.read) {
               this.ws.markMessageRead(m._id);
             }
@@ -1060,6 +1164,8 @@ export class ChatSessionService implements OnDestroy {
             editedAt: m.editedAt ? toEpoch(m.editedAt) : undefined,
             deletedAt: m.deleted ? toEpoch(m.deletedAt!) : undefined,
             readAt: m.read ? toEpoch(m.createdAt) : undefined,
+            hasImage: hasImage,
+            imageUrl: imageData ? `data:image/jpeg;base64,${imageData}` : undefined,
           });
         }
 
@@ -1077,8 +1183,8 @@ export class ChatSessionService implements OnDestroy {
   /**
    * Enhanced send method with better error handling
    */
-  async send(_: string, plain: string): Promise<void> {
-    if (!plain?.trim() || !this.roomId || !this.theirPubKey) {
+  async send(_: string, plain: string, imageAttachment?: {file: File, preview: string, compressedSize: number}): Promise<void> {
+    if ((!plain?.trim() && !imageAttachment) || !this.roomId || !this.theirPubKey) {
       return;
     }
 
@@ -1097,6 +1203,12 @@ export class ChatSessionService implements OnDestroy {
 
       this.markPreviousMessagesAsRead();
 
+      // Convert image to base64 if present
+      let imageData: string | null = null;
+      if (imageAttachment) {
+        imageData = await this.fileToBase64(imageAttachment.file);
+      }
+
       // Add pending message
       const pendingMessage: ChatMsg = {
         sender: 'You',
@@ -1104,6 +1216,9 @@ export class ChatSessionService implements OnDestroy {
         ts,
         status: 'pending',
         avatarUrl: myAvatar,
+        hasImage: !!imageAttachment,
+        imageUrl: imageData ? `data:image/jpeg;base64,${imageData}` : undefined,
+        imageFile: imageAttachment?.file,
       };
 
       const pendingKey = `pending::${ts}`;
@@ -1123,13 +1238,22 @@ export class ChatSessionService implements OnDestroy {
       this.pendingMessages.set(pendingKey, { timestamp: ts, timeoutId });
       this.push(pendingMessage);
 
+      // Prepare message payload for encryption
+      const messagePayload = {
+        text: plain,
+        imageData: imageData,
+        hasImage: !!imageAttachment
+      };
+
       // Encrypt and send - encryption is required
-      const ct = await this.crypto.encryptWithPublicKey(plain, this.theirPubKey);
+      const ct = await this.crypto.encryptWithPublicKey(JSON.stringify(messagePayload), this.theirPubKey);
 
       const pendingCacheEntry = {
         id: pendingKey,
         text: plain,
         ts,
+        imageData: imageData,
+        hasImage: !!imageAttachment
       };
 
       await this.vault.set(this.key(pendingKey), pendingCacheEntry);
@@ -1139,6 +1263,24 @@ export class ChatSessionService implements OnDestroy {
       console.error('[ChatSession] Error sending message:', error);
     }
   }
+
+  /**
+   * Convert file to base64 string
+   */
+  private fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove data URL prefix (data:image/jpeg;base64, or data:image/svg+xml;base64,)
+        const base64 = result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
 
   /**
    * Clean up all stale pending messages when connection is restored
@@ -1244,10 +1386,16 @@ export class ChatSessionService implements OnDestroy {
         ts: toEpoch(m.timestamp),
         avatarUrl: messageAvatar,
         readAt: Date.now(),
+        hasImage: this.lastDecryptedHasImage,
+        imageUrl: this.lastDecryptedImageData ? `data:image/jpeg;base64,${this.lastDecryptedImageData}` : undefined,
       };
 
       this.ws.markMessageRead(m.messageId);
       this.push(newMessage);
+      
+      // Store received message in vault for persistence
+      await this.storeReceivedMessage(newMessage);
+      
       this.partnerTyping$.next(false);
 
       if (this.typingDebounce) {
@@ -1288,6 +1436,10 @@ export class ChatSessionService implements OnDestroy {
   // Track vault corruption detection
   private vaultCorruptionDetected = false;
 
+  // Store decrypted image data temporarily
+  private lastDecryptedImageData: string | undefined = undefined;
+  private lastDecryptedHasImage = false;
+
   private async tryDecrypt(ct: string, senderId?: string): Promise<string> {
     // Check if we've already failed to decrypt this ciphertext
     if (this.failedDecryptions.has(ct)) {
@@ -1301,7 +1453,24 @@ export class ChatSessionService implements OnDestroy {
     }
 
     try {
-      return await this.crypto.decryptMessage(ct);
+      const decryptedText = await this.crypto.decryptMessage(ct);
+      
+      // Try to parse as JSON (new format with image support)
+      try {
+        const messagePayload = JSON.parse(decryptedText);
+        if (Object.prototype.hasOwnProperty.call(messagePayload, 'text') && Object.prototype.hasOwnProperty.call(messagePayload, 'hasImage')) {
+          // This is a new format message, store image data if present
+          this.lastDecryptedImageData = messagePayload.imageData;
+          this.lastDecryptedHasImage = messagePayload.hasImage;
+          return messagePayload.text;
+        }
+      } catch {
+        // Not JSON, treat as plain text (old format)
+        this.lastDecryptedImageData = undefined;
+        this.lastDecryptedHasImage = false;
+      }
+      
+      return decryptedText;
     } catch {
       // Mark this ciphertext as failed to avoid retrying
       this.failedDecryptions.add(ct);
@@ -1327,9 +1496,30 @@ export class ChatSessionService implements OnDestroy {
 
   private push(m: ChatMsg) {
     const list = [...this.messages$.value];
-    list.push(m);
-    list.sort((a, b) => (a.ts || 0) - (b.ts || 0));
-    this.messages$.next(list);
+    
+    // Check for duplicates - don't add if message already exists
+    const isDuplicate = list.some(existing => {
+      // Match by ID if both have IDs
+      if (existing.id && m.id && existing.id === m.id) {
+        return true;
+      }
+      
+      // For pending messages or messages without IDs, match by timestamp and sender
+      if (existing.ts === m.ts && existing.sender === m.sender) {
+        // Also check text content to avoid false positives
+        if (existing.text === m.text) {
+          return true;
+        }
+      }
+      
+      return false;
+    });
+    
+    if (!isDuplicate) {
+      list.push(m);
+      list.sort((a, b) => (a.ts || 0) - (b.ts || 0));
+      this.messages$.next(list);
+    }
   }
 
   private key(suffix: string) {
@@ -1377,6 +1567,11 @@ export class ChatSessionService implements OnDestroy {
   }
 
   private async findCachedMessageText(m: ServerMessage): Promise<string> {
+    const messageData = await this.findCachedMessageData(m);
+    return messageData.text;
+  }
+
+  private async findCachedMessageData(m: ServerMessage): Promise<{text: string, hasImage: boolean, imageData: string | undefined}> {
     const messageId = m._id;
     const serverTimestamp = toEpoch(m.createdAt);
 
@@ -1392,7 +1587,11 @@ export class ChatSessionService implements OnDestroy {
       try {
         const cached = await this.vault.get<SentCacheEntry>(key);
         if (cached && cached.text) {
-          return cached.text;
+          return {
+            text: cached.text,
+            hasImage: cached.hasImage || false,
+            imageData: cached.imageData || undefined
+          };
         }
       } catch {
         vaultFailureCount++;
@@ -1419,7 +1618,11 @@ export class ChatSessionService implements OnDestroy {
             // Update vault with proper keys
             await this.vault.set(this.key(messageId), cached);
             await this.vault.set(key, null);
-            return cached.text;
+            return {
+              text: cached.text,
+              hasImage: cached.hasImage || false,
+              imageData: cached.imageData || undefined
+            };
           }
         }
       }
@@ -1430,7 +1633,11 @@ export class ChatSessionService implements OnDestroy {
     // If we can't find cached text and we're seeing vault errors, trigger recovery
     this.detectVaultCorruption();
 
-    return this.getTimeAgoMessage(serverTimestamp);
+    return {
+      text: this.getTimeAgoMessage(serverTimestamp),
+      hasImage: false,
+      imageData: undefined
+    };
   }
 
   private getTimeAgoMessage(timestamp: number): string {
