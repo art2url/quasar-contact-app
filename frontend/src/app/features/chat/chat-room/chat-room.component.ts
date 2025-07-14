@@ -1,45 +1,48 @@
+import { CommonModule } from '@angular/common';
 import {
+  AfterViewChecked,
+  AfterViewInit,
+  ChangeDetectorRef,
   Component,
   ElementRef,
-  ViewChild,
-  AfterViewChecked,
-  OnInit,
-  OnDestroy,
   HostListener,
-  AfterViewInit,
   Injectable,
-  ChangeDetectorRef,
   NgZone,
+  OnDestroy,
+  OnInit,
+  ViewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-  HammerModule,
   HAMMER_GESTURE_CONFIG,
   HammerGestureConfig,
+  HammerModule,
 } from '@angular/platform-browser';
-import { Subscription } from 'rxjs';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import * as Hammer from 'hammerjs';
+import { Subscription } from 'rxjs';
 
-import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
-import { ChatSessionService } from '@services/chat-session.service';
 import { ChatMsg } from '@models/chat.model';
-import { WebSocketService } from '@services/websocket.service';
+import { ChatSessionService } from '@services/chat-session.service';
 import { LoadingService } from '@services/loading.service';
 import { NotificationService } from '@services/notification.service';
+import { WebSocketService } from '@services/websocket.service';
 
 // Import the cache info banner component
 import { CacheInfoBannerComponent } from '@shared/components/cache-info-banner/cache-info-banner.component';
 import { EmojiPickerComponent } from '@shared/components/emoji-picker/emoji-picker.component';
-// import { ImageAttachmentComponent, CompressedImage } from '@shared/components/image-attachment/image-attachment.component';
+import {
+  CompressedImage,
+  ImageAttachmentComponent,
+} from '@shared/components/image-attachment/image-attachment.component';
 
 // Import updated date utilities
-import { formatMessageTime, formatDateHeader, getStartOfDay } from '@utils/date.util';
+import { formatDateHeader, formatMessageTime, getStartOfDay } from '@utils/date.util';
 
 // Interface for grouped messages
 interface MessageGroup {
@@ -71,7 +74,7 @@ export class MyHammerConfig extends HammerGestureConfig {
     HammerModule,
     CacheInfoBannerComponent,
     EmojiPickerComponent,
-    // ImageAttachmentComponent,
+    ImageAttachmentComponent,
   ],
   providers: [
     ChatSessionService,
@@ -132,7 +135,6 @@ export class ChatRoomComponent
   newMessagesCount = 0;
   private lastMessageCount = 0;
   private scrollTimeout: NodeJS.Timeout | null = null;
-  private lastScrollTop = 0; // ADDED: Track scroll direction
 
   // Grouped messages for date separation
   messageGroups: MessageGroup[] = [];
@@ -140,14 +142,13 @@ export class ChatRoomComponent
   // Loading state tracking
   isLoadingMessages = true;
   private hasInitiallyScrolled = false;
-  
+
   // Flags for Angular hook-based operations (instead of setTimeout)
   private needsSecondaryEventEmit = false;
   private needsNotificationRefresh = false;
 
-  // Image attachment state - disabled for this iteration
-  // attachedImage: CompressedImage | null = null;
-
+  // Image attachment state
+  attachedImage: CompressedImage | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -158,14 +159,15 @@ export class ChatRoomComponent
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
     private notificationService: NotificationService
-  ) {
-  }
+  ) {}
 
   @HostListener('window:resize')
   onResize() {
     if (this.isUserAtBottom) {
       this.scrollToBottom(false);
     }
+    // Update typing indicator position on resize
+    this.updateTypingIndicatorPosition();
   }
 
   @HostListener('window:focus')
@@ -185,6 +187,12 @@ export class ChatRoomComponent
   async ngOnInit(): Promise<void> {
     document.body.classList.add('chat-room-page');
     
+    // Set body background for mobile to prevent black overscroll
+    if (window.innerWidth <= 599) {
+      const cardBg = getComputedStyle(document.documentElement).getPropertyValue('--card-background').trim();
+      document.body.style.backgroundColor = cardBg || '#f8f9fa';
+    }
+
     // Reset the flag for this chat room
     this.hasMarkedMessagesAsRead = false;
 
@@ -197,7 +205,6 @@ export class ChatRoomComponent
 
     // Emit chat room entered event for header badge updates
     this.emitChatRoomEnteredEvent();
-
 
     // Initialize once only
     try {
@@ -253,7 +260,6 @@ export class ChatRoomComponent
     try {
       // Initialize chat session ONCE
       await this.chat.init(this.receiverId);
-      
 
       // Subscribe to loading state first
       this.subs.add(
@@ -318,7 +324,7 @@ export class ChatRoomComponent
           // Key loading state changed
         })
       );
-      
+
       this.subs.add(
         this.chat.myPrivateKeyMissing$.subscribe(missing => {
           if (missing === true && !this.chat.keyLoading$.value) {
@@ -326,7 +332,7 @@ export class ChatRoomComponent
             if (!this.chat.isArtificialKeyMissingState) {
               this.chat.ensureKeysMissingFlagSet();
             }
-            
+
             // Force change detection
             setTimeout(() => this.cdr.detectChanges(), 0);
           }
@@ -345,7 +351,6 @@ export class ChatRoomComponent
               );
 
               if (unreadFromPartner.length > 0) {
-
                 unreadFromPartner.forEach(m => {
                   this.ws.markMessageRead(m.id!);
                   this.reported.add(m.id!);
@@ -416,7 +421,13 @@ export class ChatRoomComponent
         // User is at bottom, reset counter and auto-scroll
         this.newMessagesCount = 0;
         this.shouldAutoScroll = true;
-        setTimeout(() => this.scrollToBottom(true), 0);
+        this.ngZone.runOutsideAngular(() => {
+          requestAnimationFrame(() => {
+            this.ngZone.run(() => {
+              this.scrollToBottom(true);
+            });
+          });
+        });
       }
     }
 
@@ -427,7 +438,6 @@ export class ChatRoomComponent
    * Enhanced partner online status tracking
    */
   private setupOnlineStatusTracking(): void {
-
     // Subscribe to main online users list
     this.subs.add(
       this.ws.onlineUsers$.subscribe(onlineUsers => {
@@ -486,6 +496,8 @@ export class ChatRoomComponent
         // Use NgZone to ensure Angular detects the change
         this.ngZone.run(() => {
           this.isPartnerTyping = isTyping;
+          // Update positioning when typing indicator state changes
+          this.updateTypingIndicatorPosition();
         });
       })
     );
@@ -530,7 +542,7 @@ export class ChatRoomComponent
           'keydown',
           this.handleKeydown.bind(this)
         );
-        
+
         // Re-check partner key status when user focuses on chat input
         this.messageInput.nativeElement.addEventListener(
           'focus',
@@ -541,11 +553,22 @@ export class ChatRoomComponent
 
     // Set up scroll listener for intelligent scrolling
     this.setupScrollListener();
-    
+
     // Handle delayed operations using Angular hook instead of setTimeout
     this.handleDelayedOperations();
+    
+    // Initialize typing indicator position
+    this.ngZone.runOutsideAngular(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          this.ngZone.run(() => {
+            this.updateTypingIndicatorPosition();
+          });
+        });
+      });
+    });
   }
-  
+
   /**
    * Handle delayed operations using Angular lifecycle instead of setTimeout
    */
@@ -565,7 +588,7 @@ export class ChatRoomComponent
       });
       this.needsSecondaryEventEmit = false;
     }
-    
+
     // Notification refresh (replaces setTimeout for notification refresh)
     if (this.needsNotificationRefresh) {
       this.ngZone.runOutsideAngular(() => {
@@ -580,7 +603,6 @@ export class ChatRoomComponent
       });
       this.needsNotificationRefresh = false;
     }
-    
   }
 
   /**
@@ -609,16 +631,14 @@ export class ChatRoomComponent
     const scrollHeight = container.scrollHeight;
     const clientHeight = container.clientHeight;
 
-    // Track scroll direction for more responsive button behavior
-    const scrollDirection = scrollTop > this.lastScrollTop ? 'down' : 'up';
-    this.lastScrollTop = scrollTop;
+    // Track scroll position for button logic
 
     // More intelligent detection
     const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
     const isNearBottom = distanceFromBottom <= 50; // Within 50px of bottom
 
     // FIXED: Show button ONLY when user scrolls up significantly
-    const shouldShowButton = scrollDirection === 'up' && distanceFromBottom > 150;
+    const shouldShowButton = distanceFromBottom > 100; // Temporarily easier to trigger for testing
 
     // Update user position
     this.isUserAtBottom = isNearBottom;
@@ -717,12 +737,14 @@ export class ChatRoomComponent
   }
 
   send(): void {
-    if (!this.newMessage || !this.newMessage.trim()) {
+    // Allow sending if there's either text content or an image attachment
+    if ((!this.newMessage || !this.newMessage.trim()) && !this.attachedImage) {
       return;
     }
 
     // Store message content before sending
-    const messageContent = this.newMessage;
+    const messageContent = this.newMessage || '';
+    const imageAttachment = this.attachedImage;
 
     // Clear input immediately for better UX
     this.newMessage = '';
@@ -739,10 +761,19 @@ export class ChatRoomComponent
     this.newMessagesCount = 0;
     this.showScrollToBottomButton = false;
 
+    // TODO: Handle image attachment properly through the chat service
+    // For now, we'll send the message and handle the image separately
+
     // Send message
     this.chat
-      .send('', messageContent)
+      .send('', messageContent, imageAttachment || undefined)
       .then(() => {
+        // Clear attachment after successful send
+        if (imageAttachment) {
+          URL.revokeObjectURL(imageAttachment.preview);
+          this.attachedImage = null;
+        }
+
         // Re-focus the input after sending
         setTimeout(() => {
           if (this.messageInput?.nativeElement) {
@@ -751,13 +782,20 @@ export class ChatRoomComponent
         }, 0);
 
         // Scroll to bottom after sending
-        setTimeout(() => this.scrollToBottom(true), 0);
+        this.ngZone.runOutsideAngular(() => {
+          requestAnimationFrame(() => {
+            this.ngZone.run(() => {
+              this.scrollToBottom(true);
+            });
+          });
+        });
       })
       .catch(error => {
         console.error('[ChatRoom] Error sending message:', error);
 
         // Handle send failure - potentially restore the message
         this.newMessage = messageContent;
+        this.attachedImage = imageAttachment;
       });
   }
 
@@ -771,12 +809,101 @@ export class ChatRoomComponent
   }
 
   autoResizeTextarea(textarea: HTMLTextAreaElement) {
-    // Reset height to auto to get the correct scrollHeight
-    textarea.style.height = 'auto';
+    // If textarea is empty, keep single row
+    if (!textarea.value.trim()) {
+      textarea.style.height = '';
+      textarea.rows = 1;
+      this.updateTypingIndicatorPosition();
+      return;
+    }
 
-    // Set new height based on scrollHeight (with a max height)
-    const newHeight = Math.min(textarea.scrollHeight, 100);
-    textarea.style.height = `${newHeight}px`;
+    // Use scrollHeight to determine if content actually overflows
+    textarea.style.height = 'auto';
+    textarea.rows = 1;
+    
+    const style = window.getComputedStyle(textarea);
+    const lineHeight = parseInt(style.lineHeight) || parseInt(style.fontSize) * 1.2;
+    const padding = parseInt(style.paddingTop) + parseInt(style.paddingBottom);
+    const border = parseInt(style.borderTopWidth) + parseInt(style.borderBottomWidth);
+    
+    // Calculate single row height
+    const singleRowHeight = lineHeight + padding + border;
+    const currentScrollHeight = textarea.scrollHeight;
+    
+    // Only expand if content is actually overflowing (with small tolerance)
+    if (currentScrollHeight > singleRowHeight + 2) {
+      // Calculate how many rows we actually need based on scroll height
+      const rowsNeeded = Math.min(Math.ceil(currentScrollHeight / lineHeight) - 1, 4);
+      textarea.rows = Math.max(1, rowsNeeded);
+    } else {
+      // Content fits in current row, keep single row
+      textarea.rows = 1;
+    }
+    
+    // Clear any manual height
+    textarea.style.height = '';
+    
+    // Update typing indicator position after resize
+    this.updateTypingIndicatorPosition();
+    
+    // Auto-scroll to keep last message visible when textarea expands
+    this.autoScrollOnTextareaResize();
+  }
+
+  private autoScrollOnTextareaResize() {
+    // Only auto-scroll if user was already at or near the bottom
+    if (this.isUserAtBottom && this.messageContainer?.nativeElement) {
+      // Use Angular's change detection cycle instead of setTimeout
+      this.ngZone.runOutsideAngular(() => {
+        requestAnimationFrame(() => {
+          this.ngZone.run(() => {
+            this.scrollToBottom(false);
+          });
+        });
+      });
+    }
+  }
+
+  private updateTypingIndicatorPosition() {
+    const chatForm = document.querySelector('.chat-form') as HTMLElement;
+    if (chatForm) {
+      const chatFormHeight = chatForm.offsetHeight;
+      
+      if (window.innerWidth <= 599) {
+        // Mobile positioning
+        const safeArea = 'env(safe-area-inset-bottom, 0px)';
+        
+        // Update CSS custom property for typing indicator (1px border - 1px down = 0)
+        document.documentElement.style.setProperty(
+          '--typing-indicator-bottom', 
+          `calc(${chatFormHeight}px + ${safeArea})`
+        );
+        
+        // Update scroll-to-bottom button position (above typing indicator + some spacing)
+        const typingIndicatorHeight = 30; // Approximate height of typing indicator
+        const spacing = 10; // Space between button and typing indicator
+        document.documentElement.style.setProperty(
+          '--scroll-button-bottom', 
+          `calc(${chatFormHeight + typingIndicatorHeight + spacing}px + ${safeArea})`
+        );
+        
+        // Update attachment preview position (above chat form)
+        document.documentElement.style.setProperty(
+          '--attachment-preview-bottom', 
+          `calc(${chatFormHeight}px + ${safeArea})`
+        );
+        
+        // Remove dynamic padding - let fixed positioning handle spacing naturally
+      } else {
+        // Desktop positioning - above typing indicator
+        const typingIndicatorHeight = 35; // Desktop typing indicator height
+        const spacing = 15; // More spacing for desktop
+        document.documentElement.style.setProperty(
+          '--scroll-button-bottom-desktop', 
+          `calc(${chatFormHeight + typingIndicatorHeight + spacing}px)`
+        );
+      }
+    }
   }
 
   trackByTs(_: number, m: { ts: number }) {
@@ -1036,18 +1163,22 @@ export class ChatRoomComponent
     }
   }
 
-
-
   /**
    * Handle private key regeneration when user's own key is missing
    */
   async regenerateEncryptionKeys(): Promise<void> {
-    if (confirm('Your encryption keys are missing. This will generate new keys, but you will lose access to previous messages. Continue?')) {
+    if (
+      confirm(
+        'Your encryption keys are missing. This will generate new keys, but you will lose access to previous messages. Continue?'
+      )
+    ) {
       try {
         await this.chat.regenerateKeys();
       } catch (error) {
         console.error('[ChatRoom] Failed to regenerate keys:', error);
-        alert('Failed to regenerate encryption keys. Please try again or contact support.');
+        alert(
+          'Failed to regenerate encryption keys. Please try again or contact support.'
+        );
       }
     }
   }
@@ -1067,9 +1198,6 @@ export class ChatRoomComponent
     this.chat.manuallyCheckKeyStatus();
   }
 
-
-
-
   /**
    * Check if chat is blocked due to various key issues
    */
@@ -1078,27 +1206,27 @@ export class ChatRoomComponent
     if (this.isLoadingMessages) {
       return true;
     }
-    
+
     // Check if WE have missing private keys (our own recovery UI is visible)
     const myPrivateKeyMissing = this.chat.myPrivateKeyMissing$.value;
     if (myPrivateKeyMissing) {
       return true;
     }
-    
+
     // Check if partner's key is missing
     const keyMissing = this.chat.keyMissing$.value;
     if (keyMissing) {
       return true;
     }
-    
+
     // Check if partner has regenerated keys and we need to reload
     const partnerKeyRegenerated = this.chat.showPartnerKeyRegeneratedNotification$.value;
     if (partnerKeyRegenerated) {
       return true;
     }
-    
+
     // Chat not blocked - all checks passed
-    
+
     return false;
   }
 
@@ -1109,7 +1237,7 @@ export class ChatRoomComponent
     if (this.isLoadingMessages) {
       return 'Loading messages...';
     }
-    
+
     // Check if WE have missing private keys first
     const myPrivateKeyMissing = this.chat.myPrivateKeyMissing$.value;
     if (myPrivateKeyMissing) {
@@ -1122,25 +1250,30 @@ export class ChatRoomComponent
         return 'Cannot send messages - you need to regenerate your encryption keys';
       }
     }
-    
+
     const partnerKeyRegenerated = this.chat.showPartnerKeyRegeneratedNotification$.value;
     if (partnerKeyRegenerated) {
       const username = this.chat.theirUsername$.value || 'your contact';
       return `Chat blocked - ${username} is recovering their keys. Refresh to check status.`;
     }
-    
+
     const keyMissing = this.chat.keyMissing$.value;
     if (keyMissing) {
       const username = this.chat.theirUsername$.value || 'Your contact';
       return `Cannot send messages - ${username} needs to set up encryption`;
     }
-    
+
     return 'Type a message...';
   }
 
   ngOnDestroy() {
     document.body.classList.remove('chat-room-page');
     
+    // Reset body background
+    if (window.innerWidth <= 599) {
+      document.body.style.backgroundColor = '';
+    }
+
     // Reset the flag for next visit
     this.hasMarkedMessagesAsRead = false;
 
@@ -1180,9 +1313,6 @@ export class ChatRoomComponent
     }
   }
 
-
-
-
   /**
    * Handle chat input focus - re-check partner key status
    */
@@ -1199,7 +1329,7 @@ export class ChatRoomComponent
     } else {
       this.newMessage += emoji;
     }
-    
+
     // Auto-resize the textarea after adding emoji
     setTimeout(() => {
       if (this.editing && this.editInput?.nativeElement) {
@@ -1210,21 +1340,23 @@ export class ChatRoomComponent
     }, 0);
   }
 
-  // Image-related methods disabled for this iteration
-  /*
   onImageSelected(compressedImage: CompressedImage): void {
     console.log('Image selected:', {
       originalSize: (compressedImage.originalSize / 1024).toFixed(1) + 'KB',
       compressedSize: (compressedImage.compressedSize / 1024).toFixed(1) + 'KB',
-      compression: ((1 - compressedImage.compressedSize / compressedImage.originalSize) * 100).toFixed(1) + '%'
+      compression:
+        (
+          (1 - compressedImage.compressedSize / compressedImage.originalSize) *
+          100
+        ).toFixed(1) + '%',
     });
 
     // Store the image for sending
     this.attachedImage = compressedImage;
-    
+
     // Add placeholder text to show attachment
-    const imageText = `📷 ${compressedImage.file.name}`;
-    
+    const imageText = this.getTruncatedFilename(compressedImage.file.name);
+
     if (this.editing) {
       this.editDraft = imageText;
     } else {
@@ -1249,8 +1381,72 @@ export class ChatRoomComponent
     }
   }
 
-  openImageModal(imageUrl: string): void {
-    window.open(imageUrl, '_blank');
+  getTruncatedFilename(filename: string): string {
+    if (filename.length <= 14) {
+      return filename;
+    }
+    return filename.substring(0, 18) + '...';
   }
-  */
+
+  getDisplayText(text: string, hasImage?: boolean): string {
+    // If this is an image message (has image and text looks like a filename)
+    if (
+      hasImage &&
+      text &&
+      (text.includes('.jpg') ||
+        text.includes('.jpeg') ||
+        text.includes('.png') ||
+        text.includes('.gif') ||
+        text.includes('.webp'))
+    ) {
+      // Remove "compressed_" prefix if present and truncate
+      const cleanText = text.startsWith('compressed_') ? text.substring(11) : text;
+      return this.getTruncatedFilename(cleanText);
+    }
+    return text;
+  }
+
+  openImageModal(imageUrl: string): void {
+    // Convert data URL to blob URL for security
+    if (imageUrl.startsWith('data:')) {
+      try {
+        // Convert data URL to blob
+        const arr = imageUrl.split(',');
+        const mime = arr[0].match(/:(.*?);/)?.[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
+        }
+        const blob = new Blob([u8arr], { type: mime });
+
+        // Create blob URL and open it
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Clean up blob URL after a delay
+        setTimeout(() => {
+          URL.revokeObjectURL(blobUrl);
+        }, 1000);
+      } catch (error) {
+        console.error('Error opening image:', error);
+      }
+    } else {
+      // Regular URL
+      const link = document.createElement('a');
+      link.href = imageUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }
 }
