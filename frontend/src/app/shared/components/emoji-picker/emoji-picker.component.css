@@ -1,7 +1,7 @@
 /* Emoji button styles */
 .emoji-button {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -10,8 +10,6 @@
   color: var(--text-secondary);
   border: none;
   cursor: pointer;
-  min-height: 44px;
-  min-width: 44px;
   margin-right: var(--spacing-md);
   transition: all 0.2s ease;
 }
@@ -19,10 +17,11 @@
 .emoji-button:hover {
   background-color: var(--nav-hover);
   color: var(--primary-color);
+  transform: scale(1.05);
 }
 
 .emoji-button:hover .emoji-icon {
-  transform: scale(1.1);
+  transform: scale(1);
 }
 
 .emoji-button:active .emoji-icon {
@@ -71,8 +70,8 @@
 }
 
 .emoji-option {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border: none;
   background: transparent;
   border-radius: 8px;
@@ -82,8 +81,8 @@
   align-items: center;
   justify-content: center;
   transition: all 0.15s ease;
-  min-height: 42px;
-  min-width: 42px;
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .emoji-option:hover {
@@ -141,6 +140,24 @@
   }
 }
 
+/* Mobile button adjustments */
+@media (max-width: 599px) {
+  .emoji-button {
+    width: 28px;
+    height: 28px;
+    margin-right: var(--spacing-sm);
+  }
+
+  .emoji-button:hover {
+    transform: none;
+  }
+
+  .emoji-icon {
+    width: 22px;
+    height: 22px;
+  }
+}
+
 /* Very small screens - bigger emojis */
 @media only screen and (max-width: 480px) {
   .emoji-picker {
@@ -157,14 +174,5 @@
     grid-template-columns: repeat(6, 1fr);
     gap: 8px;
     padding: var(--spacing-md);
-  }
-
-  .emoji-picker .emoji-grid .emoji-option {
-    width: 38px;
-    height: 38px;
-    font-size: 28px;
-    min-height: 38px;
-    min-width: 38px;
-    border-radius: 8px;
   }
 }

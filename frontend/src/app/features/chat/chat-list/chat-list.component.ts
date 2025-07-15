@@ -533,6 +533,29 @@ export class ChatListComponent implements OnInit, OnDestroy {
     return getRelativeTime(timestamp);
   }
 
+  /**
+   * Parse and display last message properly for image messages
+   */
+  getDisplayMessage(lastMessage: string | undefined): string {
+    if (!lastMessage) return '— no messages yet —';
+    
+    // Check if it's a JSON payload from image message
+    if (lastMessage.startsWith('{"text":') && lastMessage.includes('imageData')) {
+      try {
+        const parsed = JSON.parse(lastMessage);
+        if (parsed.hasImage) {
+          return parsed.text ? `📷 ${parsed.text}` : '📷 Image';
+        }
+        return parsed.text || '— no messages yet —';
+      } catch {
+        // If parsing fails, return as-is
+        return lastMessage;
+      }
+    }
+    
+    return lastMessage;
+  }
+
   // Public methods
   public reloadChats(): void {
     this.chats = [];
