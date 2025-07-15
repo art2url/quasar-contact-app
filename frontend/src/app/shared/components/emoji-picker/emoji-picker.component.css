@@ -12,6 +12,7 @@
   cursor: pointer;
   margin-right: var(--spacing-md);
   transition: all 0.2s ease;
+  align-self: flex-end;
 }
 
 .emoji-button:hover {
