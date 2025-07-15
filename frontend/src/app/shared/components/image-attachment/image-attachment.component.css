@@ -1,7 +1,7 @@
 /* Image attachment button styles */
 .image-button {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -13,13 +13,12 @@
   margin-right: var(--spacing-sm);
   transition: all 0.2s ease;
   position: relative;
-  align-self: flex-end;
 }
 
 .image-button:hover {
   background-color: var(--nav-hover);
   color: var(--primary-color);
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 .image-button:disabled {

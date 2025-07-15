@@ -1,7 +1,7 @@
 /* Emoji button styles */
 .emoji-button {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -12,13 +12,12 @@
   cursor: pointer;
   margin-right: var(--spacing-md);
   transition: all 0.2s ease;
-  align-self: flex-end;
 }
 
 .emoji-button:hover {
   background-color: var(--nav-hover);
   color: var(--primary-color);
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 .emoji-button:hover .emoji-icon {
