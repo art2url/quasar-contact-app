@@ -420,8 +420,8 @@
   }
 
   .custom-send-icon {
-    width: 18px !important;
-    height: 18px !important;
+    width: 20px !important;
+    height: 20px !important;
   }
 }
 
@@ -1191,11 +1191,14 @@
   }
 
   .chat-container {
-    height: 100vh;
+    height: calc(100vh - var(--header-height) - 60px);
     border-radius: 0;
     box-shadow: none;
     margin: 0;
-    position: relative;
+    position: fixed;
+    top: calc(var(--header-height) + 60px);
+    left: 0;
+    right: 0;
     display: flex;
     flex-direction: column;
     background-color: var(--card-background);
@@ -1220,18 +1223,20 @@
   }
 
   .chat-window {
-    /* Calculate proper height: viewport - app header - chat header (60px) - dynamic chat form */
-    height: calc(100vh - var(--header-height) - 60px - 70px);
-    padding: var(--spacing-xl) var(--spacing-md);
-    padding-top: calc(60px + var(--spacing-md)); /* Space for fixed chat header */
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: var(--chat-form-height, 70px);
+    padding: 0 var(--spacing-md);
+
+    padding-top: 0;
     overflow-y: auto;
-    position: relative;
-    padding-bottom: 80px;
+    box-sizing: border-box;
   }
 
-  /* When cache banner is visible, add extra top padding to account for its height */
   .chat-container:has(.cache-info-banner) .chat-window {
-    padding-top: calc(60px + var(--spacing-md) + 60px); /* chat-header + spacing + banner space */
+    padding-top: var(--cache-info-banner-height, 60px);
   }
 
   .chat-form {
@@ -1318,7 +1323,7 @@
 
   .scroll-to-bottom-btn {
     position: fixed;
-    bottom: var(--scroll-button-bottom, 100px); /* Dynamic position above chat-form */
+    bottom: var(--scroll-button-bottom, 100px);
     left: 50%;
     width: 44px;
     height: 44px;

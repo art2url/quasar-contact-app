@@ -32,6 +32,7 @@ import { ChatSessionService } from '@services/chat-session.service';
 import { LoadingService } from '@services/loading.service';
 import { NotificationService } from '@services/notification.service';
 import { WebSocketService } from '@services/websocket.service';
+import { MobileChatLayoutService } from '@services/mobile-chat-layout.service';
 
 // Import the cache info banner component
 import { CacheInfoBannerComponent } from '@shared/components/cache-info-banner/cache-info-banner.component';
@@ -158,7 +159,8 @@ export class ChatRoomComponent
     private loadingService: LoadingService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private mobileChatLayoutService: MobileChatLayoutService
   ) {}
 
   @HostListener('window:resize')
@@ -192,6 +194,9 @@ export class ChatRoomComponent
       const cardBg = getComputedStyle(document.documentElement).getPropertyValue('--card-background').trim();
       document.body.style.backgroundColor = cardBg || '#f8f9fa';
     }
+
+    // Initialize mobile layout service for dynamic height calculations
+    this.mobileChatLayoutService.forceUpdate();
 
     // Reset the flag for this chat room
     this.hasMarkedMessagesAsRead = false;
@@ -271,10 +276,14 @@ export class ChatRoomComponent
             this.hasInitiallyScrolled = true;
             this.shouldAutoScroll = true;
 
-            // Scroll to bottom after a brief delay to ensure DOM is updated
+            // Scroll to bottom after ensuring layout is calculated
             setTimeout(() => {
-              this.scrollToBottom(true);
-            }, 100);
+              // Force layout update before scrolling
+              this.mobileChatLayoutService.forceUpdate();
+              setTimeout(() => {
+                this.scrollToBottom(true);
+              }, 100);
+            }, 150);
 
             // Don't mark messages as read just because they loaded
             // Only mark as read when user actually sees them (after scroll)
@@ -421,13 +430,18 @@ export class ChatRoomComponent
         // User is at bottom, reset counter and auto-scroll
         this.newMessagesCount = 0;
         this.shouldAutoScroll = true;
-        this.ngZone.runOutsideAngular(() => {
-          requestAnimationFrame(() => {
-            this.ngZone.run(() => {
-              this.scrollToBottom(true);
+        
+        // Check if we should actually auto-scroll based on user's position
+        const container = this.messageContainer?.nativeElement;
+        if (container && this.mobileChatLayoutService.shouldAutoScroll(container)) {
+          this.ngZone.runOutsideAngular(() => {
+            requestAnimationFrame(() => {
+              this.ngZone.run(() => {
+                this.scrollToBottom(true);
+              });
             });
           });
-        });
+        }
       }
     }
 
@@ -627,15 +641,10 @@ export class ChatRoomComponent
     if (!this.messageContainer?.nativeElement || this.isLoadingMessages) return;
 
     const container = this.messageContainer.nativeElement;
-    const scrollTop = container.scrollTop;
-    const scrollHeight = container.scrollHeight;
-    const clientHeight = container.clientHeight;
-
-    // Track scroll position for button logic
-
-    // More intelligent detection
-    const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-    const isNearBottom = distanceFromBottom <= 50; // Within 50px of bottom
+    
+    // Use mobile layout service for accurate scroll detection
+    const distanceFromBottom = this.mobileChatLayoutService.getDistanceFromBottom(container);
+    const isNearBottom = this.mobileChatLayoutService.isUserAtActualBottom(container);
 
     // FIXED: Show button ONLY when user scrolls up significantly
     const shouldShowButton = distanceFromBottom > 100; // Temporarily easier to trigger for testing
@@ -689,7 +698,11 @@ export class ChatRoomComponent
   ngAfterViewChecked() {
     // Only auto-scroll if conditions are met and not loading
     if (this.shouldAutoScroll && this.isUserAtBottom && !this.isLoadingMessages) {
-      this.scrollToBottom(false);
+      // Check if we should actually auto-scroll based on user's position
+      const container = this.messageContainer?.nativeElement;
+      if (container && this.mobileChatLayoutService.shouldAutoScroll(container)) {
+        this.scrollToBottom(false);
+      }
       this.shouldAutoScroll = false;
     }
   }
@@ -846,8 +859,23 @@ export class ChatRoomComponent
     // Update typing indicator position after resize
     this.updateTypingIndicatorPosition();
     
+    // Force mobile layout service to recalculate chat-window height
+    this.mobileChatLayoutService.forceUpdate();
+    // Also manually trigger a recalculation to ensure immediate update
+    this.updateChatWindowHeight();
+    
     // Auto-scroll to keep last message visible when textarea expands
     this.autoScrollOnTextareaResize();
+  }
+
+  private updateChatWindowHeight() {
+    // Get current chat-form height
+    const chatForm = document.querySelector('.chat-form') as HTMLElement;
+    if (chatForm) {
+      const chatFormHeight = chatForm.offsetHeight;
+      // Update the CSS variable directly
+      document.documentElement.style.setProperty('--chat-form-height', `${chatFormHeight}px`);
+    }
   }
 
   private autoScrollOnTextareaResize() {
@@ -865,44 +893,19 @@ export class ChatRoomComponent
   }
 
   private updateTypingIndicatorPosition() {
+    // Force update of mobile layout metrics
+    this.mobileChatLayoutService.forceUpdate();
+    
+    // Keep desktop positioning logic for backwards compatibility
     const chatForm = document.querySelector('.chat-form') as HTMLElement;
-    if (chatForm) {
+    if (chatForm && window.innerWidth > 599) {
       const chatFormHeight = chatForm.offsetHeight;
-      
-      if (window.innerWidth <= 599) {
-        // Mobile positioning
-        const safeArea = 'env(safe-area-inset-bottom, 0px)';
-        
-        // Update CSS custom property for typing indicator (1px border - 1px down = 0)
-        document.documentElement.style.setProperty(
-          '--typing-indicator-bottom', 
-          `calc(${chatFormHeight}px + ${safeArea})`
-        );
-        
-        // Update scroll-to-bottom button position (above typing indicator + some spacing)
-        const typingIndicatorHeight = 30; // Approximate height of typing indicator
-        const spacing = 10; // Space between button and typing indicator
-        document.documentElement.style.setProperty(
-          '--scroll-button-bottom', 
-          `calc(${chatFormHeight + typingIndicatorHeight + spacing}px + ${safeArea})`
-        );
-        
-        // Update attachment preview position (above chat form)
-        document.documentElement.style.setProperty(
-          '--attachment-preview-bottom', 
-          `calc(${chatFormHeight}px + ${safeArea})`
-        );
-        
-        // Remove dynamic padding - let fixed positioning handle spacing naturally
-      } else {
-        // Desktop positioning - above typing indicator
-        const typingIndicatorHeight = 35; // Desktop typing indicator height
-        const spacing = 15; // More spacing for desktop
-        document.documentElement.style.setProperty(
-          '--scroll-button-bottom-desktop', 
-          `calc(${chatFormHeight + typingIndicatorHeight + spacing}px)`
-        );
-      }
+      const typingIndicatorHeight = 35; // Desktop typing indicator height
+      const spacing = 15; // More spacing for desktop
+      document.documentElement.style.setProperty(
+        '--scroll-button-bottom-desktop', 
+        `calc(${chatFormHeight + typingIndicatorHeight + spacing}px)`
+      );
     }
   }
 
@@ -1082,14 +1085,8 @@ export class ChatRoomComponent
     try {
       const el = this.messageContainer?.nativeElement;
       if (el) {
-        if (smooth) {
-          el.scrollTo({
-            top: el.scrollHeight,
-            behavior: 'smooth',
-          });
-        } else {
-          el.scrollTop = el.scrollHeight;
-        }
+        // Use the mobile layout service for proper scroll handling
+        this.mobileChatLayoutService.scrollToBottomWithLayout(el, smooth);
 
         // Clear any pending scroll timeout
         if (this.scrollTimeout) {
@@ -1102,7 +1099,7 @@ export class ChatRoomComponent
           this.hasMarkedMessagesAsRead = true; // Set immediately to prevent multiple calls
           setTimeout(() => {
             this.markMessagesAsReadWhenVisible();
-          }, 300); // Wait for scroll to complete
+          }, 350); // Wait for scroll to complete (increased from 300 to account for layout delay)
         }
       }
     } catch (error) {
@@ -1269,9 +1266,17 @@ export class ChatRoomComponent
   ngOnDestroy() {
     document.body.classList.remove('chat-room-page');
     
-    // Reset body background
+    // Reset body background and clear mobile layout CSS variables
     if (window.innerWidth <= 599) {
       document.body.style.backgroundColor = '';
+      // Clean up mobile layout CSS variables
+      const root = document.documentElement;
+      root.style.removeProperty('--chat-window-height');
+      root.style.removeProperty('--scroll-button-bottom');
+      root.style.removeProperty('--typing-indicator-bottom');
+      root.style.removeProperty('--attachment-preview-bottom');
+      root.style.removeProperty('--viewport-height');
+      root.style.removeProperty('--chat-form-height');
     }
 
     // Reset the flag for next visit
