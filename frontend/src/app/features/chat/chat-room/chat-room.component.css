@@ -361,6 +361,7 @@
   align-items: center;
   justify-content: center;
   z-index: 10;
+  box-shadow: var(--shadow-sm);
 }
 
 .scroll-to-bottom-btn:hover {
@@ -1167,15 +1168,6 @@
 
 /* Override body background for chat room page in mobile */
 @media (max-width: 599px) {
-  :global(body.chat-room-page) {
-    background-color: var(--card-background) !important;
-  }
-
-  /* Override body background for chat room page */
-  :host {
-    background-color: var(--card-background) !important;
-  }
-
   /* Reset mobile wrapper to normal positioning */
   .chat-wrapper {
     padding: 0;
@@ -1186,7 +1178,7 @@
     transform: none;
     height: auto;
     display: block;
-    background-color: var(--background-color);
+    background-color: var(--card-background);
     min-height: 100vh;
   }
 
@@ -1229,7 +1221,6 @@
     right: 0;
     bottom: var(--chat-form-height, 70px);
     padding: 0 var(--spacing-md);
-
     padding-top: 0;
     overflow-y: auto;
     box-sizing: border-box;
@@ -1327,6 +1318,7 @@
     left: 50%;
     width: 44px;
     height: 44px;
+    box-shadow: var(--shadow-sm);
   }
 
   .message-badge {

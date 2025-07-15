@@ -193,6 +193,12 @@ export class ChatRoomComponent
     if (window.innerWidth <= 599) {
       const cardBg = getComputedStyle(document.documentElement).getPropertyValue('--card-background').trim();
       document.body.style.backgroundColor = cardBg || '#f8f9fa';
+      
+      // Block overall page scroll in mobile - only allow chat-window to scroll
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.height = '100vh';
+      document.body.style.height = '100vh';
     }
 
     // Initialize mobile layout service for dynamic height calculations
@@ -1269,6 +1275,13 @@ export class ChatRoomComponent
     // Reset body background and clear mobile layout CSS variables
     if (window.innerWidth <= 599) {
       document.body.style.backgroundColor = '';
+      
+      // Restore overall page scroll
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+      document.documentElement.style.height = '';
+      document.body.style.height = '';
+      
       // Clean up mobile layout CSS variables
       const root = document.documentElement;
       root.style.removeProperty('--chat-window-height');
