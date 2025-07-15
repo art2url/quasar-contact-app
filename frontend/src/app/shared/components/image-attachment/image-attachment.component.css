@@ -13,6 +13,7 @@
   margin-right: var(--spacing-sm);
   transition: all 0.2s ease;
   position: relative;
+  align-self: flex-end;
 }
 
 .image-button:hover {
