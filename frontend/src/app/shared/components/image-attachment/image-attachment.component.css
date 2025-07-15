@@ -189,6 +189,21 @@
 
 /* Mobile adjustments for images */
 @media (max-width: 599px) {
+  .image-button {
+    width: 28px;
+    height: 28px;
+    margin-right: var(--spacing-sm);
+  }
+
+  .image-button:hover {
+    transform: none;
+  }
+
+  .image-icon {
+    width: 18px;
+    height: 18px;
+  }
+
   .attached-image {
     width: 120px !important;
     height: 80px !important;
