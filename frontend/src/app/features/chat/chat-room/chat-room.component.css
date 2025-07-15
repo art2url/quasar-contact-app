@@ -407,18 +407,21 @@
 }
 
 @media (max-width: 599px) {
-  /* .chat-form app-image-attachment,
-  .chat-form app-emoji-picker {
-    margin-bottom: 2px;
-  } */
-  .chat-form .send-button,
-  .chat-form .cancel-button {
-    margin-bottom: 2px;
-  }
-
   .send-button,
   .cancel-button {
-    margin-right: 10px;
+    width: 28px;
+    height: 28px;
+    margin-right: 6px;
+  }
+
+  .send-button:hover:not(:disabled),
+  .cancel-button:hover {
+    transform: none;
+  }
+
+  .custom-send-icon {
+    width: 18px !important;
+    height: 18px !important;
   }
 }
 

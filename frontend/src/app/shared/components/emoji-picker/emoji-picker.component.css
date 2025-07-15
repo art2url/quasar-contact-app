@@ -140,6 +140,24 @@
   }
 }
 
+/* Mobile button adjustments */
+@media (max-width: 599px) {
+  .emoji-button {
+    width: 28px;
+    height: 28px;
+    margin-right: var(--spacing-sm);
+  }
+
+  .emoji-button:hover {
+    transform: none;
+  }
+
+  .emoji-icon {
+    width: 18px;
+    height: 18px;
+  }
+}
+
 /* Very small screens - bigger emojis */
 @media only screen and (max-width: 480px) {
   .emoji-picker {
