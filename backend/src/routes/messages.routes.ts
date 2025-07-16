@@ -3,7 +3,6 @@ import jwt from 'jsonwebtoken';
 import env from '../config/env';
 import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
 import { prisma } from '../services/database.service';
-import { Message, User } from '@prisma/client';
 
 /*
   Note: This backend route handles only storing and retrieving encrypted data.
@@ -59,7 +58,7 @@ router.get('/overview', authenticateToken, async (req: AuthRequest, res) => {
     // Group messages by sender and calculate unread count
     const peerMap = new Map();
     
-    messages.forEach((msg: Message & { sender: User }) => {
+    messages.forEach((msg: typeof messages[0]) => {
       const senderId = msg.senderId;
       if (!peerMap.has(senderId)) {
         peerMap.set(senderId, {
