@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
 export const prisma = new PrismaClient({
-  log: ['query', 'info', 'warn', 'error'],
+  log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
 });
 
 export async function connectDatabase() {
