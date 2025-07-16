@@ -20,7 +20,7 @@ router.get('/', authenticateToken, async (_req, res) => {
     });
 
     // Convert to match expected frontend format
-    const formattedUsers = users.map(user => ({
+    const formattedUsers = users.map((user: typeof users[0]) => ({
       _id: user.id,
       username: user.username,
       avatarUrl: user.avatarUrl,

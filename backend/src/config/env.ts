@@ -6,7 +6,7 @@ dotenv.config();
 interface EnvConfig {
   PORT: number;
   NODE_ENV: string;
-  MONGO_URI: string;
+  DATABASE_PUBLIC_URL: string;
   APP_NAME: string;
   JWT_SECRET: string;
   CLIENT_ORIGIN: string;
@@ -28,7 +28,7 @@ interface EnvConfig {
 export const env: EnvConfig = {
   PORT: parseInt(process.env.PORT || '5000', 10),
   NODE_ENV: process.env.NODE_ENV || 'development',
-  MONGO_URI: process.env.MONGO_URI || '',
+  DATABASE_PUBLIC_URL: process.env.DATABASE_PUBLIC_URL || '',
   APP_NAME: process.env.APP_NAME || 'Quasar Contact',
   JWT_SECRET: process.env.JWT_SECRET || '',
   CLIENT_ORIGIN: process.env.CLIENT_ORIGIN || 'http://localhost:4200',
@@ -48,8 +48,8 @@ export const env: EnvConfig = {
 
 // Validate required environment variables
 const validateEnv = () => {
-  if (!env.MONGO_URI) {
-    throw new Error('MONGO_URI is required');
+  if (!env.DATABASE_PUBLIC_URL) {
+    throw new Error('DATABASE_PUBLIC_URL is required');
   }
 
   if (!env.JWT_SECRET) {
