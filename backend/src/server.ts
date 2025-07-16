@@ -7,10 +7,7 @@ import env from './config/env';
 
 // Static file serving is now handled in app.ts - remove from here to avoid conflicts
 
-// Health check endpoint (this might be duplicate - check app.ts)
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
+// Health check endpoint is defined in app.ts
 
 const server = http.createServer(app);
 
@@ -64,27 +61,29 @@ io.on('connection', socket => {
 // Register the enhanced socket event handlers
 setupSocket(io);
 
-// Enhanced PostgreSQL connection with better error handling
-connectDatabase()
-  .then(() => {
-    // Start server after successful DB connection
-    server.listen(env.PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${env.PORT}`);
-      console.log(`🏠 Landing: http://localhost:${env.PORT}/`);
-      console.log(`💬 Chat App: http://localhost:${env.PORT}/app`);
-      console.log(`🛠️  API: http://localhost:${env.PORT}/api`);
-      console.log('📡 Socket.IO transports: websocket, polling');
-      console.log(`⏰ Ping interval: ${25000}ms, timeout: ${60000}ms`);
+// Start server immediately, connect to database asynchronously
+server.listen(env.PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${env.PORT}`);
+  console.log(`🏠 Landing: http://localhost:${env.PORT}/`);
+  console.log(`💬 Chat App: http://localhost:${env.PORT}/app`);
+  console.log(`🛠️  API: http://localhost:${env.PORT}/api`);
+  console.log('📡 Socket.IO transports: websocket, polling');
+  console.log(`⏰ Ping interval: ${25000}ms, timeout: ${60000}ms`);
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔧 Development mode - enhanced logging enabled');
-      }
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔧 Development mode - enhanced logging enabled');
+  }
+
+  // Connect to database after server starts
+  connectDatabase()
+    .then(() => {
+      console.log('✅ Database connected successfully');
+    })
+    .catch(err => {
+      console.error('❌ DB connection failed:', err);
+      console.error('⚠️  Server running without database connection');
     });
-  })
-  .catch(err => {
-    console.error('❌ DB connection failed:', err);
-    process.exit(1);
-  });
+});
 
 // Enhanced server error handling
 server.on('error', err => {
