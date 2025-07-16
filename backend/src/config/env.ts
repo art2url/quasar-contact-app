@@ -46,14 +46,17 @@ export const env: EnvConfig = {
   SMTP_FROM: process.env.SMTP_FROM || 'noreply@quasar.contact',
 };
 
-// Validate required environment variables
+// Validate required environment variables  
 const validateEnv = () => {
-  if (!env.DATABASE_PUBLIC_URL) {
-    throw new Error('DATABASE_PUBLIC_URL is required');
+  // Only validate JWT_SECRET as it's critical for auth
+  if (!env.JWT_SECRET) {
+    console.error('❌ JWT_SECRET is required');
+    throw new Error('JWT_SECRET is required');
   }
 
-  if (!env.JWT_SECRET) {
-    throw new Error('JWT_SECRET is required');
+  // Warn about missing DATABASE_PUBLIC_URL but don't block startup
+  if (!env.DATABASE_PUBLIC_URL) {
+    console.warn('⚠️  DATABASE_PUBLIC_URL not set - database features may not work');
   }
 
   if (env.JWT_SECRET.length < 32) {
