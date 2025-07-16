@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { Server, Socket } from 'socket.io';
 import env from '../config/env';
-import Message from '../models/Message';
+import { prisma } from '../services/database.service';
 
 type JwtPayload = {
   userId: string;
@@ -193,14 +193,17 @@ export const setupSocket = (io: Server) => {
             avatarUrl: avatarUrl ?? socket.data.avatarUrl,
           };
 
-          const saved = await Message.create(messageData);
+          const saved = await prisma.message.create({
+            data: messageData,
+          });
+
           const timestamp = saved.timestamp || saved.createdAt;
 
           // Message saved to database with ID and timestamp
 
           // Always acknowledge to sender first
           socket.emit('message-sent', {
-            messageId: saved._id,
+            messageId: saved.id,
             timestamp,
           });
 
@@ -210,7 +213,7 @@ export const setupSocket = (io: Server) => {
             fromUsername: username,
             avatarUrl: avatarUrl ?? socket.data.avatarUrl,
             ciphertext,
-            messageId: saved._id,
+            messageId: saved.id,
             timestamp,
           });
 
@@ -246,14 +249,13 @@ export const setupSocket = (io: Server) => {
     // Enhanced read receipts
     socket.on('read-message', async ({ messageId }: { messageId: string }) => {
       try {
-        const updated = await Message.findByIdAndUpdate(
-          messageId,
-          { read: true, readAt: new Date() },
-          { new: true },
-        );
+        const updated = await prisma.message.update({
+          where: { id: messageId },
+          data: { read: true },
+        });
 
         if (updated) {
-          const senderId = updated.senderId.toString();
+          const senderId = updated.senderId;
           emitToUser(io, senderId, 'message-read', { messageId });
         }
       } catch (err) {
@@ -274,11 +276,17 @@ export const setupSocket = (io: Server) => {
         avatarUrl?: string;
       }) => {
         try {
-          const updated = await Message.findOneAndUpdate(
-            { _id: messageId, senderId: userId },
-            { ciphertext, avatarUrl, editedAt: new Date() },
-            { new: true },
-          );
+          const updated = await prisma.message.update({
+            where: {
+              id: messageId,
+              senderId: userId,
+            },
+            data: {
+              ciphertext,
+              avatarUrl,
+              editedAt: new Date(),
+            },
+          });
 
           if (!updated) {
             socket.emit('message-error', {
@@ -288,7 +296,7 @@ export const setupSocket = (io: Server) => {
           }
 
           const eventData = {
-            messageId: updated._id,
+            messageId: updated.id,
             ciphertext: updated.ciphertext,
             editedAt: updated.editedAt,
             avatarUrl: updated.avatarUrl,
@@ -298,7 +306,7 @@ export const setupSocket = (io: Server) => {
           socket.emit('message-edited', eventData);
 
           // Send to recipient with queueing
-          const receiverId = updated.receiverId.toString();
+          const receiverId = updated.receiverId;
           emitToUser(io, receiverId, 'message-edited', eventData);
         } catch (err) {
           console.error('[Socket] edit-message error:', err);
@@ -312,11 +320,17 @@ export const setupSocket = (io: Server) => {
     // Enhanced delete-message with better synchronization
     socket.on('delete-message', async ({ messageId }: { messageId: string }) => {
       try {
-        const msg = await Message.findOneAndUpdate(
-          { _id: messageId, senderId: userId },
-          { deleted: true, deletedAt: new Date(), ciphertext: '' },
-          { new: true },
-        );
+        const msg = await prisma.message.update({
+          where: {
+            id: messageId,
+            senderId: userId,
+          },
+          data: {
+            deleted: true,
+            deletedAt: new Date(),
+            ciphertext: '',
+          },
+        });
 
         if (!msg) {
           socket.emit('message-error', {
@@ -326,7 +340,7 @@ export const setupSocket = (io: Server) => {
         }
 
         const eventData = {
-          messageId: msg._id,
+          messageId: msg.id,
           deletedAt: msg.deletedAt,
         };
 
@@ -334,7 +348,7 @@ export const setupSocket = (io: Server) => {
         socket.emit('message-deleted', eventData);
 
         // Send to recipient with queueing
-        const receiverId = msg.receiverId.toString();
+        const receiverId = msg.receiverId;
         emitToUser(io, receiverId, 'message-deleted', eventData);
       } catch (err) {
         console.error('[Socket] delete-message error:', err);
