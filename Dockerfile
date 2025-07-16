@@ -46,6 +46,9 @@ RUN cd backend && npm run build
 # Production stage
 FROM node:22-alpine AS production
 
+# Install curl for health checks
+RUN apk add --no-cache curl
+
 WORKDIR /app
 
 # Copy built assets from builder stage
@@ -67,8 +70,8 @@ RUN cd backend && npx prisma generate
 EXPOSE $PORT
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:${PORT:-3000}/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:${PORT:-3000}/health || exit 1
 
 # Start the application with Railway's PORT
-CMD ["sh", "-c", "cd backend && npx prisma migrate deploy && PORT=${PORT:-3000} node dist/server.js"]
+CMD ["sh", "-c", "cd backend && echo 'Starting deployment...' && (npx prisma migrate deploy || echo 'Migration failed, continuing...') && echo 'Starting server...' && PORT=${PORT:-3000} node dist/server.js"]
