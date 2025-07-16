@@ -1,6 +1,6 @@
 import http from 'http';
 import { Server } from 'socket.io';
-import mongoose from 'mongoose';
+import { connectDatabase, disconnectDatabase } from './services/database.service';
 import app from './app';
 import { setupSocket } from './sockets';
 import env from './config/env';
@@ -64,17 +64,9 @@ io.on('connection', socket => {
 // Register the enhanced socket event handlers
 setupSocket(io);
 
-// Enhanced MongoDB connection with better error handling
-mongoose
-  .connect(env.MONGO_URI, {
-    // Connection options for better stability
-    maxPoolSize: 10, // Maintain up to 10 socket connections
-    serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
-    socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-  })
+// Enhanced PostgreSQL connection with better error handling
+connectDatabase()
   .then(() => {
-    console.log('✅ Connected to MongoDB');
-
     // Start server after successful DB connection
     server.listen(env.PORT, () => {
       console.log(`🚀 Server running on http://localhost:${env.PORT}`);
@@ -107,11 +99,10 @@ process.on('SIGTERM', () => {
     console.log('✅ HTTP server closed');
 
     try {
-      await mongoose.connection.close();
-      console.log('✅ MongoDB connection closed');
+      await disconnectDatabase();
       process.exit(0);
     } catch (err) {
-      console.error('❌ Error closing MongoDB connection:', err);
+      console.error('❌ Error closing database connection:', err);
       process.exit(1);
     }
   });
@@ -124,11 +115,10 @@ process.on('SIGINT', () => {
     console.log('✅ HTTP server closed');
 
     try {
-      await mongoose.connection.close();
-      console.log('✅ MongoDB connection closed');
+      await disconnectDatabase();
       process.exit(0);
     } catch (err) {
-      console.error('❌ Error closing MongoDB connection:', err);
+      console.error('❌ Error closing database connection:', err);
       process.exit(1);
     }
   });

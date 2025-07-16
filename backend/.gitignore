@@ -347,3 +347,4 @@ firebase-debug.*.log
 
 # Add your custom ignores here
 # e.g., specific folders, files, or patterns unique to your project
+/src/generated/prisma

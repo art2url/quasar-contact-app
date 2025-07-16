@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
-import User from '../models/User';
+import { prisma } from '../services/database.service';
 
 /*
   Note: All encryption and decryption operations are performed on the frontend using crypto.subtle.
@@ -19,14 +19,13 @@ router.post('/upload', authenticateToken, async (req: AuthRequest, res) => {
   }
 
   try {
-    const updated = await User.findByIdAndUpdate(
-      user.userId,
-      {
+    const updated = await prisma.user.update({
+      where: { id: user.userId },
+      data: {
         publicKeyBundle,
         isKeyMissing: false, // Keys are now available
       },
-      { new: true },
-    );
+    });
 
     if (!updated) {
       return res.status(404).json({ message: 'User not found.' });
@@ -45,9 +44,15 @@ router.get('/:userId', async (req, res) => {
   const { userId } = req.params;
 
   try {
-    const user = await User.findById(userId).select(
-      'publicKeyBundle username avatarUrl isKeyMissing',
-    );
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        publicKeyBundle: true,
+        username: true,
+        avatarUrl: true,
+        isKeyMissing: true,
+      },
+    });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found.' });
@@ -81,14 +86,17 @@ router.post('/mark-missing', authenticateToken, async (req: AuthRequest, res) =>
 
   try {
     // SECURITY CHECK 1: Get current user state
-    const currentUser = await User.findById(user.userId);
+    const currentUser = await prisma.user.findUnique({
+      where: { id: user.userId },
+    });
+
     if (!currentUser) {
       return res.status(404).json({ message: 'User not found.' });
     }
 
     // SECURITY CHECK 2: Rate limiting - prevent rapid successive calls
     const now = Date.now();
-    const lastMarkTime = currentUser.lastKeyMarkTime || 0;
+    const lastMarkTime = currentUser.lastKeyMarkTime ? Number(currentUser.lastKeyMarkTime) : 0;
     const timeSinceLastMark = now - lastMarkTime;
     const MIN_MARK_INTERVAL = 60000; // 1 minute minimum between calls
 
@@ -122,7 +130,7 @@ router.post('/mark-missing', authenticateToken, async (req: AuthRequest, res) =>
     }
 
     // SECURITY CHECK 5: Add audit trail
-    const clientIP = req.ip || req.connection.remoteAddress;
+    const clientIP = req.ip || req.socket.remoteAddress;
     const userAgent = req.headers['user-agent'];
     console.log(
       `[Keys] AUDIT: User ${currentUser.username} (${user.userId}) marked keys as missing`,
@@ -135,16 +143,15 @@ router.post('/mark-missing', authenticateToken, async (req: AuthRequest, res) =>
     );
 
     // Update user with security tracking
-    const updated = await User.findByIdAndUpdate(
-      user.userId,
-      {
+    const updated = await prisma.user.update({
+      where: { id: user.userId },
+      data: {
         // DO NOT clear publicKeyBundle - other users still need it to encrypt messages
         isKeyMissing: true, // Mark keys as missing (user can't decrypt, but others can still encrypt)
-        lastKeyMarkTime: now, // Track when this was last called (for rate limiting)
+        lastKeyMarkTime: BigInt(now), // Track when this was last called (for rate limiting)
         keyMarkCount: (currentUser.keyMarkCount || 0) + 1, // Track how many times user has marked keys as missing
       },
-      { new: true },
-    );
+    });
 
     if (!updated) {
       return res.status(404).json({ message: 'User not found.' });
@@ -156,6 +163,5 @@ router.post('/mark-missing', authenticateToken, async (req: AuthRequest, res) =>
     res.status(500).json({ message: 'Server error marking keys as missing.' });
   }
 });
-
 
 export default router;
