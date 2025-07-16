@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../services/database.service';
 import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
+import { User } from '@prisma/client';
 
 const router = Router();
 
@@ -34,7 +35,7 @@ router.post('/dm', authenticateToken, async (req: AuthRequest, res) => {
 
     // Make sure the room has exactly 2 members and contains both users
     if (room && room.members.length === 2) {
-      const memberIds = room.members.map(m => m.id);
+      const memberIds = room.members.map((m: User) => m.id);
       if (memberIds.includes(me) && memberIds.includes(other)) {
         return res.json({ roomId: room.id });
       }
@@ -93,7 +94,7 @@ router.get('/my-dms', authenticateToken, async (req: AuthRequest, res) => {
     });
 
     // Extract the other member from each room
-    const list = rooms.map(room => {
+    const list = rooms.map((room: typeof rooms[0]) => {
       const otherMember = room.members[0];
       return otherMember ? {
         _id: otherMember.id,
