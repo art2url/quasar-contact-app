@@ -51,11 +51,17 @@ WORKDIR /app
 # Copy built assets from builder stage
 COPY --from=builder /app/backend/dist ./backend/dist
 COPY --from=builder /app/backend/package*.json ./backend/
+COPY --from=builder /app/backend/prisma ./backend/prisma
+COPY --from=builder /app/backend/node_modules/.prisma ./backend/node_modules/.prisma
+COPY --from=builder /app/backend/node_modules/@prisma ./backend/node_modules/@prisma
 COPY --from=builder /app/frontend/dist/browser ./dist
 COPY --from=builder /app/landing/dist ./public
 
 # Install only production dependencies for backend
 RUN cd backend && npm ci --omit=dev && npm cache clean --force
+
+# Generate Prisma client and run migrations
+RUN cd backend && npx prisma generate
 
 # Expose port (Railway uses PORT env var)
 EXPOSE $PORT
@@ -65,4 +71,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:${PORT:-3000}/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
 
 # Start the application with Railway's PORT
-CMD ["sh", "-c", "cd backend && PORT=${PORT:-3000} node dist/server.js"]
+CMD ["sh", "-c", "cd backend && npx prisma migrate deploy && PORT=${PORT:-3000} node dist/server.js"]
