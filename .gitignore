@@ -430,3 +430,5 @@ dist/
 
 # Add your custom ignores here
 # e.g., specific folders, files, or patterns unique to your project
+frontend/tmp
+public

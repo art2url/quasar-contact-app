@@ -1,16 +1,13 @@
 import http from 'http';
 import { Server } from 'socket.io';
-import mongoose from 'mongoose';
+import { connectDatabase, disconnectDatabase } from './services/database.service';
 import app from './app';
 import { setupSocket } from './sockets';
 import env from './config/env';
 
 // Static file serving is now handled in app.ts - remove from here to avoid conflicts
 
-// Health check endpoint (this might be duplicate - check app.ts)
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
+// Health check endpoint is defined in app.ts
 
 const server = http.createServer(app);
 
@@ -64,35 +61,29 @@ io.on('connection', socket => {
 // Register the enhanced socket event handlers
 setupSocket(io);
 
-// Enhanced MongoDB connection with better error handling
-mongoose
-  .connect(env.MONGO_URI, {
-    // Connection options for better stability
-    maxPoolSize: 10, // Maintain up to 10 socket connections
-    serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
-    socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-  })
-  .then(() => {
-    console.log('✅ Connected to MongoDB');
+// Start server immediately, connect to database asynchronously
+server.listen(env.PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${env.PORT}`);
+  console.log(`🏠 Landing: http://localhost:${env.PORT}/`);
+  console.log(`💬 Chat App: http://localhost:${env.PORT}/app`);
+  console.log(`🛠️  API: http://localhost:${env.PORT}/api`);
+  console.log('📡 Socket.IO transports: websocket, polling');
+  console.log(`⏰ Ping interval: ${25000}ms, timeout: ${60000}ms`);
 
-    // Start server after successful DB connection
-    server.listen(env.PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${env.PORT}`);
-      console.log(`🏠 Landing: http://localhost:${env.PORT}/`);
-      console.log(`💬 Chat App: http://localhost:${env.PORT}/app`);
-      console.log(`🛠️  API: http://localhost:${env.PORT}/api`);
-      console.log('📡 Socket.IO transports: websocket, polling');
-      console.log(`⏰ Ping interval: ${25000}ms, timeout: ${60000}ms`);
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔧 Development mode - enhanced logging enabled');
+  }
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔧 Development mode - enhanced logging enabled');
-      }
+  // Connect to database after server starts
+  connectDatabase()
+    .then(() => {
+      console.log('✅ Database connected successfully');
+    })
+    .catch(err => {
+      console.error('❌ DB connection failed:', err);
+      console.error('⚠️  Server running without database connection');
     });
-  })
-  .catch(err => {
-    console.error('❌ DB connection failed:', err);
-    process.exit(1);
-  });
+});
 
 // Enhanced server error handling
 server.on('error', err => {
@@ -107,11 +98,10 @@ process.on('SIGTERM', () => {
     console.log('✅ HTTP server closed');
 
     try {
-      await mongoose.connection.close();
-      console.log('✅ MongoDB connection closed');
+      await disconnectDatabase();
       process.exit(0);
     } catch (err) {
-      console.error('❌ Error closing MongoDB connection:', err);
+      console.error('❌ Error closing database connection:', err);
       process.exit(1);
     }
   });
@@ -124,11 +114,10 @@ process.on('SIGINT', () => {
     console.log('✅ HTTP server closed');
 
     try {
-      await mongoose.connection.close();
-      console.log('✅ MongoDB connection closed');
+      await disconnectDatabase();
       process.exit(0);
     } catch (err) {
-      console.error('❌ Error closing MongoDB connection:', err);
+      console.error('❌ Error closing database connection:', err);
       process.exit(1);
     }
   });

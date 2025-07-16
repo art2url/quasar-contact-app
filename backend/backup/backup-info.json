@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-07-16T08-16-56-032Z",
+  "collections": {
+    "users": 5,
+    "messages": 60,
+    "rooms": 4,
+    "passwordResets": 0
+  }
+}
