@@ -325,17 +325,25 @@ export class AuthService {
   // Password reset methods
   requestPasswordReset(
     email: string,
-    recaptchaToken?: string
+    recaptchaToken?: string,
+    honeypotFields?: Record<string, string>
   ): Observable<{ message: string }> {
-    // Build reset data with optional reCAPTCHA token
+    // Build reset data with optional reCAPTCHA token and honeypot fields
     interface ResetData {
       email: string;
       recaptchaToken?: string;
+      formStartTime?: number;
+      [key: string]: any;
     }
 
     const resetData: ResetData = { email };
     if (recaptchaToken) {
       resetData.recaptchaToken = recaptchaToken;
+    }
+    
+    // Add honeypot fields to the request
+    if (honeypotFields) {
+      Object.assign(resetData, honeypotFields);
     }
 
     return this.http.post<{ message: string }>(
