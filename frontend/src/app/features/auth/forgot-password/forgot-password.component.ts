@@ -10,7 +10,7 @@ import {
 import { Subscription, timer } from 'rxjs';
 
 import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+import { CommonModule, KeyValuePipe } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
@@ -22,6 +22,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '@services/auth.service';
 import { ThemeService } from '@services/theme.service';
 import { RecaptchaService } from '@services/recaptcha.service';
+import { HoneypotService } from '@services/honeypot.service';
 
 @Component({
   selector: 'app-forgot-password',
@@ -29,6 +30,7 @@ import { RecaptchaService } from '@services/recaptcha.service';
   imports: [
     FormsModule,
     CommonModule,
+    KeyValuePipe,
     RouterModule,
     MatButtonModule,
     MatInputModule,
@@ -55,12 +57,17 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
   private themeSubscription?: Subscription;
 
   private resendTimer: Subscription | undefined;
+  
+  // Security fields
+  securityFields: Record<string, string> = {};
+  formStartTime = 0;
 
   constructor(
     private authService: AuthService,
     private recaptchaService: RecaptchaService,
     private themeService: ThemeService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    public honeypotService: HoneypotService
   ) {}
 
   ngOnInit(): void {
@@ -68,6 +75,10 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
     this.error = '';
     this.emailSent = false;
     this.resendCooldown = 0;
+    
+    // Initialize security fields
+    this.securityFields = this.honeypotService.createHoneypotData();
+    this.formStartTime = this.honeypotService.addFormStartTime();
   }
 
   ngAfterViewInit(): void {
@@ -75,24 +86,22 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
     this.setupThemeSubscription();
   }
 
-  private initializeRecaptcha(): void {
+  private async initializeRecaptcha(): Promise<void> {
     this.cdr.detectChanges();
+    
     try {
       // Use different element ID based on email sent state
       const elementId = this.emailSent ? 'recaptcha-forgot-password-resend' : 'recaptcha-forgot-password';
-      this.recaptchaWidgetId = this.recaptchaService.renderRecaptcha(
+      this.recaptchaWidgetId = await this.recaptchaService.initializeRecaptcha(
         elementId,
         (token: string) => {
           this.recaptchaToken = token;
           this.error = ''; // Clear any reCAPTCHA-related errors
         }
       );
+      // reCAPTCHA initialized successfully
     } catch (error) {
-      // Only log error if it's not the common "reCAPTCHA not loaded" error
-      if ((error as Error)?.message !== 'reCAPTCHA not loaded') {
-        console.error('Failed to initialize reCAPTCHA:', error);
-      }
-      this.error = 'Failed to load security verification. Please refresh the page.';
+      this.error = (error as Error).message;
     }
   }
 
@@ -152,6 +161,7 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
     return emailRegex.test(email);
   }
 
+
   onSubmit(): void {
     this.formSubmitted = true;
     this.error = '';
@@ -166,9 +176,16 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
       return;
     }
 
+    // Client-side security validation
+    if (!this.honeypotService.validateHoneypotFields(this.securityFields)) {
+      console.warn('[Forgot Password] Security validation failed on client side');
+      this.error = 'Please try again.';
+      return;
+    }
+
     this.isLoading = true;
 
-    this.authService.requestPasswordReset(this.email, this.recaptchaToken).subscribe({
+    this.authService.requestPasswordReset(this.email, this.recaptchaToken, this.securityFields).subscribe({
       next: () => {
         this.isLoading = false;
         this.emailSent = true;
@@ -199,9 +216,7 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
 
   private resetRecaptcha(): void {
     this.recaptchaToken = '';
-    if (this.recaptchaWidgetId !== undefined) {
-      this.recaptchaService.resetRecaptcha(this.recaptchaWidgetId);
-    }
+    this.recaptchaService.resetRecaptchaWidget(this.recaptchaWidgetId);
   }
 
   private startResendCooldown(): void {
@@ -226,10 +241,8 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
     }
 
     // Reset reCAPTCHA widget
-    if (this.recaptchaWidgetId !== undefined) {
-      this.recaptchaService.resetRecaptcha(this.recaptchaWidgetId);
-      this.recaptchaWidgetId = undefined;
-    }
+    this.recaptchaService.resetRecaptchaWidget(this.recaptchaWidgetId);
+    this.recaptchaWidgetId = undefined;
 
     // Clean up theme subscription
     if (this.themeSubscription) {

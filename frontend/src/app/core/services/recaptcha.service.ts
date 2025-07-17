@@ -1,6 +1,6 @@
-import { timer } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { environment } from '@environments/environment';
+import { timer } from 'rxjs';
 import { ThemeService } from './theme.service';
 
 declare const grecaptcha: {
@@ -103,6 +103,98 @@ export class RecaptchaService {
     } else {
       return grecaptcha.getResponse();
     }
+  }
+
+  /**
+   * Initialize reCAPTCHA widget with proper loading checks and retries
+   */
+  async initializeRecaptcha(
+    elementId: string,
+    callback: (token: string) => void,
+    retryCount = 0
+  ): Promise<number> {
+    const maxRetries = 3;
+
+    return new Promise((resolve, reject) => {
+      // Wait for reCAPTCHA to be ready before initializing
+      if (typeof grecaptcha !== 'undefined' && grecaptcha.ready) {
+        grecaptcha.ready(() => {
+          try {
+            const widgetId = this.renderRecaptcha(elementId, callback);
+            resolve(widgetId);
+          } catch (error) {
+            if (retryCount < maxRetries) {
+              // Retry reCAPTCHA initialization
+              this.initializeRecaptcha(elementId, callback, retryCount + 1)
+                .then(resolve)
+                .catch(reject);
+            } else {
+              console.error(
+                'reCAPTCHA initialization failed after',
+                maxRetries + 1,
+                'attempts:',
+                error
+              );
+              reject(
+                new Error(
+                  'Failed to load security verification. Please refresh the page.'
+                )
+              );
+            }
+          }
+        });
+      } else {
+        // Fallback for when grecaptcha is not yet available
+        if (retryCount < maxRetries) {
+          // Wait a bit before retrying
+          setTimeout(() => {
+            this.initializeRecaptcha(elementId, callback, retryCount + 1)
+              .then(resolve)
+              .catch(reject);
+          }, 300);
+        } else {
+          console.error('reCAPTCHA script not loaded after', maxRetries + 1, 'attempts');
+          reject(
+            new Error('Failed to load security verification. Please refresh the page.')
+          );
+        }
+      }
+    });
+  }
+
+  /**
+   * Reset reCAPTCHA widget and clear token
+   */
+  resetRecaptchaWidget(widgetId?: number): void {
+    if (widgetId !== undefined) {
+      this.resetRecaptcha(widgetId);
+    }
+  }
+
+  /**
+   * Re-render reCAPTCHA widget after DOM recreation (for theme changes)
+   */
+  async reRenderRecaptcha(
+    elementId: string,
+    callback: (token: string) => void,
+    currentWidgetId?: number
+  ): Promise<number> {
+    // Reset the current widget if it exists
+    if (currentWidgetId !== undefined) {
+      this.resetRecaptcha(currentWidgetId);
+    }
+
+    // Completely remove and recreate the DOM element
+    const recaptchaElement = document.getElementById(elementId);
+    if (recaptchaElement && recaptchaElement.parentNode) {
+      const parent = recaptchaElement.parentNode;
+      const newElement = document.createElement('div');
+      newElement.id = elementId;
+      parent.replaceChild(newElement, recaptchaElement);
+    }
+
+    // Initialize with the new element
+    return this.initializeRecaptcha(elementId, callback);
   }
 
   /**
