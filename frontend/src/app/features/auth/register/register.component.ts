@@ -5,6 +5,7 @@ import {
   AfterViewInit,
   ElementRef,
   ViewChild,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { Router, RouterModule } from '@angular/router';
@@ -72,7 +73,8 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
     private loadingService: LoadingService,
     private recaptchaService: RecaptchaService,
     private themeService: ThemeService,
-    public honeypotService: HoneypotService
+    public honeypotService: HoneypotService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -90,20 +92,22 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private initializeRecaptcha(): void {
-    setTimeout(() => {
-      try {
-        this.recaptchaWidgetId = this.recaptchaService.renderRecaptcha(
-          'recaptcha-register',
-          (token: string) => {
-            this.recaptchaToken = token;
-            this.error = ''; // Clear any reCAPTCHA-related errors
-          }
-        );
-      } catch (error) {
+    this.cdr.detectChanges();
+    try {
+      this.recaptchaWidgetId = this.recaptchaService.renderRecaptcha(
+        'recaptcha-register',
+        (token: string) => {
+          this.recaptchaToken = token;
+          this.error = ''; // Clear any reCAPTCHA-related errors
+        }
+      );
+    } catch (error) {
+      // Only log error if it's not the common "reCAPTCHA not loaded" error
+      if ((error as Error)?.message !== 'reCAPTCHA not loaded') {
         console.error('Failed to initialize reCAPTCHA:', error);
-        this.error = 'Failed to load security verification. Please refresh the page.';
       }
-    }, 500);
+      this.error = 'Failed to load security verification. Please refresh the page.';
+    }
   }
 
   private setupThemeSubscription(): void {
@@ -138,26 +142,25 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
           // Recreated reCAPTCHA DOM element
         }
 
-        // Re-render with delay
-        setTimeout(() => {
-          try {
-            this.recaptchaWidgetId = this.recaptchaService.renderRecaptcha(
-              'recaptcha-register',
-              (token: string) => {
-                this.recaptchaToken = token;
-                this.error = '';
-              }
-            );
-            // New reCAPTCHA widget created
-          } catch (error) {
-            console.error(
+        // Re-render with change detection
+        this.cdr.detectChanges();
+        try {
+          this.recaptchaWidgetId = this.recaptchaService.renderRecaptcha(
+            'recaptcha-register',
+            (token: string) => {
+              this.recaptchaToken = token;
+              this.error = '';
+            }
+          );
+          // New reCAPTCHA widget created
+        } catch (error) {
+          console.error(
               '[Register] Failed to re-render reCAPTCHA after theme change:',
               error
             );
             // Don't show error to user for theme switching failures
             // The form will still work, just without reCAPTCHA theme update
           }
-        }, 300);
       }
     });
   }

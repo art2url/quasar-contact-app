@@ -1,4 +1,4 @@
-import { Injectable, OnDestroy } from '@angular/core';
+import { Injectable, OnDestroy, NgZone, inject } from '@angular/core';
 import { BehaviorSubject, Subject, fromEvent } from 'rxjs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
@@ -38,6 +38,8 @@ export class MobileChatLayoutService implements OnDestroy {
   private readonly SPACING_SM = 8;
   private readonly SPACING_MD = 16;
 
+  private ngZone = inject(NgZone);
+
   constructor() {
     this.initializeLayoutMonitoring();
   }
@@ -54,7 +56,13 @@ export class MobileChatLayoutService implements OnDestroy {
     fromEvent(window, 'orientationchange')
       .pipe(debounceTime(300), takeUntil(this.destroy$))
       .subscribe(() => {
-        setTimeout(() => this.updateMetrics(), 100);
+        this.ngZone.runOutsideAngular(() => {
+          requestAnimationFrame(() => {
+            this.ngZone.run(() => {
+              this.updateMetrics();
+            });
+          });
+        });
       });
 
     // Monitor DOM changes for dynamic elements
@@ -127,8 +135,14 @@ export class MobileChatLayoutService implements OnDestroy {
       });
 
       if (shouldUpdate) {
-        // Debounce updates to avoid excessive recalculations
-        setTimeout(() => this.updateMetrics(), 50);
+        // Use NgZone + requestAnimationFrame to avoid excessive recalculations
+        this.ngZone.runOutsideAngular(() => {
+          requestAnimationFrame(() => {
+            this.ngZone.run(() => {
+              this.updateMetrics();
+            });
+          });
+        });
       }
     });
 

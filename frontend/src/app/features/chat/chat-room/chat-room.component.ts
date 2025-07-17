@@ -21,7 +21,7 @@ import {
 } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import * as Hammer from 'hammerjs';
-import { Subscription } from 'rxjs';
+import { Subscription, timer } from 'rxjs';
 
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -283,13 +283,20 @@ export class ChatRoomComponent
             this.shouldAutoScroll = true;
 
             // Scroll to bottom after ensuring layout is calculated
-            setTimeout(() => {
-              // Force layout update before scrolling
-              this.mobileChatLayoutService.forceUpdate();
-              setTimeout(() => {
-                this.scrollToBottom(true);
-              }, 100);
-            }, 150);
+            this.ngZone.runOutsideAngular(() => {
+              // Use multiple requestAnimationFrame calls to ensure layout is complete
+              requestAnimationFrame(() => {
+                // Force layout update before scrolling
+                this.mobileChatLayoutService.forceUpdate();
+                requestAnimationFrame(() => {
+                  requestAnimationFrame(() => {
+                    this.ngZone.run(() => {
+                      this.scrollToBottom(true);
+                    });
+                  });
+                });
+              });
+            });
 
             // Don't mark messages as read just because they loaded
             // Only mark as read when user actually sees them (after scroll)
@@ -349,7 +356,7 @@ export class ChatRoomComponent
             }
 
             // Force change detection
-            setTimeout(() => this.cdr.detectChanges(), 0);
+            this.cdr.detectChanges();
           }
         })
       );
@@ -524,7 +531,7 @@ export class ChatRoomComponent
   }
 
   /* Improved typing event sender with throttling */
-  private typingThrottle: ReturnType<typeof setTimeout> | null = null;
+  private typingThrottle: Subscription | null = null;
   private lastTypingEvent = 0;
   private readonly TYPING_THROTTLE = 1000; // ms
 
@@ -539,26 +546,27 @@ export class ChatRoomComponent
 
       // Clear any existing throttle
       if (this.typingThrottle) {
-        clearTimeout(this.typingThrottle);
+        this.typingThrottle.unsubscribe();
       }
 
       // Set throttle to prevent sending too many events
-      this.typingThrottle = setTimeout(() => {
+      this.typingThrottle = timer(this.TYPING_THROTTLE).subscribe(() => {
         this.typingThrottle = null;
-      }, this.TYPING_THROTTLE);
+      });
     }
   }
 
   ngAfterViewInit() {
     // Set up input event listeners for typing detection
-    setTimeout(() => {
-      if (this.messageInput?.nativeElement) {
-        // Use more reliable input events to detect typing
-        this.messageInput.nativeElement.addEventListener(
-          'input',
-          this.handleTyping.bind(this)
-        );
-        this.messageInput.nativeElement.addEventListener(
+    this.ngZone.runOutsideAngular(() => {
+      requestAnimationFrame(() => {
+        if (this.messageInput?.nativeElement) {
+          // Use more reliable input events to detect typing
+          this.messageInput.nativeElement.addEventListener(
+            'input',
+            this.handleTyping.bind(this)
+          );
+          this.messageInput.nativeElement.addEventListener(
           'keydown',
           this.handleKeydown.bind(this)
         );
@@ -569,7 +577,8 @@ export class ChatRoomComponent
           this.handleChatInputFocus.bind(this)
         );
       }
-    }, 100);
+      });
+    });
 
     // Set up scroll listener for intelligent scrolling
     this.setupScrollListener();
@@ -629,15 +638,17 @@ export class ChatRoomComponent
    * Set up scroll listener to track user position
    */
   private setupScrollListener(): void {
-    setTimeout(() => {
-      if (this.messageContainer?.nativeElement) {
-        this.messageContainer.nativeElement.addEventListener(
-          'scroll',
-          this.handleScroll.bind(this),
-          { passive: true }
-        );
-      }
-    }, 200);
+    this.ngZone.runOutsideAngular(() => {
+      requestAnimationFrame(() => {
+        if (this.messageContainer?.nativeElement) {
+          this.messageContainer.nativeElement.addEventListener(
+            'scroll',
+            this.handleScroll.bind(this),
+            { passive: true }
+          );
+        }
+      });
+    });
   }
 
   /**
@@ -669,9 +680,18 @@ export class ChatRoomComponent
     // Mark messages as read when user manually scrolls to bottom
     if (isNearBottom && !this.hasMarkedMessagesAsRead) {
       this.hasMarkedMessagesAsRead = true; // Set immediately to prevent multiple calls
-      setTimeout(() => {
-        this.markMessagesAsReadWhenVisible();
-      }, 500); // Wait a bit to ensure user actually sees the messages
+      // Use requestAnimationFrame chain to ensure user actually sees the messages
+      this.ngZone.runOutsideAngular(() => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              this.ngZone.run(() => {
+                this.markMessagesAsReadWhenVisible();
+              });
+            });
+          });
+        });
+      });
     }
   }
 
@@ -794,11 +814,13 @@ export class ChatRoomComponent
         }
 
         // Re-focus the input after sending
-        setTimeout(() => {
-          if (this.messageInput?.nativeElement) {
-            this.messageInput.nativeElement.focus();
-          }
-        }, 0);
+        this.ngZone.runOutsideAngular(() => {
+          requestAnimationFrame(() => {
+            if (this.messageInput?.nativeElement) {
+              this.messageInput.nativeElement.focus();
+            }
+          });
+        });
 
         // Scroll to bottom after sending
         this.ngZone.runOutsideAngular(() => {
@@ -1067,21 +1089,25 @@ export class ChatRoomComponent
 
     this.loadingService.show('navigation');
 
-    // Use timeout to ensure the navigation happens after current event cycle
-    setTimeout(() => {
-      this.router
-        .navigate(['/chat'])
-        .then(() => {
-          this.loadingService.hide();
-        })
-        .catch(err => {
-          console.error('Navigation to chat list failed:', err);
-          this.loadingService.hide();
+    // Use requestAnimationFrame to ensure the navigation happens after current event cycle
+    this.ngZone.runOutsideAngular(() => {
+      requestAnimationFrame(() => {
+        this.ngZone.run(() => {
+          this.router
+            .navigate(['/chat'])
+            .then(() => {
+              this.loadingService.hide();
+            })
+            .catch(err => {
+              console.error('Navigation to chat list failed:', err);
+              this.loadingService.hide();
 
-          // Fallback for stubborn mobile browsers
-          window.location.href = '/chat';
+              // Fallback for stubborn mobile browsers
+              window.location.href = '/chat';
+            });
         });
-    }, 50);
+      });
+    });
   }
 
   /**
@@ -1103,9 +1129,18 @@ export class ChatRoomComponent
         // Only mark messages as read if explicitly requested (user action)
         if (markAsRead && !this.hasMarkedMessagesAsRead) {
           this.hasMarkedMessagesAsRead = true; // Set immediately to prevent multiple calls
-          setTimeout(() => {
-            this.markMessagesAsReadWhenVisible();
-          }, 350); // Wait for scroll to complete (increased from 300 to account for layout delay)
+          // Use requestAnimationFrame chain to wait for scroll to complete
+          this.ngZone.runOutsideAngular(() => {
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  this.ngZone.run(() => {
+                    this.markMessagesAsReadWhenVisible();
+                  });
+                });
+              });
+            });
+          });
         }
       }
     } catch (error) {
@@ -1123,13 +1158,15 @@ export class ChatRoomComponent
     this.editing = m;
     this.editDraft = m.text;
 
-    // Focus edit input after a short delay
-    setTimeout(() => {
-      if (this.editInput?.nativeElement) {
-        this.editInput.nativeElement.focus();
-        this.autoResizeTextarea(this.editInput.nativeElement);
-      }
-    }, 0);
+    // Focus edit input after view update
+    this.ngZone.runOutsideAngular(() => {
+      requestAnimationFrame(() => {
+        if (this.editInput?.nativeElement) {
+          this.editInput.nativeElement.focus();
+          this.autoResizeTextarea(this.editInput.nativeElement);
+        }
+      });
+    });
   }
 
   cancelEdit() {
@@ -1137,11 +1174,13 @@ export class ChatRoomComponent
     this.editDraft = '';
 
     // Re-focus the main input
-    setTimeout(() => {
-      if (this.messageInput?.nativeElement) {
-        this.messageInput.nativeElement.focus();
-      }
-    }, 0);
+    this.ngZone.runOutsideAngular(() => {
+      requestAnimationFrame(() => {
+        if (this.messageInput?.nativeElement) {
+          this.messageInput.nativeElement.focus();
+        }
+      });
+    });
   }
 
   async confirmEdit() {
@@ -1314,7 +1353,7 @@ export class ChatRoomComponent
 
     // Clear typing throttle
     if (this.typingThrottle) {
-      clearTimeout(this.typingThrottle);
+      this.typingThrottle.unsubscribe();
     }
 
     // Clear scroll timeout
@@ -1349,26 +1388,18 @@ export class ChatRoomComponent
     }
 
     // Auto-resize the textarea after adding emoji
-    setTimeout(() => {
-      if (this.editing && this.editInput?.nativeElement) {
-        this.autoResizeTextarea(this.editInput.nativeElement);
-      } else if (this.messageInput?.nativeElement) {
-        this.autoResizeTextarea(this.messageInput.nativeElement);
-      }
-    }, 0);
+    this.ngZone.runOutsideAngular(() => {
+      requestAnimationFrame(() => {
+        if (this.editing && this.editInput?.nativeElement) {
+          this.autoResizeTextarea(this.editInput.nativeElement);
+        } else if (this.messageInput?.nativeElement) {
+          this.autoResizeTextarea(this.messageInput.nativeElement);
+        }
+      });
+    });
   }
 
   onImageSelected(compressedImage: CompressedImage): void {
-    console.log('Image selected:', {
-      originalSize: (compressedImage.originalSize / 1024).toFixed(1) + 'KB',
-      compressedSize: (compressedImage.compressedSize / 1024).toFixed(1) + 'KB',
-      compression:
-        (
-          (1 - compressedImage.compressedSize / compressedImage.originalSize) *
-          100
-        ).toFixed(1) + '%',
-    });
-
     // Store the image for sending
     this.attachedImage = compressedImage;
 
@@ -1382,13 +1413,15 @@ export class ChatRoomComponent
     }
 
     // Auto-resize textarea
-    setTimeout(() => {
-      if (this.editing && this.editInput?.nativeElement) {
-        this.autoResizeTextarea(this.editInput.nativeElement);
-      } else if (this.messageInput?.nativeElement) {
-        this.autoResizeTextarea(this.messageInput.nativeElement);
-      }
-    }, 0);
+    this.ngZone.runOutsideAngular(() => {
+      requestAnimationFrame(() => {
+        if (this.editing && this.editInput?.nativeElement) {
+          this.autoResizeTextarea(this.editInput.nativeElement);
+        } else if (this.messageInput?.nativeElement) {
+          this.autoResizeTextarea(this.messageInput.nativeElement);
+        }
+      });
+    });
   }
 
   removeAttachedImage(): void {
@@ -1450,9 +1483,19 @@ export class ChatRoomComponent
         document.body.removeChild(link);
 
         // Clean up blob URL after a delay
-        setTimeout(() => {
-          URL.revokeObjectURL(blobUrl);
-        }, 1000);
+        this.ngZone.runOutsideAngular(() => {
+          // Use requestAnimationFrame for better performance than setTimeout
+          let frameCount = 0;
+          const cleanup = () => {
+            frameCount++;
+            if (frameCount < 60) { // Approximately 1 second at 60fps
+              requestAnimationFrame(cleanup);
+            } else {
+              URL.revokeObjectURL(blobUrl);
+            }
+          };
+          requestAnimationFrame(cleanup);
+        });
       } catch (error) {
         console.error('Error opening image:', error);
       }
