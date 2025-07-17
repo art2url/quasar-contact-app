@@ -1,5 +1,5 @@
-import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Observable, Subscription, firstValueFrom } from 'rxjs';
+import { Injectable, OnDestroy, NgZone } from '@angular/core';
+import { BehaviorSubject, Observable, Subscription, firstValueFrom, timer } from 'rxjs';
 
 import { CryptoService } from '@services/crypto.service';
 import { MessagesService } from '@services/messages.service';
@@ -49,7 +49,7 @@ export class ChatSessionService implements OnDestroy {
   private subs = new Subscription();
   private theirPubKey: string | null = null;
   private roomId = '';
-  private typingDebounce!: ReturnType<typeof setTimeout>;
+  private typingDebounce?: Subscription;
   public partnerAvatar: string | undefined;
 
   // Initialization tracking
@@ -60,13 +60,13 @@ export class ChatSessionService implements OnDestroy {
   // Message state management
   private pendingMessages = new Map<
     string,
-    { timestamp: number; timeoutId: ReturnType<typeof setTimeout> }
+    { timestamp: number; timeoutSubscription: Subscription }
   >();
   private tempMessages: ChatMsg[] = [];
   private loadingOperations = 0;
 
   // Enhanced connection monitoring
-  private syncTimer: ReturnType<typeof setInterval> | null = null;
+  private syncTimer?: Subscription;
   private lastSyncTime = 0;
   private connectionLossDetected = false;
   private reconnectSyncInProgress = false;
@@ -105,7 +105,8 @@ export class ChatSessionService implements OnDestroy {
     private api: MessagesService,
     private users: UserService,
     private crypto: CryptoService,
-    private vault: VaultService
+    private vault: VaultService,
+    private ngZone: NgZone
   ) {
     this.connected$ = this.ws.isConnected$.asObservable();
 
@@ -168,10 +169,8 @@ export class ChatSessionService implements OnDestroy {
       // Always try to update pending messages, even during loading
       const success = await this.updatePendingMessage(messageId, timestamp);
       if (!success) {
-        console.error(
-          '[ChatSession] Failed to update pending message, scheduling sync. MessageId:',
-          messageId
-        );
+        // Failed to update pending message - this can happen during normal operation
+        // when acknowledgments arrive out of order or after sync operations
         this.scheduleFallbackSync();
       }
 
@@ -332,9 +331,11 @@ export class ChatSessionService implements OnDestroy {
 
     const delay = baseDelay * Math.pow(1.5, attempt);
 
-    setTimeout(() => {
-      this.fetchAndUpdatePartnerKey(userId, attempt);
-    }, delay);
+    this.subs.add(
+      timer(delay).subscribe(() => {
+        this.fetchAndUpdatePartnerKey(userId, attempt);
+      })
+    );
   }
 
   /**
@@ -432,7 +433,8 @@ export class ChatSessionService implements OnDestroy {
     }
 
     if (bestMatchIdx === -1) {
-      console.error('[ChatSession] No pending message found for ack:', messageId);
+      // No pending message found for ack - this can happen during normal operation
+      // when acknowledgments arrive out of order or after sync operations
       return false;
     }
 
@@ -451,7 +453,7 @@ export class ChatSessionService implements OnDestroy {
     const pendingKey = `pending::${pendingMessage.ts}`;
     const pendingInfo = this.pendingMessages.get(pendingKey);
     if (pendingInfo) {
-      clearTimeout(pendingInfo.timeoutId);
+      pendingInfo.timeoutSubscription.unsubscribe();
       this.pendingMessages.delete(pendingKey);
     }
 
@@ -588,10 +590,10 @@ export class ChatSessionService implements OnDestroy {
         if (this.ws.isConnected()) {
           this.partnerTyping$.next(true);
 
-          if (this.typingDebounce) clearTimeout(this.typingDebounce);
-          this.typingDebounce = setTimeout(() => {
+          if (this.typingDebounce) this.typingDebounce.unsubscribe();
+          this.typingDebounce = timer(2000).subscribe(() => {
             this.partnerTyping$.next(false);
-          }, 2000);
+          });
         }
       })
     );
@@ -601,7 +603,7 @@ export class ChatSessionService implements OnDestroy {
    * Start periodic sync monitoring
    */
   private startSyncMonitoring(): void {
-    this.syncTimer = setInterval(() => {
+    this.syncTimer = timer(this.SYNC_INTERVAL, this.SYNC_INTERVAL).subscribe(() => {
       if (this.roomId && this.ws.isConnected()) {
         const timeSinceLastSync = Date.now() - this.lastSyncTime;
 
@@ -610,7 +612,7 @@ export class ChatSessionService implements OnDestroy {
           this.scheduleFallbackSync();
         }
       }
-    }, this.SYNC_INTERVAL);
+    });
   }
 
   /**
@@ -619,9 +621,11 @@ export class ChatSessionService implements OnDestroy {
   private scheduleFallbackSync(): void {
     if (this.reconnectSyncInProgress) return;
 
-    setTimeout(() => {
-      this.performFallbackSync();
-    }, 1000);
+    this.subs.add(
+      timer(1000).subscribe(() => {
+        this.performFallbackSync();
+      })
+    );
   }
 
   /**
@@ -630,9 +634,11 @@ export class ChatSessionService implements OnDestroy {
   private scheduleReconnectSync(): void {
     if (this.reconnectSyncInProgress) return;
 
-    setTimeout(() => {
-      this.performReconnectSync();
-    }, this.SYNC_ON_RECONNECT_DELAY);
+    this.subs.add(
+      timer(this.SYNC_ON_RECONNECT_DELAY).subscribe(() => {
+        this.performReconnectSync();
+      })
+    );
   }
 
   /**
@@ -1224,7 +1230,7 @@ export class ChatSessionService implements OnDestroy {
       const pendingKey = `pending::${ts}`;
 
       // Add pending message with timeout tracking
-      const timeoutId = setTimeout(() => {
+      const timeoutSubscription = timer(30000).subscribe(() => {
         if (this.pendingMessages.has(pendingKey)) {
           console.error(
             '[ChatSession] Message ack timeout after 30s, but keeping message visible'
@@ -1233,9 +1239,9 @@ export class ChatSessionService implements OnDestroy {
           // The fallback sync will handle recovery
           this.pendingMessages.delete(pendingKey);
         }
-      }, 30000); // 30 second timeout (increased from 10s)
+      });
 
-      this.pendingMessages.set(pendingKey, { timestamp: ts, timeoutId });
+      this.pendingMessages.set(pendingKey, { timestamp: ts, timeoutSubscription });
       this.push(pendingMessage);
 
       // Prepare message payload for encryption
@@ -1292,7 +1298,7 @@ export class ChatSessionService implements OnDestroy {
     // Clear timeouts and tracking, but keep messages in UI
     // Let fallback sync determine what actually needs to be done
     this.pendingMessages.forEach(pendingInfo => {
-      clearTimeout(pendingInfo.timeoutId);
+      pendingInfo.timeoutSubscription.unsubscribe();
     });
 
     this.pendingMessages.clear();
@@ -1399,7 +1405,7 @@ export class ChatSessionService implements OnDestroy {
       this.partnerTyping$.next(false);
 
       if (this.typingDebounce) {
-        clearTimeout(this.typingDebounce);
+        this.typingDebounce.unsubscribe();
       }
     } catch (error) {
       console.error('[ChatSession] Failed to process incoming message:', error);
@@ -1843,15 +1849,19 @@ export class ChatSessionService implements OnDestroy {
    * Schedule a post-initialization check to ensure partner key status is properly evaluated
    */
   private schedulePostInitializationCheck(): void {
-    // Use requestAnimationFrame for proper timing without arbitrary delays
-    requestAnimationFrame(() => {
+    // Use NgZone.runOutsideAngular for proper timing without arbitrary delays
+    this.ngZone.runOutsideAngular(() => {
       requestAnimationFrame(() => {
-        if (this.roomId) {
-          // Clear any cached results to force a fresh check
-          this.keyStatusCache.clear();
-          this.lastKeyStatusCheck = 0;
-          this.checkPartnerKeyStatusOnDemand('post_initialization');
-        }
+        requestAnimationFrame(() => {
+          this.ngZone.run(() => {
+            if (this.roomId) {
+              // Clear any cached results to force a fresh check
+              this.keyStatusCache.clear();
+              this.lastKeyStatusCheck = 0;
+              this.checkPartnerKeyStatusOnDemand('post_initialization');
+            }
+          });
+        });
       });
     });
   }
@@ -2036,7 +2046,7 @@ export class ChatSessionService implements OnDestroy {
 
       // Clear any pending message operations
       this.pendingMessages.forEach(pendingInfo => {
-        clearTimeout(pendingInfo.timeoutId);
+        pendingInfo.timeoutSubscription.unsubscribe();
       });
       this.pendingMessages.clear();
 
@@ -2053,9 +2063,11 @@ export class ChatSessionService implements OnDestroy {
       // Key regeneration completed successfully
 
       // Refresh the page after successful key generation to ensure clean state
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
+      this.subs.add(
+        timer(2000).subscribe(() => {
+          window.location.reload();
+        })
+      );
     } catch (error) {
       console.error('[ChatSession] Failed to regenerate keys:', error);
       // Key regeneration failed
@@ -2069,8 +2081,8 @@ export class ChatSessionService implements OnDestroy {
   ngOnDestroy() {
     // Stop sync monitoring
     if (this.syncTimer) {
-      clearInterval(this.syncTimer);
-      this.syncTimer = null;
+      this.syncTimer.unsubscribe();
+      this.syncTimer = undefined;
     }
 
     // Removed: Recovery UI monitoring now handled via database flag
@@ -2082,7 +2094,7 @@ export class ChatSessionService implements OnDestroy {
     this.ws.offMessageRead(this.messageReadCb);
     this.ws.offKeyRegenerated(this.keyRegeneratedCb);
     // Removed: Partner key recovery handlers now handled via database flag
-    clearTimeout(this.typingDebounce);
+    if (this.typingDebounce) this.typingDebounce.unsubscribe();
 
     // Clean up key status cache
     this.clearKeyStatusCache();
@@ -2092,7 +2104,7 @@ export class ChatSessionService implements OnDestroy {
 
     // Clean up pending message timeouts
     this.pendingMessages.forEach(pendingInfo => {
-      clearTimeout(pendingInfo.timeoutId);
+      pendingInfo.timeoutSubscription.unsubscribe();
     });
     this.pendingMessages.clear();
 

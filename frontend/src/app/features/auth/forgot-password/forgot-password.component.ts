@@ -1,11 +1,13 @@
 import {
   Component,
+  OnInit,
   OnDestroy,
   AfterViewInit,
   ElementRef,
   ViewChild,
+  ChangeDetectorRef,
 } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { Subscription, timer } from 'rxjs';
 
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -38,7 +40,7 @@ import { RecaptchaService } from '@services/recaptcha.service';
   templateUrl: './forgot-password.component.html',
   styleUrls: ['./forgot-password.component.css'],
 })
-export class ForgotPasswordComponent implements OnDestroy, AfterViewInit {
+export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('recaptchaElement', { static: false })
   recaptchaElement!: ElementRef;
 
@@ -52,14 +54,21 @@ export class ForgotPasswordComponent implements OnDestroy, AfterViewInit {
   recaptchaWidgetId: number | undefined;
   private themeSubscription?: Subscription;
 
-  private resendInterval: ReturnType<typeof setInterval> | undefined;
+  private resendTimer: Subscription | undefined;
 
   constructor(
     private authService: AuthService,
     private recaptchaService: RecaptchaService,
-    private themeService: ThemeService
+    private themeService: ThemeService,
+    private cdr: ChangeDetectorRef
   ) {}
 
+  ngOnInit(): void {
+    // Reset form state on component initialization
+    this.error = '';
+    this.emailSent = false;
+    this.resendCooldown = 0;
+  }
 
   ngAfterViewInit(): void {
     this.initializeRecaptcha();
@@ -67,22 +76,24 @@ export class ForgotPasswordComponent implements OnDestroy, AfterViewInit {
   }
 
   private initializeRecaptcha(): void {
-    setTimeout(() => {
-      try {
-        // Use different element ID based on email sent state
-        const elementId = this.emailSent ? 'recaptcha-forgot-password-resend' : 'recaptcha-forgot-password';
-        this.recaptchaWidgetId = this.recaptchaService.renderRecaptcha(
-          elementId,
-          (token: string) => {
-            this.recaptchaToken = token;
-            this.error = ''; // Clear any reCAPTCHA-related errors
-          }
-        );
-      } catch (error) {
+    this.cdr.detectChanges();
+    try {
+      // Use different element ID based on email sent state
+      const elementId = this.emailSent ? 'recaptcha-forgot-password-resend' : 'recaptcha-forgot-password';
+      this.recaptchaWidgetId = this.recaptchaService.renderRecaptcha(
+        elementId,
+        (token: string) => {
+          this.recaptchaToken = token;
+          this.error = ''; // Clear any reCAPTCHA-related errors
+        }
+      );
+    } catch (error) {
+      // Only log error if it's not the common "reCAPTCHA not loaded" error
+      if ((error as Error)?.message !== 'reCAPTCHA not loaded') {
         console.error('Failed to initialize reCAPTCHA:', error);
-        this.error = 'Failed to load security verification. Please refresh the page.';
       }
-    }, 500);
+      this.error = 'Failed to load security verification. Please refresh the page.';
+    }
   }
 
   private setupThemeSubscription(): void {
@@ -117,35 +128,23 @@ export class ForgotPasswordComponent implements OnDestroy, AfterViewInit {
           // Recreated reCAPTCHA DOM element
         }
 
-        // Re-render with delay
-        setTimeout(() => {
-          try {
-            this.recaptchaWidgetId = this.recaptchaService.renderRecaptcha(
-              'recaptcha-forgot-password',
-              (token: string) => {
-                this.recaptchaToken = token;
-                this.error = '';
-              }
-            );
-            // New reCAPTCHA widget created
-          } catch (error) {
-            console.error(
-              '[ForgotPassword] Failed to re-render reCAPTCHA after theme change:',
-              error
-            );
-            // Don't show error to user for theme switching failures
-            // The form will still work, just without reCAPTCHA theme update
-          }
-        }, 300);
+        // Re-render with change detection
+        this.cdr.detectChanges();
+        try {
+          this.recaptchaWidgetId = this.recaptchaService.renderRecaptcha(
+            'recaptcha-forgot-password',
+            (token: string) => {
+              this.recaptchaToken = token;
+              this.error = '';
+            }
+          );
+          // New reCAPTCHA widget created
+        } catch {
+          // Don't log theme change errors - they're not critical
+          // The form will still work, just without reCAPTCHA theme update
+        }
       }
     });
-  }
-
-  private resetRecaptcha(): void {
-    this.recaptchaToken = '';
-    if (this.recaptchaWidgetId !== undefined) {
-      this.recaptchaService.resetRecaptcha(this.recaptchaWidgetId);
-    }
   }
 
   isValidEmail(email: string): boolean {
@@ -195,44 +194,35 @@ export class ForgotPasswordComponent implements OnDestroy, AfterViewInit {
   resendEmail(): void {
     if (this.resendCooldown > 0) return;
 
-    if (!this.recaptchaToken) {
-      this.error = 'Please complete the security verification';
-      return;
+    this.onSubmit();
+  }
+
+  private resetRecaptcha(): void {
+    this.recaptchaToken = '';
+    if (this.recaptchaWidgetId !== undefined) {
+      this.recaptchaService.resetRecaptcha(this.recaptchaWidgetId);
     }
-
-    this.authService.requestPasswordReset(this.email, this.recaptchaToken).subscribe({
-      next: () => {
-        this.startResendCooldown();
-      },
-      error: err => {
-        console.error('Failed to resend email:', err);
-        this.resetRecaptcha(); // Reset reCAPTCHA on failed attempt
-
-        if (err.status === 400 && err.error?.message?.includes('recaptcha')) {
-          this.error = 'Security verification failed. Please try again.';
-        }
-      },
-    });
   }
 
   private startResendCooldown(): void {
     this.resendCooldown = 60; // 60 seconds
 
-    this.resendInterval = setInterval(() => {
+    this.resendTimer = timer(0, 1000).subscribe(() => {
       this.resendCooldown--;
       if (this.resendCooldown <= 0) {
-        clearInterval(this.resendInterval);
+        this.resendTimer?.unsubscribe();
+        this.resendTimer = undefined;
         // Re-initialize reCAPTCHA for resend functionality
         this.initializeRecaptcha();
       }
-    }, 1000);
+    });
   }
 
   ngOnDestroy(): void {
-    // Clear any running intervals
-    if (this.resendInterval) {
-      clearInterval(this.resendInterval);
-      this.resendInterval = undefined;
+    // Clear any running timers
+    if (this.resendTimer) {
+      this.resendTimer.unsubscribe();
+      this.resendTimer = undefined;
     }
 
     // Reset reCAPTCHA widget

@@ -1,3 +1,4 @@
+import { timer } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { environment } from '@environments/environment';
 import { ThemeService } from './theme.service';
@@ -120,11 +121,11 @@ export class RecaptchaService {
       }
 
       // Wait a bit for the reset to complete before rendering new widget
-      setTimeout(() => {
+      timer(150).subscribe(() => {
         // Rendering new reCAPTCHA with theme
         const newWidgetId = this.renderRecaptcha(elementId, callback);
         resolve(newWidgetId);
-      }, 150);
+      });
     });
   }
 }
