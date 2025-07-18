@@ -33,6 +33,7 @@ import { LoadingService } from '@services/loading.service';
 import { NotificationService } from '@services/notification.service';
 import { WebSocketService } from '@services/websocket.service';
 import { MobileChatLayoutService } from '@services/mobile-chat-layout.service';
+import { ThemeService } from '@services/theme.service';
 
 // Import the cache info banner component
 import { CacheInfoBannerComponent } from '@shared/components/cache-info-banner/cache-info-banner.component';
@@ -160,7 +161,8 @@ export class ChatRoomComponent
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
     private notificationService: NotificationService,
-    private mobileChatLayoutService: MobileChatLayoutService
+    private mobileChatLayoutService: MobileChatLayoutService,
+    private themeService: ThemeService
   ) {}
 
   @HostListener('window:resize')
@@ -191,14 +193,24 @@ export class ChatRoomComponent
     
     // Set body background for mobile to prevent black overscroll
     if (window.innerWidth <= 599) {
-      const cardBg = getComputedStyle(document.documentElement).getPropertyValue('--card-background').trim();
-      document.body.style.backgroundColor = cardBg || '#f8f9fa';
+      // Set initial background
+      this.updateMobileBodyBackground();
+      
+      // Subscribe to theme changes and update background
+      this.subs.add(
+        this.themeService.theme$.subscribe(() => {
+          this.updateMobileBodyBackground();
+        })
+      );
       
       // Block overall page scroll in mobile - only allow chat-window to scroll
       document.documentElement.style.overflow = 'hidden';
       document.body.style.overflow = 'hidden';
       document.documentElement.style.height = '100vh';
       document.body.style.height = '100vh';
+      
+      // Add scroll event listeners to redirect scroll to chat-window
+      this.addScrollRedirectListeners();
     }
 
     // Initialize mobile layout service for dynamic height calculations
@@ -1308,6 +1320,15 @@ export class ChatRoomComponent
     return 'Type a message...';
   }
 
+  /**
+   * Updates the mobile body background to match the current theme
+   */
+  private updateMobileBodyBackground(): void {
+    const cardBg = getComputedStyle(document.documentElement).getPropertyValue('--card-background').trim();
+    const defaultBg = this.themeService.isDarkTheme() ? '#0c2524' : '#fafafa';
+    document.body.style.backgroundColor = cardBg || defaultBg;
+  }
+
   ngOnDestroy() {
     document.body.classList.remove('chat-room-page');
     
@@ -1320,6 +1341,9 @@ export class ChatRoomComponent
       document.body.style.overflow = '';
       document.documentElement.style.height = '';
       document.body.style.height = '';
+      
+      // Remove scroll redirect listeners
+      this.removeScrollRedirectListeners();
       
       // Clean up mobile layout CSS variables
       const root = document.documentElement;
@@ -1457,6 +1481,46 @@ export class ChatRoomComponent
     return text;
   }
 
+  /**
+   * Format message text by replacing emojis with Material icons for system messages
+   */
+  formatMessageText(text: string): string {
+    // Replace emoji-based system messages with text-only versions
+    if (text === '🔒 Encrypted message (from partner)') {
+      return 'Encrypted message (from partner)';
+    }
+    if (text.includes('🔒 Encrypted message (sent by you)')) {
+      return text.replace('🔒 Encrypted message (sent by you)', 'Encrypted message (sent by you)');
+    }
+    if (text.includes('💬 Message sent')) {
+      return text.replace('💬 Message sent', 'Message sent');
+    }
+    if (text === '⋯ message deleted ⋯') {
+      return 'Message deleted';
+    }
+    return text;
+  }
+
+  /**
+   * Check if message is a system message that needs special icon treatment
+   */
+  isSystemMessage(text: string): boolean {
+    return text === '🔒 Encrypted message (from partner)' ||
+           text.includes('🔒 Encrypted message (sent by you)') ||
+           text.includes('💬 Message sent') ||
+           text === '⋯ message deleted ⋯';
+  }
+
+  /**
+   * Get the appropriate icon for system messages
+   */
+  getSystemMessageIcon(text: string): string {
+    if (text === '⋯ message deleted ⋯') {
+      return 'delete';
+    }
+    return 'lock';
+  }
+
   openImageModal(imageUrl: string): void {
     // Convert data URL to blob URL for security
     if (imageUrl.startsWith('data:')) {
@@ -1510,4 +1574,85 @@ export class ChatRoomComponent
       document.body.removeChild(link);
     }
   }
+
+  /**
+   * Add scroll event listeners to prevent scrolling on header, chat-header, and chat-form
+   */
+  private addScrollRedirectListeners(): void {
+    // Target elements that should have scrolling disabled
+    const targetSelectors = [
+      'app-header',
+      '.header', 
+      '.chat-header',
+      '.chat-form'
+    ];
+
+    targetSelectors.forEach(selector => {
+      const element = document.querySelector(selector);
+      if (element) {
+        element.addEventListener('wheel', this.preventScroll, { passive: false });
+        element.addEventListener('touchmove', this.preventTouchScroll, { passive: false });
+      }
+    });
+  }
+
+  /**
+   * Remove scroll event listeners
+   */
+  private removeScrollRedirectListeners(): void {
+    const targetSelectors = [
+      'app-header',
+      '.header', 
+      '.chat-header',
+      '.chat-form'
+    ];
+
+    targetSelectors.forEach(selector => {
+      const element = document.querySelector(selector);
+      if (element) {
+        element.removeEventListener('wheel', this.preventScroll);
+        element.removeEventListener('touchmove', this.preventTouchScroll);
+      }
+    });
+  }
+
+  /**
+   * Prevent wheel scroll events on specific elements
+   */
+  private preventScroll = (event: Event): void => {
+    // Don't prevent scroll if it's happening inside emoji picker
+    const target = event.target as HTMLElement;
+    if (target.closest('.emoji-picker')) {
+      return;
+    }
+    event.preventDefault();
+  }
+
+  /**
+   * Prevent touch scroll events but allow other touch interactions
+   */
+  private preventTouchScroll = (event: Event): void => {
+    const touchEvent = event as TouchEvent;
+    
+    // Don't prevent scroll if it's happening inside emoji picker
+    const target = touchEvent.target as HTMLElement;
+    if (target.closest('.emoji-picker')) {
+      return;
+    }
+    
+    // Only prevent if this is a scroll gesture (not tap/click)
+    if (touchEvent.touches.length === 1) {
+      const touch = touchEvent.touches[0];
+      if (this.lastTouchY !== undefined) {
+        const deltaY = Math.abs(this.lastTouchY - touch.clientY);
+        // Only prevent if there's significant vertical movement (scrolling)
+        if (deltaY > 5) {
+          event.preventDefault();
+        }
+      }
+      this.lastTouchY = touch.clientY;
+    }
+  }
+
+  private lastTouchY: number | undefined;
 }

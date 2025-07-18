@@ -206,24 +206,18 @@
 }
 
 .message.you {
-  background-color: var(--primary-color);
-  color: var(--button-text);
+  background-color: #edf1f2;
+  color: var(--text-color);
   align-self: flex-end;
   margin-left: auto;
   border-bottom-right-radius: 4px;
 }
 
 .message.other {
-  background-color: #f1f3f4;
+  background-color: #f9fafb;
   color: var(--text-color);
   align-self: flex-start;
   border-bottom-left-radius: 4px;
-}
-
-.message.deleted {
-  background-color: var(--border-color);
-  color: var(--text-secondary);
-  font-style: italic;
 }
 
 .message-bubble {
@@ -240,14 +234,25 @@
   align-items: center;
   font-size: 0.7rem;
   margin-top: 2px;
+  opacity: 0.5;
 }
 
 .message-time {
-  opacity: 0.7;
+  opacity: 1;
+  font-size: 0.65rem;
 }
 
 .message-status {
   margin-left: 4px;
+}
+
+.message-status mat-icon {
+  font-size: 12px;
+  width: 12px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .message.you .message-actions {
@@ -1018,28 +1023,36 @@
   background-color: #f8f9fa !important;
 }
 
-.message.unreadable .message-content {
+.message.unreadable .message-content,
+.message.deleted .message-content {
   font-style: italic;
   color: #6c757d;
+  font-size: 15px;
+}
+
+/* Remove italic styling from message-time in deleted messages */
+.message.deleted .message-time {
+  font-style: normal;
 }
 
 .message.you.unreadable {
-  background-color: #f9f9f9 !important;
+  background-color: #fcfcfc !important;
 }
 
 .message.other.unreadable {
-  background-color: #f9f9f9 !important;
+  background-color: #fcfcfc !important;
 }
 
 /* Encrypted messages from partner - same styling as unreadable */
 .message.other.encrypted {
-  background-color: #f9f9f9 !important;
+  background-color: #fcfcfc !important;
   opacity: 0.85;
 }
 
 .message.other.encrypted .message-content {
   font-style: italic;
   color: #6c757d;
+  font-size: 15px;
 }
 
 /* Dark theme styling for unreadable messages */
@@ -1048,25 +1061,30 @@
   opacity: 0.7;
 }
 
-.dark-theme .message.unreadable .message-content {
+.dark-theme .message.unreadable .message-content,
+.dark-theme .message.deleted .message-content {
   color: var(--text-secondary) !important;
 }
 
 .dark-theme .message.you.unreadable {
-  background-color: #0b1e1e !important;
+  background-color: #0a1e1e !important;
+}
+
+.dark-theme .message.you {
+  background-color: #2d5754 !important;
 }
 
 .dark-theme .message.other {
-  background-color: rgba(104, 182, 132, 0.15) !important;
+  background-color: #1d3836 !important;
 }
 
 .dark-theme .message.other.unreadable {
-  background-color: #0b1e1e !important;
+  background-color: #0a1e1e !important;
 }
 
 /* Dark theme encrypted messages from partner */
 .dark-theme .message.other.encrypted {
-  background-color: #0b1e1e !important;
+  background-color: #0a1e1e !important;
   opacity: 0.7;
 }
 
@@ -1077,14 +1095,18 @@
 /* Fix message time and status visibility for unreadable messages */
 /* Light theme - make time/status darker on light blue background */
 .message.you.unreadable .message-time,
-.message.you.unreadable .message-status {
+.message.you.unreadable .message-status,
+.message.other.encrypted .message-time,
+.message.other.encrypted .message-status {
   color: #0277bd !important;
   opacity: 0.8 !important;
 }
 
 /* Dark theme - make time/status lighter on light green background */
 .dark-theme .message.you.unreadable .message-time,
-.dark-theme .message.you.unreadable .message-status {
+.dark-theme .message.you.unreadable .message-status,
+.dark-theme .message.other.encrypted .message-time,
+.dark-theme .message.other.encrypted .message-status {
   color: rgba(195, 247, 58, 0.9) !important;
   opacity: 1 !important;
 }
@@ -1094,6 +1116,42 @@
   color: #6c757d;
   font-size: 0.7rem;
   font-weight: normal;
+}
+
+/* System message styling */
+.system-message-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.system-message-text {
+  font-style: normal;
+  font-size: 0.8rem;
+  vertical-align: middle;
+}
+
+/* Override system message styling for encrypted, unreadable, and deleted messages */
+.message.encrypted .system-message-text,
+.message.unreadable .system-message-text,
+.message.deleted .system-message-text {
+  font-style: italic;
+  font-size: 15px;
+}
+
+/* Override system message colors for deleted messages to match dimmed style */
+.message.deleted .system-message-text,
+.message.deleted .system-message-icon {
+  color: #6c757d;
+  opacity: 0.7;
+}
+
+.dark-theme .message.deleted .system-message-text,
+.dark-theme .message.deleted .system-message-icon {
+  color: var(--text-secondary);
+  opacity: 0.7;
 }
 
 /* Dark theme indicator */
@@ -1175,8 +1233,12 @@
     transform: none;
     height: auto;
     display: block;
-    background-color: var(--card-background);
+    background-color: #fafafd;
     min-height: 100vh;
+  }
+
+  .dark-theme .chat-wrapper {
+    background-color: #001011;
   }
 
   .chat-container {
@@ -1209,6 +1271,15 @@
   /* Dark theme mobile chat-header */
   .dark-theme .chat-header {
     background-color: #001011 !important;
+  }
+
+  /* Mobile main-content background */
+  .main-content {
+    background-color: #fafafa !important;
+  }
+
+  .dark-theme .main-content {
+    background-color: #0c2524 !important;
   }
 
   .chat-window {
@@ -1549,4 +1620,35 @@
     z-index: 1002 !important;
     max-height: 80px !important;
   }
+}
+
+/* Deleted message styling - placed at end to override other styles */
+.message.deleted,
+.message.you.deleted,
+.message.other.deleted {
+  background-color: #fcfcfc !important;
+  color: #6c757d !important;
+  font-style: italic !important;
+}
+
+.dark-theme .message.deleted,
+.dark-theme .message.you.deleted,
+.dark-theme .message.other.deleted {
+  background-color: #0a1e1e !important;
+  color: var(--text-secondary) !important;
+  opacity: 0.7;
+}
+
+/* Deleted message content styling to match encrypted/unreadable */
+.message.deleted .message-content,
+.message.you.deleted .message-content,
+.message.other.deleted .message-content {
+  font-style: italic !important;
+  color: #6c757d !important;
+}
+
+.dark-theme .message.deleted .message-content,
+.dark-theme .message.you.deleted .message-content,
+.dark-theme .message.other.deleted .message-content {
+  color: var(--text-secondary) !important;
 }
