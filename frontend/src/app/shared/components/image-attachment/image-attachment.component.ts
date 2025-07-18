@@ -89,7 +89,6 @@ export class ImageAttachmentComponent {
     // Special handling for SVG files
     let imageSrc: string;
     if (file.type === 'image/svg+xml') {
-      console.log('[ImageAttachment] Processing SVG file:', file.name);
       // Read SVG as text and convert to data URL
       const svgText = await file.text();
       const svgBlob = new Blob([svgText], { type: 'image/svg+xml' });
@@ -102,8 +101,6 @@ export class ImageAttachmentComponent {
 
         img.onload = () => {
           try {
-            console.log('[ImageAttachment] Image loaded:', file.type, 'Size:', file.size, 'Dimensions:', img.width, 'x', img.height);
-            
             // Calculate new dimensions (max 1920px width/height)
             const maxDimension = 1920;
             let { width, height } = img;
@@ -112,7 +109,6 @@ export class ImageAttachmentComponent {
             if (width === 0 || height === 0) {
               width = 512;
               height = 512;
-              console.log('[ImageAttachment] SVG has no dimensions, using default 512x512');
             }
 
             if (width > maxDimension || height > maxDimension) {
@@ -160,12 +156,6 @@ export class ImageAttachmentComponent {
 
                 // Create preview URL
                 const preview = URL.createObjectURL(blob);
-
-                console.log('[ImageAttachment] Compression complete:', {
-                  originalSize: file.size,
-                  compressedSize: blob.size,
-                  compression: ((blob.size - file.size) / file.size * 100).toFixed(1) + '%'
-                });
 
                 resolve({
                   file: compressedFile,

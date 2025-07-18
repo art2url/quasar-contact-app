@@ -41,6 +41,16 @@
   color: var(--primary-color);
 }
 
+.back-button[disabled] {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.back-button[disabled]:hover {
+  background-color: transparent;
+}
+
 .chat-header h2 {
   margin: 0;
   color: var(--text-color);

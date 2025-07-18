@@ -43,7 +43,7 @@
 /* Emoji picker styles */
 .emoji-picker {
   position: fixed;
-  bottom: calc(60px + var(--spacing-xl));
+  bottom: calc(var(--chat-form-height, 70px) + var(--spacing-md));
   right: calc(var(--spacing-xl) + var(--spacing-md));
   background: var(--card-background);
   border: none;
@@ -57,9 +57,13 @@
   animation: fadeInUp 0.2s ease-out;
 }
 
-/* Adjust emoji picker position when message input is dirty (expanded) */
-.chat-form:has(.message-input.ng-dirty) app-emoji-picker .emoji-picker {
-  bottom: calc(70px + var(--spacing-xl));
+/* Adjust emoji picker position when message input is dirty (expanded) - desktop/tablet */
+@media (min-width: 600px) {
+  .chat-form:has(.message-input.ng-dirty) app-emoji-picker .emoji-picker {
+    bottom: calc(
+      var(--chat-form-height, 70px) + calc(var(--spacing-xl) + var(--spacing-md))
+    ) !important;
+  }
 }
 
 .emoji-grid {
@@ -118,7 +122,7 @@
 }
 
 /* Tablet adjustments for emoji picker */
-@media (max-width: 768px) {
+@media (max-width: 768px) and (min-width: 600px) {
   .emoji-picker {
     right: calc(var(--spacing-md) + var(--spacing-md));
     max-height: 240px;
@@ -158,13 +162,15 @@
   }
 }
 
-/* Very small screens - bigger emojis */
-@media only screen and (max-width: 480px) {
+/* Mobile screens - properly aligned with chat form */
+@media only screen and (max-width: 599px) {
   .emoji-picker {
     position: fixed;
-    bottom: calc(80px + env(safe-area-inset-bottom, 0px) + var(--spacing-md));
-    right: var(--spacing-md);
-    left: var(--spacing-md);
+    bottom: calc(
+      var(--chat-form-height, 58px) + env(safe-area-inset-bottom, 0px) + var(--spacing-sm)
+    );
+    right: var(--spacing-sm);
+    left: var(--spacing-sm);
     width: auto;
     max-width: none;
     max-height: 200px;

@@ -447,10 +447,7 @@
   box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
 }
 
-/* Adjust emoji picker position when message input is dirty (expanded) */
-.chat-form:has(.message-input.ng-dirty) app-emoji-picker .emoji-picker {
-  bottom: calc(70px + var(--spacing-xl)) !important;
-}
+/* Desktop emoji picker positioning handled in emoji-picker.component.css */
 
 /* Disabled state styling for message input */
 .message-input:disabled {
@@ -1245,7 +1242,9 @@
 
   /* Adjust emoji picker position when message input is dirty (expanded) - mobile */
   .chat-form:has(.message-input.ng-dirty) app-emoji-picker .emoji-picker {
-    bottom: calc(70px + env(safe-area-inset-bottom, 0px) + var(--spacing-md)) !important;
+    bottom: calc(
+      var(--chat-form-height, 58px) + env(safe-area-inset-bottom, 0px) + var(--spacing-sm)
+    ) !important;
   }
 
   .avatar {
