@@ -1997,6 +1997,10 @@ h1 {
     right: 5px;
   }
 
+  .carousel-btn-pause {
+    display: none;
+  }
+
   .carousel-dots {
     margin-top: 0.75rem;
   }
