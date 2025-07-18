@@ -246,7 +246,7 @@ input[ng-reflect] {
   --primary-color: #0077cc;
   --primary-color-rgb: 0, 119, 204;
   --secondary-color: #005599;
-  --background-color: #f8f9fa;
+  --background-color: #fafafa;
   --text-color: #001011;
   --text-secondary: #666666;
   --border-color: #e0e0e0;
@@ -271,7 +271,7 @@ input[ng-reflect] {
   --input-border: #e0e0e0;
   --button-background: var(--primary-color);
   --button-text: #ffffff;
-  --header-background: rgba(255, 255, 255, 0.5);
+  --header-background: #fff;
   --nav-hover: rgba(0, 119, 204, 0.08);
   --warning-background: #fff3e0;
   --warning-text: #e65100;
@@ -311,7 +311,7 @@ input[ng-reflect] {
   --input-border: #3c4f4f;
   --button-background: var(--primary-color);
   --button-text: #001011;
-  --header-background: rgba(12, 37, 36, 0.5);
+  --header-background: rgb(12, 37, 36);
   --nav-hover: rgba(195, 247, 58, 0.1);
   --warning-background: rgba(255, 183, 77, 0.1);
   --warning-text: #ffb74d;

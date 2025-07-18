@@ -193,14 +193,20 @@
               </div>
 
               <!-- Text content -->
-              <p *ngIf="m.text" class="message-content">{{ getDisplayText(m.text, m.hasImage) }}</p>
+              <p *ngIf="m.text" class="message-content">
+                <ng-container *ngIf="isSystemMessage(m.text); else regularText">
+                  <mat-icon class="system-message-icon">{{ getSystemMessageIcon(m.text) }}</mat-icon>
+                  <span class="system-message-text">{{ formatMessageText(m.text) }}</span>
+                </ng-container>
+                <ng-template #regularText>{{ getDisplayText(m.text, m.hasImage) }}</ng-template>
+              </p>
 
               <div class="message-meta">
                 <span class="message-time" [title]="getFullTimestamp(m.ts)">
                   {{ formatMessageTime(m.ts) }}
                 </span>
 
-                <span *ngIf="m.sender === 'You'" class="message-status">
+                <span *ngIf="m.sender === 'You' && !isMessageUnreadable(m)" class="message-status">
                   <ng-container [ngSwitch]="m.status">
                     <mat-icon *ngSwitchCase="'pending'" class="status-icon">schedule</mat-icon>
                     <mat-icon *ngSwitchCase="'sent'" class="status-icon">check</mat-icon>
@@ -208,7 +214,7 @@
                   </ng-container>
                 </span>
 
-                <small *ngIf="!m.deletedAt && m.editedAt">&nbsp;(edited)</small>
+                <small *ngIf="!m.deletedAt && m.editedAt && !isMessageUnreadable(m) && !isMessageEncrypted(m)">&nbsp;(edited)</small>
 
                 <!-- Show indicator for unreadable messages -->
                 <small *ngIf="isMessageUnreadable(m)" class="unreadable-indicator"> &nbsp;(text unavailable) </small>
