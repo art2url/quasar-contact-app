@@ -1287,11 +1287,20 @@
     top: 0;
     left: 0;
     right: 0;
-    bottom: var(--chat-form-height, 70px);
+    /* Allow height to be set directly by JavaScript for better browser compatibility */
+    height: calc(
+      100vh - 56px - 60px - 70px
+    ); /* Fallback: viewport - header - chat-header - chat-form */
+    max-height: calc(100vh - 56px - 60px - 70px);
     padding: 0 var(--spacing-md);
     padding-top: 0;
+    padding-bottom: 0; /* Remove padding since we're using height directly */
     overflow-y: auto;
     box-sizing: border-box;
+    /* Force hardware acceleration for better scrolling performance */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-overflow-scrolling: touch;
   }
 
   .chat-container:has(.cache-info-banner) .chat-window {
@@ -1349,10 +1358,13 @@
     position: fixed !important;
     left: 0;
     right: 0;
-    bottom: var(--typing-indicator-bottom, calc(58px + env(safe-area-inset-bottom, 0px)));
+    width: auto;
+    bottom: 70px; /* Fallback for browsers without CSS variable support */
+    bottom: var(--typing-indicator-bottom, 70px);
     background: #f8f9fa;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    /* Match chat-window horizontal padding exactly for all screen sizes */
     padding: var(--spacing-xs) var(--spacing-md);
     margin: 0;
     font-style: italic;

@@ -24,6 +24,7 @@ import { VaultService } from '@services/vault.service';
 import { LoadingService } from '@services/loading.service';
 import { AuthService } from '@services/auth.service';
 import { NotificationService, ChatNotification } from '@services/notification.service';
+import { ScrollService } from '@services/scroll.service';
 
 import { UserSummary } from '@models/user.model';
 import { ChatEntry } from '@models/chat.model';
@@ -81,10 +82,15 @@ export class ChatListComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private notificationService: NotificationService,
     private location: Location,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private scrollService: ScrollService
   ) {}
 
   ngOnInit() {
+    // IMPORTANT: Always scroll to top when chat-list loads
+    // This prevents the page from staying at bottom position when navigating back from chat-room
+    this.scrollService.scrollToTop();
+
     // Determine if back button should be shown
     this.checkBackButtonVisibility();
 
@@ -105,6 +111,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
 
     // Router event handling removed - notification service handles refresh automatically
   }
+
 
   /**
    * Determine if the back button should be visible

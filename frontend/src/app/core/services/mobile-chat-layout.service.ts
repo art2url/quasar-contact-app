@@ -156,14 +156,36 @@ export class MobileChatLayoutService implements OnDestroy {
 
   private updateMetrics(): void {
     if (!this.isMobileView()) {
+      console.log('[MobileChatLayout] Not mobile view, skipping update');
       return;
     }
 
-    const viewportHeight = window.innerHeight;
-    const visualViewportHeight = window.visualViewport?.height || viewportHeight;
+    console.log('[MobileChatLayout] Starting metrics update');
 
-    // Check if mobile keyboard is visible
-    const isKeyboardVisible = viewportHeight > visualViewportHeight + 100;
+    // Use multiple viewport height detection methods for better browser compatibility
+    let viewportHeight = window.innerHeight;
+    let visualViewportHeight = viewportHeight;
+
+    // Try visual viewport API (Safari/Chrome support)
+    if (window.visualViewport?.height) {
+      visualViewportHeight = window.visualViewport.height;
+    } else {
+      // Fallback for browsers without visual viewport API
+      const docHeight = document.documentElement.clientHeight;
+      if (docHeight > 0 && Math.abs(docHeight - viewportHeight) > 50) {
+        visualViewportHeight = Math.min(docHeight, viewportHeight);
+      }
+    }
+
+    // Check if mobile keyboard is visible with more conservative threshold
+    const isKeyboardVisible = viewportHeight > visualViewportHeight + 150;
+
+    console.log('[MobileChatLayout] Viewport info:', {
+      viewportHeight,
+      visualViewportHeight,
+      isKeyboardVisible,
+      userAgent: navigator.userAgent
+    });
 
     // Get actual element heights and visibility
     const chatFormHeight = this.getChatFormHeight();
@@ -210,6 +232,8 @@ export class MobileChatLayoutService implements OnDestroy {
       attachmentPreviewBottomOffset,
     };
 
+    console.log('[MobileChatLayout] Final metrics:', newMetrics);
+
     this.metrics$.next(newMetrics);
     this.applyCSSVariables(newMetrics);
   }
@@ -221,39 +245,57 @@ export class MobileChatLayoutService implements OnDestroy {
     keyRecoveryOverlayHeight: number,
     partnerKeyNotificationHeight: number
   ): number {
-    // Simplified calculation: chat-window should fill chat-container minus elements that take space
+    // Precise calculation: chat-window should fill exact space available
     // Layout structure:
-    // - chat-wrapper (fills viewport minus app header)
-    //   - chat-header (60px, positioned above chat-container)
-    //   - chat-container (flexible height)
-    //     - cache-info-banner (if visible)
-    //     - chat-window (flexible, should fill remaining space)
-    //     - overlays (positioned absolute, don't affect layout)
-    //   - chat-form (fixed at bottom, overlaps chat-container)
+    // - viewport height (full screen)
+    //   - app header (56px)
+    //   - chat header (60px) 
+    //   - chat-window (calculated)
+    //   - typing indicator (if visible, takes space from chat-window)
+    //   - chat-form (actual measured height)
 
-    // The chat-container gets: viewport - app-header - chat-header
-    const chatContainerHeight =
-      viewportHeight - this.HEADER_HEIGHT - this.CHAT_HEADER_HEIGHT;
+    // Start with full viewport
+    let availableHeight = viewportHeight;
 
-    // Within chat-container, chat-window gets: container height - cache banner - chat-form overlap
-    let chatWindowHeight = chatContainerHeight;
+    // Subtract fixed app header
+    availableHeight -= this.HEADER_HEIGHT; // 56px
 
-    // Subtract cache banner if visible (takes space at top of chat-container)
+    // Subtract chat header  
+    availableHeight -= this.CHAT_HEADER_HEIGHT; // 60px
+
+    // Subtract actual chat form height (not fixed 70px)
+    availableHeight -= chatFormHeight;
+
+    // Subtract cache banner if visible (takes space at top)
     if (cacheInfoBannerHeight > 0) {
-      chatWindowHeight -= cacheInfoBannerHeight;
+      availableHeight -= cacheInfoBannerHeight;
     }
 
-    // Subtract chat-form height to prevent overlap (chat-form is fixed at bottom)
-    chatWindowHeight -= chatFormHeight;
+    // Subtract typing indicator height if visible (it should push content up)
+    const typingIndicatorHeight = this.getTypingIndicatorHeight();
+    if (typingIndicatorHeight > 0) {
+      availableHeight -= typingIndicatorHeight;
+    }
 
-    // Overlays don't affect layout calculation (they're positioned absolute)
+    // Don't subtract overlay heights as they're positioned absolute and don't affect layout
     // Just ensure minimum height if overlays are present
     if (keyRecoveryOverlayHeight > 0 || partnerKeyNotificationHeight > 0) {
-      chatWindowHeight = Math.min(chatWindowHeight, 100);
+      availableHeight = Math.min(availableHeight, 200);
     }
 
+    console.log('[MobileChatLayout] Height calculation breakdown:', {
+      startingViewport: viewportHeight,
+      afterAppHeader: viewportHeight - this.HEADER_HEIGHT,
+      afterChatHeader: viewportHeight - this.HEADER_HEIGHT - this.CHAT_HEADER_HEIGHT,
+      afterChatForm: viewportHeight - this.HEADER_HEIGHT - this.CHAT_HEADER_HEIGHT - chatFormHeight,
+      afterTypingIndicator: typingIndicatorHeight > 0 ? availableHeight + typingIndicatorHeight - typingIndicatorHeight : availableHeight,
+      typingIndicatorHeight,
+      afterCacheBanner: availableHeight,
+      finalHeight: Math.max(availableHeight, 150)
+    });
+
     // Return calculated height with reasonable minimum
-    return Math.max(chatWindowHeight, 150);
+    return Math.max(availableHeight, 150);
   }
 
   private calculateScrollButtonPosition(
@@ -268,6 +310,8 @@ export class MobileChatLayoutService implements OnDestroy {
     chatFormHeight: number,
     safeAreaBottom: number
   ): number {
+    // Typing indicator should appear just above the chat form
+    // Position it exactly at the chat form height + safe area
     return chatFormHeight + safeAreaBottom;
   }
 
@@ -283,7 +327,26 @@ export class MobileChatLayoutService implements OnDestroy {
 
     const chatForm = document.querySelector('.chat-form') as HTMLElement;
     if (chatForm) {
-      return chatForm.offsetHeight;
+      // Use multiple measurement methods for better browser compatibility
+      let height = chatForm.offsetHeight;
+      
+      // Fallback to getBoundingClientRect if offsetHeight is 0
+      if (height === 0) {
+        const rect = chatForm.getBoundingClientRect();
+        height = rect.height;
+      }
+      
+      // Additional fallback using computed style
+      if (height === 0) {
+        const style = window.getComputedStyle(chatForm);
+        const computedHeight = parseFloat(style.height);
+        if (!isNaN(computedHeight) && computedHeight > 0) {
+          height = computedHeight;
+        }
+      }
+      
+      // Ensure minimum height but use actual height if larger
+      return Math.max(height, this.MIN_CHAT_FORM_HEIGHT);
     }
     return this.MIN_CHAT_FORM_HEIGHT;
   }
@@ -366,34 +429,174 @@ export class MobileChatLayoutService implements OnDestroy {
   }
 
   private isMobileView(): boolean {
-    return window.innerWidth <= 768; // Increased breakpoint to cover more devices
+    return window.innerWidth <= 599; // Match CSS mobile breakpoint exactly
   }
 
   private applyCSSVariables(metrics: ChatLayoutMetrics): void {
-    const root = document.documentElement;
+    try {
+      const root = document.documentElement;
 
-    // Critical: Update chat-form-height FIRST so other calculations can use it
-    root.style.setProperty('--chat-form-height', `${metrics.chatFormHeight}px`);
+      // Critical: Update chat-form-height FIRST so other calculations can use it
+      // Use multiple approaches for better browser compatibility
+      const chatFormHeightValue = `${metrics.chatFormHeight}px`;
+      
+      root.style.setProperty('--chat-form-height', chatFormHeightValue);
+      
+      // Also set a fallback data attribute for browsers with CSS variable issues
+      root.setAttribute('data-chat-form-height', chatFormHeightValue);
 
-    // Update CSS variables for dynamic positioning
-    root.style.setProperty('--chat-window-height', `${metrics.availableChatHeight}px`);
-    root.style.setProperty(
-      '--cache-info-banner-height',
-      `${metrics.cacheInfoBannerHeight}px`
-    );
-    root.style.setProperty(
-      '--scroll-button-bottom',
-      `${metrics.scrollButtonBottomOffset}px`
-    );
-    root.style.setProperty(
-      '--typing-indicator-bottom',
-      `${metrics.typingIndicatorBottomOffset}px`
-    );
-    root.style.setProperty(
-      '--attachment-preview-bottom',
-      `${metrics.attachmentPreviewBottomOffset}px`
-    );
-    root.style.setProperty('--viewport-height', `${metrics.viewportHeight}px`);
+      // Update other CSS variables for dynamic positioning
+      root.style.setProperty('--chat-window-height', `${metrics.availableChatHeight}px`);
+      root.style.setProperty(
+        '--cache-info-banner-height',
+        `${metrics.cacheInfoBannerHeight}px`
+      );
+      root.style.setProperty(
+        '--scroll-button-bottom',
+        `${metrics.scrollButtonBottomOffset}px`
+      );
+      root.style.setProperty(
+        '--typing-indicator-bottom',
+        `${metrics.typingIndicatorBottomOffset}px`
+      );
+      root.style.setProperty(
+        '--attachment-preview-bottom',
+        `${metrics.attachmentPreviewBottomOffset}px`
+      );
+      root.style.setProperty('--viewport-height', `${metrics.viewportHeight}px`);
+
+      console.log('[MobileChatLayout] Applied CSS variables:', {
+        chatFormHeight: chatFormHeightValue,
+        chatWindowHeight: `${metrics.availableChatHeight}px`,
+        viewportHeight: `${metrics.viewportHeight}px`
+      });
+
+      // NEW: Apply styles directly to elements as a fallback
+      this.applyDirectStyles(metrics);
+
+      // Force immediate style recalculation in problematic browsers
+      if (this.needsForceRecalculation()) {
+        this.forceStyleRecalculation();
+      }
+    } catch (error) {
+      console.warn('[MobileChatLayout] Error applying CSS variables:', error);
+      // Continue without CSS variables - the layout will use fallback values
+    }
+  }
+
+  private applyDirectStyles(metrics: ChatLayoutMetrics): void {
+    // Only apply direct styles on mobile devices
+    if (!this.isMobileView()) {
+      return;
+    }
+
+    // Apply styles directly to elements for browsers with CSS variable issues
+    const chatWindow = document.querySelector('.chat-window') as HTMLElement;
+    const chatForm = document.querySelector('.chat-form') as HTMLElement;
+    
+    if (!chatForm) {
+      console.warn('[MobileChatLayout] Chat form not found, cannot apply direct styles');
+      return;
+    }
+
+    // Get actual chat form height for precise calculation
+    const actualChatFormHeight = chatForm.offsetHeight;
+    const safeAreaBottom = this.getSafeAreaBottom();
+    
+    if (chatWindow) {
+      console.log('[MobileChatLayout] Applying direct styles to chat-window');
+      
+      // Calculate height to fill exactly to the top of chat form
+      const viewportHeight = window.innerHeight;
+      const headerHeight = 56; // App header
+      const chatHeaderHeight = 60; // Chat room header
+      
+      // Calculate precise height: viewport - headers - actual chat form height
+      const preciseHeight = viewportHeight - headerHeight - chatHeaderHeight - actualChatFormHeight;
+      
+      chatWindow.style.height = `${preciseHeight}px`;
+      chatWindow.style.maxHeight = `${preciseHeight}px`;
+      
+      console.log('[MobileChatLayout] Precise height calculation:', {
+        viewportHeight,
+        headerHeight,
+        chatHeaderHeight,
+        actualChatFormHeight,
+        calculatedHeight: preciseHeight,
+        originalMetricsHeight: metrics.availableChatHeight
+      });
+    }
+
+    // Update typing indicator position - should push chat content up, not overlay
+    const typingIndicator = document.querySelector('.typing-indicator') as HTMLElement;
+    if (typingIndicator) {
+      // For mobile, typing indicator should be positioned just above the chat form
+      // and reduce the available space for chat-window (not overlay on top)
+      const typingIndicatorBottom = actualChatFormHeight + safeAreaBottom;
+      
+      // Position it fixed to bottom, but the chat-window height calculation above
+      // already accounts for its height, so content will be pushed up
+      typingIndicator.style.bottom = `${typingIndicatorBottom}px`;
+      typingIndicator.style.position = 'fixed';
+      
+      // Make it full-width like chat-window, with internal padding
+      typingIndicator.style.left = '0';
+      typingIndicator.style.right = '0';
+      typingIndicator.style.width = 'auto';
+      
+      // Apply the same internal padding as chat-window (--spacing-md = 16px)
+      typingIndicator.style.paddingLeft = '16px';
+      typingIndicator.style.paddingRight = '16px';
+      
+      typingIndicator.style.zIndex = '1001';
+      
+      console.log('[MobileChatLayout] Typing indicator positioned at:', {
+        chatFormHeight: actualChatFormHeight,
+        safeAreaBottom,
+        totalBottom: typingIndicatorBottom,
+        layout: 'full-width with internal padding (16px)',
+        element: typingIndicator,
+        computedBottom: getComputedStyle(typingIndicator).bottom
+      });
+    }
+
+    // Update scroll button position - should be above typing indicator area
+    const scrollButton = document.querySelector('.scroll-to-bottom-btn') as HTMLElement;
+    if (scrollButton) {
+      const typingIndicatorHeight = 35; // Typical typing indicator height
+      const buttonSpacing = 16; // Spacing above typing indicator
+      const scrollButtonBottom = actualChatFormHeight + safeAreaBottom + typingIndicatorHeight + buttonSpacing;
+      
+      scrollButton.style.bottom = `${scrollButtonBottom}px`;
+      
+      console.log('[MobileChatLayout] Scroll button positioned at:', {
+        chatFormHeight: actualChatFormHeight,
+        safeAreaBottom,
+        typingIndicatorHeight,
+        buttonSpacing,
+        totalBottom: scrollButtonBottom
+      });
+    }
+  }
+
+  private needsForceRecalculation(): boolean {
+    // Detect browsers that need forced style recalculation
+    const userAgent = navigator.userAgent.toLowerCase();
+    return userAgent.includes('safari') && !userAgent.includes('chrome');
+  }
+
+  private forceStyleRecalculation(): void {
+    // Force style recalculation for Safari and other problematic browsers
+    const chatWindow = document.querySelector('.chat-window') as HTMLElement;
+    if (chatWindow) {
+      // Temporarily change a non-visual property to force recalculation
+      const originalTransform = chatWindow.style.transform;
+      chatWindow.style.transform = 'translateZ(0)';
+      // Use requestAnimationFrame to restore after recalculation
+      requestAnimationFrame(() => {
+        chatWindow.style.transform = originalTransform;
+      });
+    }
   }
 
   // Public methods for components to use
@@ -472,6 +675,51 @@ export class MobileChatLayoutService implements OnDestroy {
 
   public shouldAutoScroll(messageContainer: HTMLElement): boolean {
     return this.isUserAtActualBottom(messageContainer);
+  }
+
+  /**
+   * Update typing indicator position specifically (can be called when typing state changes)
+   */
+  public updateTypingIndicatorPosition(): void {
+    if (!this.isMobileView()) {
+      return;
+    }
+
+    const typingIndicator = document.querySelector('.typing-indicator') as HTMLElement;
+    const chatForm = document.querySelector('.chat-form') as HTMLElement;
+    
+    if (typingIndicator && chatForm) {
+      const actualChatFormHeight = chatForm.offsetHeight;
+      const safeAreaBottom = this.getSafeAreaBottom();
+      const typingIndicatorBottom = actualChatFormHeight + safeAreaBottom;
+      
+      // Apply the position directly for reliable positioning
+      typingIndicator.style.bottom = `${typingIndicatorBottom}px`;
+      typingIndicator.style.position = 'fixed';
+      
+      // Make it full-width like chat-window, with internal padding
+      typingIndicator.style.left = '0';
+      typingIndicator.style.right = '0';
+      typingIndicator.style.width = 'auto';
+      
+      // Apply the same internal padding as chat-window (--spacing-md = 16px)
+      typingIndicator.style.paddingLeft = '16px';
+      typingIndicator.style.paddingRight = '16px';
+      
+      typingIndicator.style.zIndex = '1001';
+      
+      console.log('[MobileChatLayout] Updated typing indicator position:', {
+        chatFormHeight: actualChatFormHeight,
+        safeAreaBottom,
+        totalBottom: typingIndicatorBottom,
+        layout: 'full-width with internal padding (16px)',
+        visible: !this.isElementHidden(typingIndicator)
+      });
+
+      // IMPORTANT: Trigger full layout recalculation to adjust chat-window height
+      // This ensures the chat content is pushed up when typing indicator appears
+      this.updateMetrics();
+    }
   }
 
   ngOnDestroy(): void {
