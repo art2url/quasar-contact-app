@@ -37,20 +37,47 @@ export class MobileChatLayoutService implements OnDestroy {
   private readonly MIN_CHAT_FORM_HEIGHT = 70;
   private readonly SPACING_SM = 8;
   private readonly SPACING_MD = 16;
+  
+  // Track keyboard state to detect changes
+  private lastKeyboardVisible = false;
+  
+  // Store the initial viewport height to detect keyboard
+  private initialViewportHeight = 0;
+  
+  // Track if input is focused to predict keyboard appearance
+  private isInputFocused = false;
 
   private ngZone = inject(NgZone);
 
   constructor() {
+    // Store initial viewport height for keyboard detection
+    this.initialViewportHeight = window.innerHeight;
     this.initializeLayoutMonitoring();
   }
 
   private initializeLayoutMonitoring(): void {
     // Monitor viewport changes (includes keyboard show/hide)
     fromEvent(window, 'resize')
-      .pipe(debounceTime(150), takeUntil(this.destroy$))
+      .pipe(debounceTime(100), takeUntil(this.destroy$))
       .subscribe(() => {
         this.updateMetrics();
       });
+
+    // Monitor visual viewport changes specifically for keyboard events
+    if (window.visualViewport) {
+      fromEvent(window.visualViewport, 'resize')
+        .pipe(debounceTime(16), takeUntil(this.destroy$)) // ~60fps response
+        .subscribe(() => {
+          this.updateMetrics();
+        });
+      
+      // Also monitor scroll events on visual viewport (can indicate keyboard changes)
+      fromEvent(window.visualViewport, 'scroll')
+        .pipe(debounceTime(16), takeUntil(this.destroy$))
+        .subscribe(() => {
+          this.updateMetrics();
+        });
+    }
 
     // Monitor orientation changes
     fromEvent(window, 'orientationchange')
@@ -67,6 +94,9 @@ export class MobileChatLayoutService implements OnDestroy {
 
     // Monitor DOM changes for dynamic elements
     this.setupMutationObserver();
+
+    // Monitor focus events to predict keyboard appearance
+    this.setupFocusMonitoring();
 
     // Initial calculation
     this.updateMetrics();
@@ -154,38 +184,54 @@ export class MobileChatLayoutService implements OnDestroy {
     });
   }
 
+  private setupFocusMonitoring(): void {
+    if (!this.isMobileView()) return;
+
+    // Listen for focus events on input elements
+    fromEvent(document, 'focusin')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((event) => {
+        const target = event.target as HTMLElement;
+        if (target?.tagName.toLowerCase() === 'textarea' || 
+            target?.tagName.toLowerCase() === 'input') {
+          this.isInputFocused = true;
+          // Immediately update layout assuming keyboard will appear
+          this.updateMetrics();
+        }
+      });
+
+    // Listen for blur events
+    fromEvent(document, 'focusout')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.isInputFocused = false;
+        // Update layout assuming keyboard will disappear
+        this.ngZone.runOutsideAngular(() => {
+          requestAnimationFrame(() => {
+            this.ngZone.run(() => {
+              this.updateMetrics();
+            });
+          });
+        });
+      });
+  }
+
   private updateMetrics(): void {
     if (!this.isMobileView()) {
-      console.log('[MobileChatLayout] Not mobile view, skipping update');
       return;
     }
 
-    console.log('[MobileChatLayout] Starting metrics update');
-
-    // Use multiple viewport height detection methods for better browser compatibility
-    let viewportHeight = window.innerHeight;
-    let visualViewportHeight = viewportHeight;
-
-    // Try visual viewport API (Safari/Chrome support)
+    // Simplified approach - let CSS handle height with dvh units
+    // Just track state for other components that need to know
+    let effectiveViewportHeight = window.innerHeight;
+    let isKeyboardVisible = false;
+    
     if (window.visualViewport?.height) {
-      visualViewportHeight = window.visualViewport.height;
+      effectiveViewportHeight = window.visualViewport.height;
+      isKeyboardVisible = this.initialViewportHeight > window.visualViewport.height + 100;
     } else {
-      // Fallback for browsers without visual viewport API
-      const docHeight = document.documentElement.clientHeight;
-      if (docHeight > 0 && Math.abs(docHeight - viewportHeight) > 50) {
-        visualViewportHeight = Math.min(docHeight, viewportHeight);
-      }
+      isKeyboardVisible = this.isInputFocused;
     }
-
-    // Check if mobile keyboard is visible with more conservative threshold
-    const isKeyboardVisible = viewportHeight > visualViewportHeight + 150;
-
-    console.log('[MobileChatLayout] Viewport info:', {
-      viewportHeight,
-      visualViewportHeight,
-      isKeyboardVisible,
-      userAgent: navigator.userAgent
-    });
 
     // Get actual element heights and visibility
     const chatFormHeight = this.getChatFormHeight();
@@ -196,7 +242,7 @@ export class MobileChatLayoutService implements OnDestroy {
 
     // Calculate available height for chat window based on all visible elements
     const availableChatHeight = this.calculateAvailableChatHeight(
-      isKeyboardVisible ? visualViewportHeight : viewportHeight,
+      effectiveViewportHeight,
       chatFormHeight,
       cacheInfoBannerHeight,
       keyRecoveryOverlayHeight,
@@ -222,7 +268,7 @@ export class MobileChatLayoutService implements OnDestroy {
     );
 
     const newMetrics: ChatLayoutMetrics = {
-      viewportHeight: isKeyboardVisible ? visualViewportHeight : viewportHeight,
+      viewportHeight: effectiveViewportHeight,
       availableChatHeight,
       chatFormHeight,
       typingIndicatorHeight,
@@ -231,8 +277,6 @@ export class MobileChatLayoutService implements OnDestroy {
       typingIndicatorBottomOffset,
       attachmentPreviewBottomOffset,
     };
-
-    console.log('[MobileChatLayout] Final metrics:', newMetrics);
 
     this.metrics$.next(newMetrics);
     this.applyCSSVariables(newMetrics);
@@ -283,16 +327,6 @@ export class MobileChatLayoutService implements OnDestroy {
       availableHeight = Math.min(availableHeight, 200);
     }
 
-    console.log('[MobileChatLayout] Height calculation breakdown:', {
-      startingViewport: viewportHeight,
-      afterAppHeader: viewportHeight - this.HEADER_HEIGHT,
-      afterChatHeader: viewportHeight - this.HEADER_HEIGHT - this.CHAT_HEADER_HEIGHT,
-      afterChatForm: viewportHeight - this.HEADER_HEIGHT - this.CHAT_HEADER_HEIGHT - chatFormHeight,
-      afterTypingIndicator: typingIndicatorHeight > 0 ? availableHeight + typingIndicatorHeight - typingIndicatorHeight : availableHeight,
-      typingIndicatorHeight,
-      afterCacheBanner: availableHeight,
-      finalHeight: Math.max(availableHeight, 150)
-    });
 
     // Return calculated height with reasonable minimum
     return Math.max(availableHeight, 150);
@@ -465,13 +499,7 @@ export class MobileChatLayoutService implements OnDestroy {
       );
       root.style.setProperty('--viewport-height', `${metrics.viewportHeight}px`);
 
-      console.log('[MobileChatLayout] Applied CSS variables:', {
-        chatFormHeight: chatFormHeightValue,
-        chatWindowHeight: `${metrics.availableChatHeight}px`,
-        viewportHeight: `${metrics.viewportHeight}px`
-      });
-
-      // NEW: Apply styles directly to elements as a fallback
+      // Apply styles directly to elements as a fallback
       this.applyDirectStyles(metrics);
 
       // Force immediate style recalculation in problematic browsers
@@ -479,7 +507,6 @@ export class MobileChatLayoutService implements OnDestroy {
         this.forceStyleRecalculation();
       }
     } catch (error) {
-      console.warn('[MobileChatLayout] Error applying CSS variables:', error);
       // Continue without CSS variables - the layout will use fallback values
     }
   }
@@ -495,7 +522,6 @@ export class MobileChatLayoutService implements OnDestroy {
     const chatForm = document.querySelector('.chat-form') as HTMLElement;
     
     if (!chatForm) {
-      console.warn('[MobileChatLayout] Chat form not found, cannot apply direct styles');
       return;
     }
 
@@ -503,29 +529,8 @@ export class MobileChatLayoutService implements OnDestroy {
     const actualChatFormHeight = chatForm.offsetHeight;
     const safeAreaBottom = this.getSafeAreaBottom();
     
-    if (chatWindow) {
-      console.log('[MobileChatLayout] Applying direct styles to chat-window');
-      
-      // Calculate height to fill exactly to the top of chat form
-      const viewportHeight = window.innerHeight;
-      const headerHeight = 56; // App header
-      const chatHeaderHeight = 60; // Chat room header
-      
-      // Calculate precise height: viewport - headers - actual chat form height
-      const preciseHeight = viewportHeight - headerHeight - chatHeaderHeight - actualChatFormHeight;
-      
-      chatWindow.style.height = `${preciseHeight}px`;
-      chatWindow.style.maxHeight = `${preciseHeight}px`;
-      
-      console.log('[MobileChatLayout] Precise height calculation:', {
-        viewportHeight,
-        headerHeight,
-        chatHeaderHeight,
-        actualChatFormHeight,
-        calculatedHeight: preciseHeight,
-        originalMetricsHeight: metrics.availableChatHeight
-      });
-    }
+    // DON'T manipulate chat-window height - let CSS handle it with dvh units
+    // This prevents JavaScript layout changes that cause the flash
 
     // Update typing indicator position - should push chat content up, not overlay
     const typingIndicator = document.querySelector('.typing-indicator') as HTMLElement;
@@ -549,15 +554,6 @@ export class MobileChatLayoutService implements OnDestroy {
       typingIndicator.style.paddingRight = '16px';
       
       typingIndicator.style.zIndex = '1001';
-      
-      console.log('[MobileChatLayout] Typing indicator positioned at:', {
-        chatFormHeight: actualChatFormHeight,
-        safeAreaBottom,
-        totalBottom: typingIndicatorBottom,
-        layout: 'full-width with internal padding (16px)',
-        element: typingIndicator,
-        computedBottom: getComputedStyle(typingIndicator).bottom
-      });
     }
 
     // Update scroll button position - should be above typing indicator area
@@ -568,14 +564,6 @@ export class MobileChatLayoutService implements OnDestroy {
       const scrollButtonBottom = actualChatFormHeight + safeAreaBottom + typingIndicatorHeight + buttonSpacing;
       
       scrollButton.style.bottom = `${scrollButtonBottom}px`;
-      
-      console.log('[MobileChatLayout] Scroll button positioned at:', {
-        chatFormHeight: actualChatFormHeight,
-        safeAreaBottom,
-        typingIndicatorHeight,
-        buttonSpacing,
-        totalBottom: scrollButtonBottom
-      });
     }
   }
 
@@ -708,13 +696,6 @@ export class MobileChatLayoutService implements OnDestroy {
       
       typingIndicator.style.zIndex = '1001';
       
-      console.log('[MobileChatLayout] Updated typing indicator position:', {
-        chatFormHeight: actualChatFormHeight,
-        safeAreaBottom,
-        totalBottom: typingIndicatorBottom,
-        layout: 'full-width with internal padding (16px)',
-        visible: !this.isElementHidden(typingIndicator)
-      });
 
       // IMPORTANT: Trigger full layout recalculation to adjust chat-window height
       // This ensures the chat content is pushed up when typing indicator appears
