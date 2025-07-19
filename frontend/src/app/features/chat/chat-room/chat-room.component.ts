@@ -599,6 +599,18 @@ export class ChatRoomComponent
           'focus',
           this.handleChatInputFocus.bind(this)
         );
+        
+        // Update layout when user focuses input (keyboard may appear)
+        this.messageInput.nativeElement.addEventListener(
+          'focus',
+          this.handleInputFocus.bind(this)
+        );
+        
+        // Update layout when user unfocuses input (keyboard may disappear)
+        this.messageInput.nativeElement.addEventListener(
+          'blur',
+          this.handleInputBlur.bind(this)
+        );
       }
       });
     });
@@ -727,6 +739,9 @@ export class ChatRoomComponent
 
       // Send typing event to chat session
       this.chat.sendTyping();
+      
+      // Also trigger layout update in case keyboard appeared during typing
+      this.mobileChatLayoutService.forceUpdate();
     }
   }
 
@@ -959,7 +974,6 @@ export class ChatRoomComponent
       );
     }
     
-    console.log('[ChatRoom] Updated typing indicator position, mobile width:', window.innerWidth <= 599);
   }
 
   trackByTs(_: number, m: { ts: number }) {
@@ -1339,61 +1353,45 @@ export class ChatRoomComponent
   private initializeMobileLayout(): void {
     if (window.innerWidth > 599) return;
 
-    console.log('[ChatRoom] Initializing mobile layout');
-
     // Force immediate update
     this.mobileChatLayoutService.forceUpdate();
 
-    // Set up aggressive retry mechanism for browsers that need more time
+    // Set up retry mechanism using requestAnimationFrame for browsers that need more time
     let retryCount = 0;
     const maxRetries = 5;
-    const retryInterval = 200; // ms
 
     const retryLayoutUpdate = () => {
       retryCount++;
-      console.log(`[ChatRoom] Layout retry ${retryCount}/${maxRetries}`);
       
       this.ngZone.runOutsideAngular(() => {
-        setTimeout(() => {
-          this.ngZone.run(() => {
-            this.mobileChatLayoutService.forceUpdate();
-            
-            // Check if layout was applied correctly
-            const chatForm = document.querySelector('.chat-form') as HTMLElement;
-            const chatWindow = document.querySelector('.chat-window') as HTMLElement;
-            
-            if (chatForm && chatWindow) {
-              const chatFormHeight = chatForm.offsetHeight;
-              const chatWindowHeight = chatWindow.offsetHeight;
-              const windowHeight = window.innerHeight;
+        // Use requestAnimationFrame chain instead of setTimeout
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            this.ngZone.run(() => {
+              this.mobileChatLayoutService.forceUpdate();
               
-              console.log('[ChatRoom] Layout check:', {
-                chatFormHeight,
-                chatWindowHeight,
-                windowHeight,
-                retryCount
-              });
+              // Check if layout was applied correctly
+              const chatForm = document.querySelector('.chat-form') as HTMLElement;
+              const chatWindow = document.querySelector('.chat-window') as HTMLElement;
               
-              // Check if height looks reasonable
-              const expectedHeight = windowHeight - 56 - 60 - chatFormHeight; // viewport - header - chat-header - form
-              const heightDiff = Math.abs(chatWindowHeight - expectedHeight);
-              
-              if (heightDiff > 50 && retryCount < maxRetries) {
-                console.log('[ChatRoom] Height mismatch, retrying...', {
-                  expected: expectedHeight,
-                  actual: chatWindowHeight,
-                  diff: heightDiff
-                });
+              if (chatForm && chatWindow) {
+                const chatFormHeight = chatForm.offsetHeight;
+                const chatWindowHeight = chatWindow.offsetHeight;
+                const windowHeight = window.innerHeight;
+                
+                // Check if height looks reasonable
+                const expectedHeight = windowHeight - 56 - 60 - chatFormHeight; // viewport - header - chat-header - form
+                const heightDiff = Math.abs(chatWindowHeight - expectedHeight);
+                
+                if (heightDiff > 50 && retryCount < maxRetries) {
+                  retryLayoutUpdate();
+                }
+              } else if (retryCount < maxRetries) {
                 retryLayoutUpdate();
-              } else {
-                console.log('[ChatRoom] Layout appears correct or max retries reached');
               }
-            } else if (retryCount < maxRetries) {
-              console.log('[ChatRoom] Elements not found, retrying...');
-              retryLayoutUpdate();
-            }
+            });
           });
-        }, retryInterval);
+        });
       });
     };
 
@@ -1410,7 +1408,6 @@ export class ChatRoomComponent
 
     // Also force updates on window events
     const forceUpdate = () => {
-      console.log('[ChatRoom] Window event triggered layout update');
       this.mobileChatLayoutService.forceUpdate();
     };
 
@@ -1466,6 +1463,9 @@ export class ChatRoomComponent
     if (this.messageInput?.nativeElement) {
       this.messageInput.nativeElement.removeEventListener('input', this.handleTyping);
       this.messageInput.nativeElement.removeEventListener('keydown', this.handleKeydown);
+      this.messageInput.nativeElement.removeEventListener('focus', this.handleChatInputFocus);
+      this.messageInput.nativeElement.removeEventListener('focus', this.handleInputFocus);
+      this.messageInput.nativeElement.removeEventListener('blur', this.handleInputBlur);
     }
 
     // Remove scroll listener
@@ -1503,6 +1503,40 @@ export class ChatRoomComponent
    */
   private handleChatInputFocus(): void {
     this.chat.manuallyCheckKeyStatus();
+  }
+
+  /**
+   * Handle input focus - update layout for potential keyboard appearance
+   */
+  private handleInputFocus(): void {
+    // Immediate update on focus
+    this.mobileChatLayoutService.forceUpdate();
+    
+    // Additional update after a frame to catch keyboard state
+    this.ngZone.runOutsideAngular(() => {
+      requestAnimationFrame(() => {
+        this.ngZone.run(() => {
+          this.mobileChatLayoutService.forceUpdate();
+        });
+      });
+    });
+  }
+
+  /**
+   * Handle input blur - update layout for potential keyboard disappearance
+   */
+  private handleInputBlur(): void {
+    // Immediate update on blur
+    this.mobileChatLayoutService.forceUpdate();
+    
+    // Additional update after a frame to catch keyboard state
+    this.ngZone.runOutsideAngular(() => {
+      requestAnimationFrame(() => {
+        this.ngZone.run(() => {
+          this.mobileChatLayoutService.forceUpdate();
+        });
+      });
+    });
   }
 
   /**

@@ -1287,20 +1287,23 @@
     top: 0;
     left: 0;
     right: 0;
-    /* Allow height to be set directly by JavaScript for better browser compatibility */
-    height: calc(
-      100vh - 56px - 60px - 70px
-    ); /* Fallback: viewport - header - chat-header - chat-form */
-    max-height: calc(100vh - 56px - 60px - 70px);
+    /* Use dynamic height that responds to chat-form height changes */
+    /* This ensures last message stays visible when textarea expands */
+    height: calc(100dvh - 56px - 60px - var(--chat-form-height, 70px) + 14px);
+    max-height: calc(100dvh - 56px - 60px - var(--chat-form-height, 70px) + 14px);
     padding: 0 var(--spacing-md);
     padding-top: 0;
-    padding-bottom: 0; /* Remove padding since we're using height directly */
+    padding-bottom: var(--spacing-md); /* Add bottom padding equal to left-right padding */
     overflow-y: auto;
     box-sizing: border-box;
     /* Force hardware acceleration for better scrolling performance */
     -webkit-transform: translateZ(0);
     transform: translateZ(0);
     -webkit-overflow-scrolling: touch;
+    /* Smooth transition when height changes due to textarea expansion */
+    transition:
+      height 0.2s ease-out,
+      max-height 0.2s ease-out;
   }
 
   .chat-container:has(.cache-info-banner) .chat-window {
