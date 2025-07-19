@@ -211,7 +211,7 @@ export class ChatRoomComponent
     }
 
     // Initialize mobile layout service for dynamic height calculations
-    this.mobileChatLayoutService.forceUpdate();
+    this.initializeMobileLayout();
 
     // Reset the flag for this chat room
     this.hasMarkedMessagesAsRead = false;
@@ -531,9 +531,23 @@ export class ChatRoomComponent
       this.chat.partnerTyping$.subscribe(isTyping => {
         // Use NgZone to ensure Angular detects the change
         this.ngZone.run(() => {
+          const wasTyping = this.isPartnerTyping;
           this.isPartnerTyping = isTyping;
+          
           // Update positioning when typing indicator state changes
-          this.updateTypingIndicatorPosition();
+          // Use requestAnimationFrame to ensure DOM has updated
+          this.ngZone.runOutsideAngular(() => {
+            requestAnimationFrame(() => {
+              this.ngZone.run(() => {
+                this.updateTypingIndicatorPosition();
+                
+                // Also call the mobile layout service method for mobile-specific positioning
+                if (window.innerWidth <= 599) {
+                  this.mobileChatLayoutService.updateTypingIndicatorPosition();
+                }
+              });
+            });
+          });
         });
       })
     );
@@ -930,7 +944,7 @@ export class ChatRoomComponent
   }
 
   private updateTypingIndicatorPosition() {
-    // Force update of mobile layout metrics
+    // Force update of mobile layout metrics for both mobile and desktop
     this.mobileChatLayoutService.forceUpdate();
     
     // Keep desktop positioning logic for backwards compatibility
@@ -944,6 +958,8 @@ export class ChatRoomComponent
         `calc(${chatFormHeight + typingIndicatorHeight + spacing}px)`
       );
     }
+    
+    console.log('[ChatRoom] Updated typing indicator position, mobile width:', window.innerWidth <= 599);
   }
 
   trackByTs(_: number, m: { ts: number }) {
@@ -1315,6 +1331,99 @@ export class ChatRoomComponent
     }
 
     return 'Type a message...';
+  }
+
+  /**
+   * Initialize mobile layout with retry mechanism for better browser compatibility
+   */
+  private initializeMobileLayout(): void {
+    if (window.innerWidth > 599) return;
+
+    console.log('[ChatRoom] Initializing mobile layout');
+
+    // Force immediate update
+    this.mobileChatLayoutService.forceUpdate();
+
+    // Set up aggressive retry mechanism for browsers that need more time
+    let retryCount = 0;
+    const maxRetries = 5;
+    const retryInterval = 200; // ms
+
+    const retryLayoutUpdate = () => {
+      retryCount++;
+      console.log(`[ChatRoom] Layout retry ${retryCount}/${maxRetries}`);
+      
+      this.ngZone.runOutsideAngular(() => {
+        setTimeout(() => {
+          this.ngZone.run(() => {
+            this.mobileChatLayoutService.forceUpdate();
+            
+            // Check if layout was applied correctly
+            const chatForm = document.querySelector('.chat-form') as HTMLElement;
+            const chatWindow = document.querySelector('.chat-window') as HTMLElement;
+            
+            if (chatForm && chatWindow) {
+              const chatFormHeight = chatForm.offsetHeight;
+              const chatWindowHeight = chatWindow.offsetHeight;
+              const windowHeight = window.innerHeight;
+              
+              console.log('[ChatRoom] Layout check:', {
+                chatFormHeight,
+                chatWindowHeight,
+                windowHeight,
+                retryCount
+              });
+              
+              // Check if height looks reasonable
+              const expectedHeight = windowHeight - 56 - 60 - chatFormHeight; // viewport - header - chat-header - form
+              const heightDiff = Math.abs(chatWindowHeight - expectedHeight);
+              
+              if (heightDiff > 50 && retryCount < maxRetries) {
+                console.log('[ChatRoom] Height mismatch, retrying...', {
+                  expected: expectedHeight,
+                  actual: chatWindowHeight,
+                  diff: heightDiff
+                });
+                retryLayoutUpdate();
+              } else {
+                console.log('[ChatRoom] Layout appears correct or max retries reached');
+              }
+            } else if (retryCount < maxRetries) {
+              console.log('[ChatRoom] Elements not found, retrying...');
+              retryLayoutUpdate();
+            }
+          });
+        }, retryInterval);
+      });
+    };
+
+    // Start retries after DOM settles
+    this.ngZone.runOutsideAngular(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          this.ngZone.run(() => {
+            retryLayoutUpdate();
+          });
+        });
+      });
+    });
+
+    // Also force updates on window events
+    const forceUpdate = () => {
+      console.log('[ChatRoom] Window event triggered layout update');
+      this.mobileChatLayoutService.forceUpdate();
+    };
+
+    window.addEventListener('resize', forceUpdate);
+    window.addEventListener('orientationchange', forceUpdate);
+    
+    // Clean up listeners in component destroy
+    this.subs.add({
+      unsubscribe: () => {
+        window.removeEventListener('resize', forceUpdate);
+        window.removeEventListener('orientationchange', forceUpdate);
+      }
+    } as any);
   }
 
   /**
