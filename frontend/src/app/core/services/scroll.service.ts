@@ -53,18 +53,16 @@ export class ScrollService {
           // And once more after DOM settles
           requestAnimationFrame(() => {
             window.scrollTo(0, 0);
+            
+            // Additional check for navigation from login page
+            requestAnimationFrame(() => {
+              window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+            });
           });
         });
-        
-        // Also use setTimeout as backup for browsers with timing issues
-        setTimeout(() => {
-          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-        }, 0);
       });
-
-      console.log('[ScrollService] Executed scroll to top');
-    } catch (error) {
-      console.warn('[ScrollService] Error scrolling to top:', error);
+    } catch {
+      // Continue without error logging on mobile
     }
   }
 
@@ -74,8 +72,7 @@ export class ScrollService {
   scrollToElement(element: HTMLElement, behavior: ScrollBehavior = 'smooth'): void {
     try {
       element.scrollIntoView({ behavior, block: 'start', inline: 'nearest' });
-    } catch (error) {
-      console.warn('[ScrollService] Error scrolling to element:', error);
+    } catch {
       // Fallback
       element.scrollIntoView();
     }

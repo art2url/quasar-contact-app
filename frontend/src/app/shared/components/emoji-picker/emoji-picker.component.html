@@ -4,7 +4,8 @@
   class="emoji-button"
   (click)="togglePicker($event)"
   [disabled]="disabled"
-  [attr.aria-label]="'Add emoji'">
+  [attr.aria-label]="'Add emoji'"
+  tabindex="-1">
   <svg viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" class="emoji-icon">
     <g clip-path="url(#clip0_770_20169)">
       <path
@@ -39,12 +40,14 @@
   <div class="emoji-grid">
     <button
       *ngFor="let emoji of popularEmojis"
+      type="button"
       class="emoji-option"
-      (click)="onEmojiClick(emoji)"
-      (keydown.enter)="onEmojiClick(emoji)"
-      (keydown.space)="onEmojiClick(emoji)"
+      (click)="onEmojiClick(emoji, $event)"
+      (keydown.enter)="onEmojiClick(emoji, $event)"
+      (keydown.space)="onEmojiClick(emoji, $event)"
       [title]="emoji"
-      [attr.aria-label]="emoji">
+      [attr.aria-label]="emoji"
+      tabindex="-1">
       {{ emoji }}
     </button>
   </div>
