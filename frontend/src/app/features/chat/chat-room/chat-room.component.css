@@ -452,6 +452,17 @@
   box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
 }
 
+/* Mobile-specific textarea auto-expansion using CSS only */
+@media (max-width: 599px) {
+  .message-input {
+    /* Use CSS for auto-expansion on mobile to prevent JavaScript freezing */
+    field-sizing: content;
+    min-height: 40px;
+    max-height: 80px; /* Limit to ~3 rows */
+    overflow-y: auto;
+  }
+}
+
 /* Desktop emoji picker positioning handled in emoji-picker.component.css */
 
 /* Disabled state styling for message input */
@@ -1325,9 +1336,7 @@
 
   /* Adjust emoji picker position when message input is dirty (expanded) - mobile */
   .chat-form:has(.message-input.ng-dirty) app-emoji-picker .emoji-picker {
-    bottom: calc(
-      var(--chat-form-height, 58px) + env(safe-area-inset-bottom, 0px) + var(--spacing-sm)
-    ) !important;
+    bottom: calc(var(--chat-form-height, 58px) + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   .avatar {

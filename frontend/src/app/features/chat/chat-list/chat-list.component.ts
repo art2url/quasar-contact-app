@@ -89,7 +89,19 @@ export class ChatListComponent implements OnInit, OnDestroy {
   ngOnInit() {
     // IMPORTANT: Always scroll to top when chat-list loads
     // This prevents the page from staying at bottom position when navigating back from chat-room
+    // Use multiple timing approaches to ensure it works from login page too
     this.scrollService.scrollToTop();
+    
+    // Additional scroll after view initialization for navigation from login
+    this.ngZone.runOutsideAngular(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          this.ngZone.run(() => {
+            this.scrollService.scrollToTop();
+          });
+        });
+      });
+    });
 
     // Determine if back button should be shown
     this.checkBackButtonVisibility();
