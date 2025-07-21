@@ -452,6 +452,17 @@
   box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
 }
 
+/* Mobile-specific textarea auto-expansion using CSS only */
+@media (max-width: 599px) {
+  .message-input {
+    /* Use CSS for auto-expansion on mobile to prevent JavaScript freezing */
+    field-sizing: content;
+    min-height: 40px;
+    max-height: 80px; /* Limit to ~3 rows */
+    overflow-y: auto;
+  }
+}
+
 /* Desktop emoji picker positioning handled in emoji-picker.component.css */
 
 /* Disabled state styling for message input */
@@ -1287,11 +1298,23 @@
     top: 0;
     left: 0;
     right: 0;
-    bottom: var(--chat-form-height, 70px);
+    /* Use dynamic height that responds to chat-form height changes */
+    /* This ensures last message stays visible when textarea expands */
+    height: calc(100dvh - 56px - 60px - var(--chat-form-height, 70px) + 14px);
+    max-height: calc(100dvh - 56px - 60px - var(--chat-form-height, 70px) + 14px);
     padding: 0 var(--spacing-md);
     padding-top: 0;
+    padding-bottom: var(--spacing-md); /* Add bottom padding equal to left-right padding */
     overflow-y: auto;
     box-sizing: border-box;
+    /* Force hardware acceleration for better scrolling performance */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-overflow-scrolling: touch;
+    /* Smooth transition when height changes due to textarea expansion */
+    transition:
+      height 0.2s ease-out,
+      max-height 0.2s ease-out;
   }
 
   .chat-container:has(.cache-info-banner) .chat-window {
@@ -1313,9 +1336,7 @@
 
   /* Adjust emoji picker position when message input is dirty (expanded) - mobile */
   .chat-form:has(.message-input.ng-dirty) app-emoji-picker .emoji-picker {
-    bottom: calc(
-      var(--chat-form-height, 58px) + env(safe-area-inset-bottom, 0px) + var(--spacing-sm)
-    ) !important;
+    bottom: calc(var(--chat-form-height, 58px) + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   .avatar {
@@ -1349,10 +1370,13 @@
     position: fixed !important;
     left: 0;
     right: 0;
-    bottom: var(--typing-indicator-bottom, calc(58px + env(safe-area-inset-bottom, 0px)));
+    width: auto;
+    bottom: 70px; /* Fallback for browsers without CSS variable support */
+    bottom: var(--typing-indicator-bottom, 70px);
     background: #f8f9fa;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    /* Match chat-window horizontal padding exactly for all screen sizes */
     padding: var(--spacing-xs) var(--spacing-md);
     margin: 0;
     font-style: italic;

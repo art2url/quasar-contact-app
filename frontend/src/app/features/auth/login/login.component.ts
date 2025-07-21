@@ -24,6 +24,7 @@ import { AuthService } from '@services/auth.service';
 import { RecaptchaService } from '@services/recaptcha.service';
 import { ThemeService } from '@services/theme.service';
 import { HoneypotService } from '@services/honeypot.service';
+import { ScrollService } from '@services/scroll.service';
 import { environment } from '@environments/environment';
 
 @Component({
@@ -68,7 +69,8 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
     private recaptchaService: RecaptchaService,
     private themeService: ThemeService,
     public honeypotService: HoneypotService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private scrollService: ScrollService
   ) {}
 
   ngOnInit(): void {
@@ -192,6 +194,8 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
       );
       // Login successful, navigating
 
+      // Ensure page scrolls to top before navigation
+      this.scrollService.scrollToTop();
       await this.router.navigate(['/chat']);
     } catch (error) {
       console.error('[Login] Login failed:', error);

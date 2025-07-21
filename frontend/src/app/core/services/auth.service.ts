@@ -333,7 +333,7 @@ export class AuthService {
       email: string;
       recaptchaToken?: string;
       formStartTime?: number;
-      [key: string]: any;
+      [key: string]: string | number | undefined;
     }
 
     const resetData: ResetData = { email };
