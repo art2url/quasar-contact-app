@@ -36,21 +36,18 @@
   flex-shrink: 0;
 }
 
-/* Large screen spacing */
 @media (min-width: 1200px) {
   .chat-header {
     padding: var(--spacing-lg) 0;
   }
 }
 
-/* Left side: back button + user info */
 .left-side {
   display: flex;
   align-items: center;
   flex: 1;
 }
 
-/* Right side: status */
 .right-side {
   display: flex;
   align-items: center;
@@ -142,7 +139,6 @@
   scroll-behavior: smooth;
 }
 
-/* Loading state for messages */
 .messages-loading {
   flex: 1;
   display: flex;
@@ -157,7 +153,6 @@
   margin: 0;
 }
 
-/* Date header styling */
 .date-header {
   display: flex;
   justify-content: center;
@@ -189,7 +184,6 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* Reduce spacing for first date header */
 .date-header:first-child {
   margin-top: var(--spacing-md);
 }
@@ -290,7 +284,6 @@
   transform: scale(1.1);
 }
 
-/* Enhanced typing indicator positioning and styling - Desktop version */
 .typing-indicator {
   background: #f8f9fa;
   backdrop-filter: blur(10px);
@@ -308,12 +301,10 @@
   order: 2;
 }
 
-/* Dark theme typing indicator background */
 .dark-theme .typing-indicator {
   background: #0b1e1e;
 }
 
-/* Add typing animation dots */
 .typing-indicator::after {
   content: "";
   display: inline-block;
@@ -365,7 +356,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10;
+  z-index: 1100;
   box-shadow: var(--shadow-sm);
 }
 
@@ -434,38 +425,49 @@
 .message-input {
   flex: 1;
   padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid var(--input-border);
-  background-color: var(--input-background);
-  color: var(--text-color);
-  border-radius: 20px;
+  border: 1px solid var(--input-border) !important;
+  background-color: var(--input-background) !important;
+  color: var(--text-color) !important;
+  border-radius: 4px !important;
   margin-right: var(--spacing-sm);
   resize: none;
-  max-height: 100px;
-  overflow-y: auto;
+  max-height: calc(1.4em * 3 + 16px);
   font-size: 16px;
-  transition: all 0.2s ease;
+  font-family: "Jost", sans-serif !important;
+  font-optical-sizing: auto;
+  transition: all 0.3s ease;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  box-sizing: border-box;
+}
+
+.message-input::placeholder {
+  color: var(--text-secondary) !important;
 }
 
 .message-input:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
+  outline: none !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 1px var(--primary-color) !important;
 }
 
-/* Mobile-specific textarea auto-expansion using CSS only */
+.dark-theme .message-input:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 1px var(--primary-color) !important;
+}
+
+.dark-theme .message-input::placeholder {
+  color: var(--text-secondary) !important;
+}
+
 @media (max-width: 599px) {
   .message-input {
-    /* Use CSS for auto-expansion on mobile to prevent JavaScript freezing */
-    field-sizing: content;
-    min-height: 40px;
-    max-height: 80px; /* Limit to ~3 rows */
-    overflow-y: auto;
+    min-height: 1.4em;
+    max-height: calc(1.4em * 3 + 16px);
+    overflow-y: hidden;
   }
 }
 
-/* Desktop emoji picker positioning handled in emoji-picker.component.css */
-
-/* Disabled state styling for message input */
 .message-input:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -583,7 +585,6 @@
   color: #f39c12;
 }
 
-/* Key recovery overlay - centered in chat area */
 .key-recovery-overlay {
   position: absolute;
   top: 0;
@@ -658,7 +659,6 @@
   transform: translateY(0);
 }
 
-/* Dark theme green styling for recovery button */
 .dark-theme .recovery-content .recovery-button {
   background-color: #4caf50 !important;
   color: #ffffff !important;
@@ -677,7 +677,6 @@
   margin: 0;
 }
 
-/* Dark theme support for recovery overlay */
 .dark-theme .key-recovery-overlay {
   background-color: rgba(0, 0, 0, 0.3);
 }
@@ -703,7 +702,6 @@
   color: var(--text-secondary);
 }
 
-/* Partner key regeneration notification overlay - BLOCKS CHAT */
 .partner-key-regenerated-overlay {
   position: absolute;
   top: 0;
@@ -836,7 +834,6 @@
   box-shadow: none;
 }
 
-/* Dark theme support for partner key notification */
 .dark-theme .partner-key-regenerated-overlay {
   background-color: rgba(0, 0, 0, 0.5);
 }
@@ -893,7 +890,6 @@
   margin: var(--spacing-sm) 0 0 0 !important;
 }
 
-/* Partner status styling for when partner lost keys */
 .partner-status {
   display: flex;
   align-items: center;
@@ -943,7 +939,6 @@
   text-align: center;
 }
 
-/* Dark theme support for partner status */
 .dark-theme .partner-status {
   background-color: rgba(255, 152, 0, 0.15);
   border-color: rgba(255, 152, 0, 0.4);
@@ -961,7 +956,6 @@
   color: var(--text-secondary);
 }
 
-/* Dark theme styling for key status messages */
 .dark-theme .key-loading,
 .dark-theme .key-missing {
   background-color: var(--card-background);
@@ -984,7 +978,6 @@
   color: rgba(255, 152, 0, 0.9) !important;
 }
 
-/* Mobile styles for key recovery banner */
 @media (max-width: 599px) {
   .key-recovery-banner {
     font-size: 0.8rem !important;
@@ -1028,7 +1021,6 @@
   color: #ffc107;
 }
 
-/* Styling for unreadable messages - Light theme */
 .message.unreadable {
   opacity: 0.85;
   background-color: #f8f9fa !important;
@@ -1041,7 +1033,6 @@
   font-size: 15px;
 }
 
-/* Remove italic styling from message-time in deleted messages */
 .message.deleted .message-time {
   font-style: normal;
 }
@@ -1054,7 +1045,6 @@
   background-color: #fcfcfc !important;
 }
 
-/* Encrypted messages from partner - same styling as unreadable */
 .message.other.encrypted {
   background-color: #fcfcfc !important;
   opacity: 0.85;
@@ -1066,7 +1056,6 @@
   font-size: 15px;
 }
 
-/* Dark theme styling for unreadable messages */
 .dark-theme .message.unreadable {
   background-color: rgba(255, 255, 255, 0.05) !important;
   opacity: 0.7;
@@ -1093,7 +1082,6 @@
   background-color: #0a1e1e !important;
 }
 
-/* Dark theme encrypted messages from partner */
 .dark-theme .message.other.encrypted {
   background-color: #0a1e1e !important;
   opacity: 0.7;
@@ -1103,8 +1091,6 @@
   color: var(--text-secondary) !important;
 }
 
-/* Fix message time and status visibility for unreadable messages */
-/* Light theme - make time/status darker on light blue background */
 .message.you.unreadable .message-time,
 .message.you.unreadable .message-status,
 .message.other.encrypted .message-time,
@@ -1113,7 +1099,6 @@
   opacity: 0.8 !important;
 }
 
-/* Dark theme - make time/status lighter on light green background */
 .dark-theme .message.you.unreadable .message-time,
 .dark-theme .message.you.unreadable .message-status,
 .dark-theme .message.other.encrypted .message-time,
@@ -1122,14 +1107,12 @@
   opacity: 1 !important;
 }
 
-/* Indicator text styling */
 .unreadable-indicator {
   color: #6c757d;
   font-size: 0.7rem;
   font-weight: normal;
 }
 
-/* System message styling */
 .system-message-icon {
   font-size: 14px;
   width: 14px;
@@ -1144,7 +1127,6 @@
   vertical-align: middle;
 }
 
-/* Override system message styling for encrypted, unreadable, and deleted messages */
 .message.encrypted .system-message-text,
 .message.unreadable .system-message-text,
 .message.deleted .system-message-text {
@@ -1152,7 +1134,6 @@
   font-size: 15px;
 }
 
-/* Override system message colors for deleted messages to match dimmed style */
 .message.deleted .system-message-text,
 .message.deleted .system-message-icon {
   color: #6c757d;
@@ -1165,12 +1146,10 @@
   opacity: 0.7;
 }
 
-/* Dark theme indicator */
 .dark-theme .unreadable-indicator {
   color: var(--text-secondary) !important;
 }
 
-/* Unreadable message actions area */
 .unreadable-actions {
   position: absolute;
   top: -20px;
@@ -1185,7 +1164,6 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* Dark theme unreadable actions */
 .dark-theme .unreadable-actions {
   color: var(--text-secondary) !important;
   background-color: rgba(0, 0, 0, 0.6) !important;
@@ -1198,7 +1176,6 @@
   height: 12px;
 }
 
-/* Disabled action buttons */
 .action-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -1209,12 +1186,10 @@
   color: #ccc;
 }
 
-/* Hide regular message actions for unreadable messages */
 .message.unreadable .message-actions:not(.unreadable-actions) {
   display: none;
 }
 
-/* Hover effects for unreadable messages */
 .message.unreadable:hover .unreadable-actions {
   display: flex;
 }
@@ -1232,9 +1207,7 @@
   }
 }
 
-/* Override body background for chat room page in mobile */
 @media (max-width: 599px) {
-  /* Reset mobile wrapper to normal positioning */
   .chat-wrapper {
     padding: 0;
     margin: 0;
@@ -1247,7 +1220,6 @@
     background-color: #fafafd;
     min-height: 100vh;
   }
-
   .dark-theme .chat-wrapper {
     background-color: #001011;
   }
@@ -1279,12 +1251,10 @@
     align-items: center;
   }
 
-  /* Dark theme mobile chat-header */
   .dark-theme .chat-header {
     background-color: #001011 !important;
   }
 
-  /* Mobile main-content background */
   .main-content {
     background-color: #fafafa !important;
   }
@@ -1298,20 +1268,16 @@
     top: 0;
     left: 0;
     right: 0;
-    /* Use dynamic height that responds to chat-form height changes */
-    /* This ensures last message stays visible when textarea expands */
     height: calc(100dvh - 56px - 60px - var(--chat-form-height, 70px) + 14px);
     max-height: calc(100dvh - 56px - 60px - var(--chat-form-height, 70px) + 14px);
     padding: 0 var(--spacing-md);
     padding-top: 0;
-    padding-bottom: var(--spacing-md); /* Add bottom padding equal to left-right padding */
+    padding-bottom: var(--spacing-md);
     overflow-y: auto;
     box-sizing: border-box;
-    /* Force hardware acceleration for better scrolling performance */
     -webkit-transform: translateZ(0);
     transform: translateZ(0);
     -webkit-overflow-scrolling: touch;
-    /* Smooth transition when height changes due to textarea expansion */
     transition:
       height 0.2s ease-out,
       max-height 0.2s ease-out;
@@ -1334,7 +1300,6 @@
     box-sizing: border-box;
   }
 
-  /* Adjust emoji picker position when message input is dirty (expanded) - mobile */
   .chat-form:has(.message-input.ng-dirty) app-emoji-picker .emoji-picker {
     bottom: calc(var(--chat-form-height, 58px) + env(safe-area-inset-bottom, 0px)) !important;
   }
@@ -1371,33 +1336,29 @@
     left: 0;
     right: 0;
     width: auto;
-    bottom: 70px; /* Fallback for browsers without CSS variable support */
+    bottom: 70px;
     bottom: var(--typing-indicator-bottom, 70px);
     background: #f8f9fa;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    /* Match chat-window horizontal padding exactly for all screen sizes */
     padding: var(--spacing-xs) var(--spacing-md);
     margin: 0;
     font-style: italic;
     color: var(--text-secondary);
     font-size: 0.8rem;
     text-align: left;
-    z-index: 1001;
+    z-index: 10;
     animation: fadeInUp 0.3s ease-out;
   }
 
-  /* Dark theme mobile typing indicator background */
   .dark-theme .typing-indicator {
     background: #0b1e1e;
   }
 
-  /* Fix iOS overscroll behavior */
   .chat-window {
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Ensure touch targets are large enough */
   .action-btn,
   .send-button,
   .cancel-button,
@@ -1408,7 +1369,7 @@
 
   .scroll-to-bottom-btn {
     position: fixed;
-    bottom: var(--scroll-button-bottom, 100px);
+    bottom: var(--scroll-button-bottom, 110px);
     left: 50%;
     width: 44px;
     height: 44px;
@@ -1432,7 +1393,6 @@
     font-size: 10px;
   }
 
-  /* Mobile adjustments for date headers */
   .date-header {
     margin: var(--spacing-md) 0 var(--spacing-sm) 0;
   }
@@ -1442,7 +1402,6 @@
     padding: var(--spacing-xs) var(--spacing-sm);
   }
 
-  /* Loading state mobile adjustments */
   .messages-loading {
     min-height: 150px;
   }
@@ -1451,7 +1410,6 @@
     font-size: 0.8rem;
   }
 
-  /* Mobile adjustments for recovery modal */
   .key-recovery-card {
     width: 95%;
     max-width: none;
@@ -1478,7 +1436,6 @@
     font-size: 0.9rem;
   }
 
-  /* Mobile adjustments for partner key notification */
   .partner-key-regenerated-card {
     width: 95%;
     max-width: none;
@@ -1517,13 +1474,11 @@
     font-size: 0.8rem;
   }
 
-  /* Prevent zoom on input focus for iOS */
   .message-input {
     font-size: 16px;
   }
 }
 
-/* Attachment preview styles */
 .attachment-preview {
   padding: 0 !important;
   background: none !important;
@@ -1603,7 +1558,6 @@
   transform: scale(1.1);
 }
 
-/* Message image styles */
 .attached-image {
   width: 150px !important;
   height: 100px !important;
@@ -1622,7 +1576,6 @@
   transform: scale(1.02);
 }
 
-/* Mobile adjustments for message images */
 @media (max-width: 599px) {
   .attached-image {
     width: 120px !important;
@@ -1646,7 +1599,6 @@
   }
 }
 
-/* Deleted message styling - placed at end to override other styles */
 .message.deleted,
 .message.you.deleted,
 .message.other.deleted {
@@ -1663,7 +1615,6 @@
   opacity: 0.7;
 }
 
-/* Deleted message content styling to match encrypted/unreadable */
 .message.deleted .message-content,
 .message.you.deleted .message-content,
 .message.other.deleted .message-content {

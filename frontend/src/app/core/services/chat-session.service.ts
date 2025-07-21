@@ -27,7 +27,9 @@ import {
 /**
  * Enhanced chat session service with better connection handling and fallback sync
  */
-@Injectable()
+@Injectable({
+  providedIn: 'root'
+})
 export class ChatSessionService implements OnDestroy {
   /* ── public streams for the template ─────────────── */
   readonly theirUsername$ = new BehaviorSubject<string>('');

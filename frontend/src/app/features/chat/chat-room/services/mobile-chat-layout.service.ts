@@ -155,11 +155,12 @@ export class MobileChatLayoutService implements OnDestroy {
     });
   }
 
+  // TODO: fix this
   private setupFocusMonitoring(): void {
     // Completely disable focus monitoring to prevent keyboard freezing
     // CSS dvh units will handle layout automatically without JavaScript intervention
-    // 
-    // The original focus/blur event listeners were causing expensive updateMetrics() 
+    //
+    // The original focus/blur event listeners were causing expensive updateMetrics()
     // calls during typing which severely impacted virtual keyboard performance
   }
 
@@ -170,7 +171,7 @@ export class MobileChatLayoutService implements OnDestroy {
 
     // Minimal implementation - let CSS dvh units handle everything
     // Only update the absolute minimum required for other components
-    
+
     // Keyboard visibility tracking removed - CSS dvh units handle layout automatically
 
     // Only update chat-form-height CSS variable (minimal DOM work)
