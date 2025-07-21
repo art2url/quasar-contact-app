@@ -143,7 +143,7 @@
     </div>
 
     <!-- Chat window -->
-    <div #messageContainer class="chat-window">
+    <div #messageContainer class="chat-window" (scroll)="handleScroll()">
       <!-- Loading state for messages -->
       <div *ngIf="isLoadingMessages" class="messages-loading">
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px">
@@ -285,7 +285,7 @@
         [placeholder]="getChatInputPlaceholder()"
         required
         (input)="onType()"
-        [rows]="1"
+        rows="1"
         #messageInput
         (keydown.enter)="onKeydownEnter($event)"
         (keydown.enter.control)="onKeydownCtrlEnter($event)"
@@ -299,8 +299,9 @@
         name="editDraft"
         placeholder="Edit message..."
         required
-        [rows]="1"
+        rows="1"
         #editInput
+        (input)="onTypeEdit()"
         (keydown.enter)="onKeydownEnterEdit($event)"
         (keydown.enter.control)="onKeydownCtrlEnterEdit($event)"
         (keydown.enter.meta)="onKeydownMetaEnterEdit($event)"></textarea>
