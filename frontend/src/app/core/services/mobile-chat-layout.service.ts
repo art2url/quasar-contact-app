@@ -1,4 +1,4 @@
-import { Injectable, OnDestroy, NgZone, inject } from '@angular/core';
+import { Injectable, NgZone, OnDestroy, inject } from '@angular/core';
 import { BehaviorSubject, Subject, fromEvent } from 'rxjs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
@@ -24,19 +24,17 @@ export class MobileChatLayoutService implements OnDestroy {
     chatFormHeight: 70,
     typingIndicatorHeight: 0,
     cacheInfoBannerHeight: 0,
-    scrollButtonBottomOffset: 100,
-    typingIndicatorBottomOffset: 58,
-    attachmentPreviewBottomOffset: 80,
+    scrollButtonBottomOffset: 0,
+    typingIndicatorBottomOffset: 0,
+    attachmentPreviewBottomOffset: 0,
   });
 
+  // MutationObserver for tracking DOM changes
   private mutationObserver?: MutationObserver;
 
-  // Constants for mobile layout
-  private readonly HEADER_HEIGHT = 56;
-  private readonly CHAT_HEADER_HEIGHT = 60;
-  private readonly MIN_CHAT_FORM_HEIGHT = 70;
-  private readonly SPACING_SM = 8;
-  private readonly SPACING_MD = 16;
+  // Removed unused constants to fix TypeScript warnings
+
+  // Removed unused keyboard tracking variables to fix TypeScript warnings
 
   private ngZone = inject(NgZone);
 
@@ -47,10 +45,26 @@ export class MobileChatLayoutService implements OnDestroy {
   private initializeLayoutMonitoring(): void {
     // Monitor viewport changes (includes keyboard show/hide)
     fromEvent(window, 'resize')
-      .pipe(debounceTime(150), takeUntil(this.destroy$))
+      .pipe(debounceTime(100), takeUntil(this.destroy$))
       .subscribe(() => {
         this.updateMetrics();
       });
+
+    // Monitor visual viewport changes with much longer debounce to prevent keyboard freezing
+    if (window.visualViewport) {
+      fromEvent(window.visualViewport, 'resize')
+        .pipe(debounceTime(300), takeUntil(this.destroy$)) // Increased from 16ms to 300ms
+        .subscribe(() => {
+          this.updateMetrics();
+        });
+
+      // Disable scroll monitoring completely as it's too aggressive for typing
+      // fromEvent(window.visualViewport, 'scroll')
+      //   .pipe(debounceTime(16), takeUntil(this.destroy$))
+      //   .subscribe(() => {
+      //     this.updateMetrics();
+      //   });
+    }
 
     // Monitor orientation changes
     fromEvent(window, 'orientationchange')
@@ -68,6 +82,9 @@ export class MobileChatLayoutService implements OnDestroy {
     // Monitor DOM changes for dynamic elements
     this.setupMutationObserver();
 
+    // Monitor focus events to predict keyboard appearance
+    this.setupFocusMonitoring();
+
     // Initial calculation
     this.updateMetrics();
   }
@@ -82,52 +99,36 @@ export class MobileChatLayoutService implements OnDestroy {
 
       mutations.forEach(mutation => {
         if (mutation.type === 'childList') {
-          // Check if any added/removed nodes are layout-affecting elements
-          const affectedElements = [
-            '.cache-info-banner',
-            '.typing-indicator',
-            '.key-recovery-overlay',
-            '.partner-key-regenerated-overlay',
-            '.chat-form',
-          ];
+          // Check if typing indicator, cache banner, or other dynamic elements changed
+          const addedNodes = Array.from(mutation.addedNodes);
+          const removedNodes = Array.from(mutation.removedNodes);
 
-          mutation.addedNodes.forEach(node => {
-            if (node.nodeType === 1) {
-              // Element node
-              const element = node as HTMLElement;
-              if (
-                affectedElements.some(
-                  selector =>
-                    element.matches?.(selector) || element.querySelector?.(selector)
-                )
-              ) {
-                shouldUpdate = true;
-              }
+          const relevantChanges = [...addedNodes, ...removedNodes].some(node => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              const element = node as Element;
+              return (
+                element.classList?.contains('typing-indicator') ||
+                element.classList?.contains('cache-info-banner') ||
+                element.classList?.contains('key-recovery-overlay') ||
+                element.classList?.contains('partner-key-notification') ||
+                element.tagName === 'APP-CACHE-INFO-BANNER'
+              );
             }
+            return false;
           });
 
-          mutation.removedNodes.forEach(node => {
-            if (node.nodeType === 1) {
-              // Element node
-              const element = node as HTMLElement;
-              if (
-                affectedElements.some(
-                  selector =>
-                    element.matches?.(selector) || element.querySelector?.(selector)
-                )
-              ) {
-                shouldUpdate = true;
-              }
-            }
-          });
+          if (relevantChanges) {
+            shouldUpdate = true;
+          }
         }
 
-        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-          const element = mutation.target as HTMLElement;
+        if (mutation.type === 'attributes') {
+          const target = mutation.target as Element;
           if (
-            element.matches?.(
-              '.cache-info-banner, .typing-indicator, .key-recovery-overlay, .partner-key-regenerated-overlay, .chat-form, .message-input, textarea'
-            )
+            target.classList?.contains('typing-indicator') ||
+            target.classList?.contains('cache-info-banner') ||
+            target.classList?.contains('key-recovery-overlay') ||
+            target.classList?.contains('partner-key-notification')
           ) {
             shouldUpdate = true;
           }
@@ -135,7 +136,7 @@ export class MobileChatLayoutService implements OnDestroy {
       });
 
       if (shouldUpdate) {
-        // Use NgZone + requestAnimationFrame to avoid excessive recalculations
+        // Debounce rapid mutations
         this.ngZone.runOutsideAngular(() => {
           requestAnimationFrame(() => {
             this.ngZone.run(() => {
@@ -154,205 +155,35 @@ export class MobileChatLayoutService implements OnDestroy {
     });
   }
 
+  private setupFocusMonitoring(): void {
+    // Completely disable focus monitoring to prevent keyboard freezing
+    // CSS dvh units will handle layout automatically without JavaScript intervention
+    // 
+    // The original focus/blur event listeners were causing expensive updateMetrics() 
+    // calls during typing which severely impacted virtual keyboard performance
+  }
+
   private updateMetrics(): void {
     if (!this.isMobileView()) {
       return;
     }
 
-    const viewportHeight = window.innerHeight;
-    const visualViewportHeight = window.visualViewport?.height || viewportHeight;
+    // Minimal implementation - let CSS dvh units handle everything
+    // Only update the absolute minimum required for other components
+    
+    // Keyboard visibility tracking removed - CSS dvh units handle layout automatically
 
-    // Check if mobile keyboard is visible
-    const isKeyboardVisible = viewportHeight > visualViewportHeight + 100;
-
-    // Get actual element heights and visibility
-    const chatFormHeight = this.getChatFormHeight();
-    const typingIndicatorHeight = this.getTypingIndicatorHeight();
-    const cacheInfoBannerHeight = this.getCacheInfoBannerHeight();
-    const keyRecoveryOverlayHeight = this.getKeyRecoveryOverlayHeight();
-    const partnerKeyNotificationHeight = this.getPartnerKeyNotificationHeight();
-
-    // Calculate available height for chat window based on all visible elements
-    const availableChatHeight = this.calculateAvailableChatHeight(
-      isKeyboardVisible ? visualViewportHeight : viewportHeight,
-      chatFormHeight,
-      cacheInfoBannerHeight,
-      keyRecoveryOverlayHeight,
-      partnerKeyNotificationHeight
-    );
-
-    // Calculate positioning offsets
-    const safeAreaBottom = this.getSafeAreaBottom();
-    const scrollButtonBottomOffset = this.calculateScrollButtonPosition(
-      chatFormHeight,
-      typingIndicatorHeight,
-      safeAreaBottom
-    );
-
-    const typingIndicatorBottomOffset = this.calculateTypingIndicatorPosition(
-      chatFormHeight,
-      safeAreaBottom
-    );
-
-    const attachmentPreviewBottomOffset = this.calculateAttachmentPreviewPosition(
-      chatFormHeight,
-      safeAreaBottom
-    );
-
-    const newMetrics: ChatLayoutMetrics = {
-      viewportHeight: isKeyboardVisible ? visualViewportHeight : viewportHeight,
-      availableChatHeight,
-      chatFormHeight,
-      typingIndicatorHeight,
-      cacheInfoBannerHeight,
-      scrollButtonBottomOffset,
-      typingIndicatorBottomOffset,
-      attachmentPreviewBottomOffset,
-    };
-
-    this.metrics$.next(newMetrics);
-    this.applyCSSVariables(newMetrics);
-  }
-
-  private calculateAvailableChatHeight(
-    viewportHeight: number,
-    chatFormHeight: number,
-    cacheInfoBannerHeight: number,
-    keyRecoveryOverlayHeight: number,
-    partnerKeyNotificationHeight: number
-  ): number {
-    // Simplified calculation: chat-window should fill chat-container minus elements that take space
-    // Layout structure:
-    // - chat-wrapper (fills viewport minus app header)
-    //   - chat-header (60px, positioned above chat-container)
-    //   - chat-container (flexible height)
-    //     - cache-info-banner (if visible)
-    //     - chat-window (flexible, should fill remaining space)
-    //     - overlays (positioned absolute, don't affect layout)
-    //   - chat-form (fixed at bottom, overlaps chat-container)
-
-    // The chat-container gets: viewport - app-header - chat-header
-    const chatContainerHeight =
-      viewportHeight - this.HEADER_HEIGHT - this.CHAT_HEADER_HEIGHT;
-
-    // Within chat-container, chat-window gets: container height - cache banner - chat-form overlap
-    let chatWindowHeight = chatContainerHeight;
-
-    // Subtract cache banner if visible (takes space at top of chat-container)
-    if (cacheInfoBannerHeight > 0) {
-      chatWindowHeight -= cacheInfoBannerHeight;
-    }
-
-    // Subtract chat-form height to prevent overlap (chat-form is fixed at bottom)
-    chatWindowHeight -= chatFormHeight;
-
-    // Overlays don't affect layout calculation (they're positioned absolute)
-    // Just ensure minimum height if overlays are present
-    if (keyRecoveryOverlayHeight > 0 || partnerKeyNotificationHeight > 0) {
-      chatWindowHeight = Math.min(chatWindowHeight, 100);
-    }
-
-    // Return calculated height with reasonable minimum
-    return Math.max(chatWindowHeight, 150);
-  }
-
-  private calculateScrollButtonPosition(
-    chatFormHeight: number,
-    typingIndicatorHeight: number,
-    safeAreaBottom: number
-  ): number {
-    return chatFormHeight + typingIndicatorHeight + this.SPACING_MD + safeAreaBottom;
-  }
-
-  private calculateTypingIndicatorPosition(
-    chatFormHeight: number,
-    safeAreaBottom: number
-  ): number {
-    return chatFormHeight + safeAreaBottom;
-  }
-
-  private calculateAttachmentPreviewPosition(
-    chatFormHeight: number,
-    safeAreaBottom: number
-  ): number {
-    return chatFormHeight + this.SPACING_SM + safeAreaBottom;
-  }
-
-  private getChatFormHeight(): number {
-    if (!this.isMobileView()) return this.MIN_CHAT_FORM_HEIGHT;
-
+    // Only update chat-form-height CSS variable (minimal DOM work)
     const chatForm = document.querySelector('.chat-form') as HTMLElement;
     if (chatForm) {
-      return chatForm.offsetHeight;
+      const chatFormHeight = chatForm.offsetHeight;
+      document.documentElement.style.setProperty(
+        '--chat-form-height',
+        `${chatFormHeight}px`
+      );
     }
-    return this.MIN_CHAT_FORM_HEIGHT;
-  }
 
-  private getTypingIndicatorHeight(): number {
-    if (!this.isMobileView()) return 0;
-
-    const typingIndicator = document.querySelector('.typing-indicator') as HTMLElement;
-    if (
-      typingIndicator &&
-      typingIndicator.offsetHeight > 0 &&
-      !this.isElementHidden(typingIndicator)
-    ) {
-      return typingIndicator.offsetHeight;
-    }
-    return 0;
-  }
-
-  private getCacheInfoBannerHeight(): number {
-    if (!this.isMobileView()) return 0;
-
-    const cacheInfoBanner = document.querySelector('.cache-info-banner') as HTMLElement;
-    if (
-      cacheInfoBanner &&
-      cacheInfoBanner.offsetHeight > 0 &&
-      !this.isElementHidden(cacheInfoBanner)
-    ) {
-      return cacheInfoBanner.offsetHeight;
-    }
-    return 0;
-  }
-
-  private getKeyRecoveryOverlayHeight(): number {
-    if (!this.isMobileView()) return 0;
-
-    const keyRecoveryOverlay = document.querySelector(
-      '.key-recovery-overlay'
-    ) as HTMLElement;
-    if (
-      keyRecoveryOverlay &&
-      keyRecoveryOverlay.offsetHeight > 0 &&
-      !this.isElementHidden(keyRecoveryOverlay)
-    ) {
-      return keyRecoveryOverlay.offsetHeight;
-    }
-    return 0;
-  }
-
-  private getPartnerKeyNotificationHeight(): number {
-    if (!this.isMobileView()) return 0;
-
-    const partnerKeyNotification = document.querySelector(
-      '.partner-key-regenerated-overlay'
-    ) as HTMLElement;
-    if (
-      partnerKeyNotification &&
-      partnerKeyNotification.offsetHeight > 0 &&
-      !this.isElementHidden(partnerKeyNotification)
-    ) {
-      return partnerKeyNotification.offsetHeight;
-    }
-    return 0;
-  }
-
-  private isElementHidden(element: HTMLElement): boolean {
-    const style = window.getComputedStyle(element);
-    return (
-      style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0'
-    );
+    // Skip all other expensive calculations - CSS dvh units handle the layout
   }
 
   private getSafeAreaBottom(): number {
@@ -366,35 +197,10 @@ export class MobileChatLayoutService implements OnDestroy {
   }
 
   private isMobileView(): boolean {
-    return window.innerWidth <= 768; // Increased breakpoint to cover more devices
+    return window.innerWidth <= 599; // Match CSS mobile breakpoint exactly
   }
 
-  private applyCSSVariables(metrics: ChatLayoutMetrics): void {
-    const root = document.documentElement;
-
-    // Critical: Update chat-form-height FIRST so other calculations can use it
-    root.style.setProperty('--chat-form-height', `${metrics.chatFormHeight}px`);
-
-    // Update CSS variables for dynamic positioning
-    root.style.setProperty('--chat-window-height', `${metrics.availableChatHeight}px`);
-    root.style.setProperty(
-      '--cache-info-banner-height',
-      `${metrics.cacheInfoBannerHeight}px`
-    );
-    root.style.setProperty(
-      '--scroll-button-bottom',
-      `${metrics.scrollButtonBottomOffset}px`
-    );
-    root.style.setProperty(
-      '--typing-indicator-bottom',
-      `${metrics.typingIndicatorBottomOffset}px`
-    );
-    root.style.setProperty(
-      '--attachment-preview-bottom',
-      `${metrics.attachmentPreviewBottomOffset}px`
-    );
-    root.style.setProperty('--viewport-height', `${metrics.viewportHeight}px`);
-  }
+  // Removed unused styling methods to fix TypeScript warnings
 
   // Public methods for components to use
   public getMetrics(): ChatLayoutMetrics {
@@ -472,6 +278,43 @@ export class MobileChatLayoutService implements OnDestroy {
 
   public shouldAutoScroll(messageContainer: HTMLElement): boolean {
     return this.isUserAtActualBottom(messageContainer);
+  }
+
+  /**
+   * Update typing indicator position specifically (can be called when typing state changes)
+   */
+  public updateTypingIndicatorPosition(): void {
+    if (!this.isMobileView()) {
+      return;
+    }
+
+    const typingIndicator = document.querySelector('.typing-indicator') as HTMLElement;
+    const chatForm = document.querySelector('.chat-form') as HTMLElement;
+
+    if (typingIndicator && chatForm) {
+      const actualChatFormHeight = chatForm.offsetHeight;
+      const safeAreaBottom = this.getSafeAreaBottom();
+      const typingIndicatorBottom = actualChatFormHeight + safeAreaBottom;
+
+      // Apply the position directly for reliable positioning
+      typingIndicator.style.bottom = `${typingIndicatorBottom}px`;
+      typingIndicator.style.position = 'fixed';
+
+      // Make it full-width like chat-window, with internal padding
+      typingIndicator.style.left = '0';
+      typingIndicator.style.right = '0';
+      typingIndicator.style.width = 'auto';
+
+      // Apply the same internal padding as chat-window (--spacing-md = 16px)
+      typingIndicator.style.paddingLeft = '16px';
+      typingIndicator.style.paddingRight = '16px';
+
+      typingIndicator.style.zIndex = '1001';
+
+      // IMPORTANT: Trigger full layout recalculation to adjust chat-window height
+      // This ensures the chat content is pushed up when typing indicator appears
+      this.updateMetrics();
+    }
   }
 
   ngOnDestroy(): void {

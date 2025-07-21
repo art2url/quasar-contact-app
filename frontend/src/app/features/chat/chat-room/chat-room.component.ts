@@ -21,7 +21,8 @@ import {
 } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import * as Hammer from 'hammerjs';
-import { Subscription, timer } from 'rxjs';
+import { Subject, Subscription, timer } from 'rxjs';
+import { debounceTime, takeUntil } from 'rxjs/operators';
 
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -30,10 +31,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ChatMsg } from '@models/chat.model';
 import { ChatSessionService } from '@services/chat-session.service';
 import { LoadingService } from '@services/loading.service';
-import { NotificationService } from '@services/notification.service';
-import { WebSocketService } from '@services/websocket.service';
 import { MobileChatLayoutService } from '@services/mobile-chat-layout.service';
+import { NotificationService } from '@services/notification.service';
 import { ThemeService } from '@services/theme.service';
+import { WebSocketService } from '@services/websocket.service';
 
 // Import the cache info banner component
 import { CacheInfoBannerComponent } from '@shared/components/cache-info-banner/cache-info-banner.component';
@@ -152,6 +153,14 @@ export class ChatRoomComponent
   // Image attachment state
   attachedImage: CompressedImage | null = null;
 
+  // Track textarea rows to avoid unnecessary layout updates
+  private lastTextareaRows = 1;
+
+  // Track typing state to prevent expensive layout updates during typing
+  private isCurrentlyTyping = false;
+  private typingStateSubject = new Subject<void>();
+  private destroy$ = new Subject<void>();
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -190,19 +199,19 @@ export class ChatRoomComponent
 
   async ngOnInit(): Promise<void> {
     document.body.classList.add('chat-room-page');
-    
+
     // Set body background for mobile to prevent black overscroll
     if (window.innerWidth <= 599) {
       // Set initial background
       this.updateMobileBodyBackground();
-      
+
       // Subscribe to theme changes and update background
       this.subs.add(
         this.themeService.theme$.subscribe(() => {
           this.updateMobileBodyBackground();
         })
       );
-      
+
       // Block overall page scroll in mobile - only allow chat-window to scroll
       document.documentElement.style.overflow = 'hidden';
       document.body.style.overflow = 'hidden';
@@ -211,7 +220,7 @@ export class ChatRoomComponent
     }
 
     // Initialize mobile layout service for dynamic height calculations
-    this.mobileChatLayoutService.forceUpdate();
+    this.initializeMobileLayout();
 
     // Reset the flag for this chat room
     this.hasMarkedMessagesAsRead = false;
@@ -226,6 +235,9 @@ export class ChatRoomComponent
     // Emit chat room entered event for header badge updates
     this.emitChatRoomEnteredEvent();
 
+    // Set up typing state debouncing to prevent memory leaks
+    this.setupTypingStateDebouncing();
+
     // Initialize once only
     try {
       await this.initializeOnce();
@@ -233,6 +245,19 @@ export class ChatRoomComponent
       this.loadingService.hide();
       this.navigateToList();
     }
+  }
+
+  /**
+   * Set up typing state debouncing using RxJS to prevent memory leaks
+   */
+  private setupTypingStateDebouncing(): void {
+    this.subs.add(
+      this.typingStateSubject
+        .pipe(debounceTime(500), takeUntil(this.destroy$))
+        .subscribe(() => {
+          this.isCurrentlyTyping = false;
+        })
+    );
   }
 
   /**
@@ -452,7 +477,7 @@ export class ChatRoomComponent
         // User is at bottom, reset counter and auto-scroll
         this.newMessagesCount = 0;
         this.shouldAutoScroll = true;
-        
+
         // Check if we should actually auto-scroll based on user's position
         const container = this.messageContainer?.nativeElement;
         if (container && this.mobileChatLayoutService.shouldAutoScroll(container)) {
@@ -532,8 +557,21 @@ export class ChatRoomComponent
         // Use NgZone to ensure Angular detects the change
         this.ngZone.run(() => {
           this.isPartnerTyping = isTyping;
+
           // Update positioning when typing indicator state changes
-          this.updateTypingIndicatorPosition();
+          // Use requestAnimationFrame to ensure DOM has updated
+          this.ngZone.runOutsideAngular(() => {
+            requestAnimationFrame(() => {
+              this.ngZone.run(() => {
+                this.updateTypingIndicatorPosition();
+
+                // Also call the mobile layout service method for mobile-specific positioning
+                if (window.innerWidth <= 599) {
+                  this.mobileChatLayoutService.updateTypingIndicatorPosition();
+                }
+              });
+            });
+          });
         });
       })
     );
@@ -576,16 +614,29 @@ export class ChatRoomComponent
             this.handleTyping.bind(this)
           );
           this.messageInput.nativeElement.addEventListener(
-          'keydown',
-          this.handleKeydown.bind(this)
-        );
+            'keydown',
+            this.handleKeydown.bind(this)
+          );
 
-        // Re-check partner key status when user focuses on chat input
-        this.messageInput.nativeElement.addEventListener(
-          'focus',
-          this.handleChatInputFocus.bind(this)
-        );
-      }
+          // Re-check partner key status when user focuses on chat input
+          this.messageInput.nativeElement.addEventListener(
+            'focus',
+            this.handleChatInputFocus.bind(this)
+          );
+
+          // Skip focus/blur listeners on mobile to prevent keyboard freezing
+          if (window.innerWidth > 599) {
+            this.messageInput.nativeElement.addEventListener(
+              'focus',
+              this.handleInputFocus.bind(this)
+            );
+
+            this.messageInput.nativeElement.addEventListener(
+              'blur',
+              this.handleInputBlur.bind(this)
+            );
+          }
+        }
       });
     });
 
@@ -594,7 +645,7 @@ export class ChatRoomComponent
 
     // Handle delayed operations using Angular hook instead of setTimeout
     this.handleDelayedOperations();
-    
+
     // Initialize typing indicator position
     this.ngZone.runOutsideAngular(() => {
       requestAnimationFrame(() => {
@@ -667,9 +718,10 @@ export class ChatRoomComponent
     if (!this.messageContainer?.nativeElement || this.isLoadingMessages) return;
 
     const container = this.messageContainer.nativeElement;
-    
+
     // Use mobile layout service for accurate scroll detection
-    const distanceFromBottom = this.mobileChatLayoutService.getDistanceFromBottom(container);
+    const distanceFromBottom =
+      this.mobileChatLayoutService.getDistanceFromBottom(container);
     const isNearBottom = this.mobileChatLayoutService.isUserAtActualBottom(container);
 
     // FIXED: Show button ONLY when user scrolls up significantly
@@ -714,6 +766,12 @@ export class ChatRoomComponent
       // Send typing event to chat session
       this.chat.sendTyping();
     }
+
+    // Mark as actively typing to prevent expensive layout updates
+    this.isCurrentlyTyping = true;
+
+    // Use RxJS debouncing to reset typing state (prevents memory leaks)
+    this.typingStateSubject.next();
   }
 
   private handleKeydown(event: KeyboardEvent): void {
@@ -852,8 +910,8 @@ export class ChatRoomComponent
   onType(): void {
     this.handleTyping();
 
-    // Auto-resize the textarea
-    if (this.messageInput?.nativeElement) {
+    // Skip textarea auto-resize on mobile to prevent keyboard freezing
+    if (window.innerWidth > 599 && this.messageInput?.nativeElement) {
       this.autoResizeTextarea(this.messageInput.nativeElement);
     }
   }
@@ -863,46 +921,46 @@ export class ChatRoomComponent
     if (!textarea.value.trim()) {
       textarea.style.height = '';
       textarea.rows = 1;
-      this.updateTypingIndicatorPosition();
       return;
     }
 
     // Use scrollHeight to determine if content actually overflows
     textarea.style.height = 'auto';
     textarea.rows = 1;
-    
+
     const style = window.getComputedStyle(textarea);
     const lineHeight = parseInt(style.lineHeight) || parseInt(style.fontSize) * 1.2;
     const padding = parseInt(style.paddingTop) + parseInt(style.paddingBottom);
     const border = parseInt(style.borderTopWidth) + parseInt(style.borderBottomWidth);
-    
+
     // Calculate single row height
     const singleRowHeight = lineHeight + padding + border;
     const currentScrollHeight = textarea.scrollHeight;
-    
+
     // Only expand if content is actually overflowing (with small tolerance)
     if (currentScrollHeight > singleRowHeight + 2) {
-      // Calculate how many rows we actually need based on scroll height
-      const rowsNeeded = Math.min(Math.ceil(currentScrollHeight / lineHeight) - 1, 4);
+      // Calculate how many rows we actually need based on scroll height (max 3 rows)
+      const rowsNeeded = Math.min(Math.ceil(currentScrollHeight / lineHeight) - 1, 3);
       textarea.rows = Math.max(1, rowsNeeded);
     } else {
       // Content fits in current row, keep single row
       textarea.rows = 1;
     }
-    
+
     // Clear any manual height
     textarea.style.height = '';
-    
-    // Update typing indicator position after resize
-    this.updateTypingIndicatorPosition();
-    
-    // Force mobile layout service to recalculate chat-window height
-    this.mobileChatLayoutService.forceUpdate();
-    // Also manually trigger a recalculation to ensure immediate update
-    this.updateChatWindowHeight();
-    
-    // Auto-scroll to keep last message visible when textarea expands
-    this.autoScrollOnTextareaResize();
+
+    // Only update layout when rows actually change (not on every keystroke)
+    const newRows = textarea.rows;
+    if (newRows !== this.lastTextareaRows) {
+      this.lastTextareaRows = newRows;
+
+      // Skip expensive operations during active typing to prevent freezing
+      if (!this.isCurrentlyTyping) {
+        this.updateChatWindowHeight();
+        this.autoScrollOnTextareaResize();
+      }
+    }
   }
 
   private updateChatWindowHeight() {
@@ -911,7 +969,10 @@ export class ChatRoomComponent
     if (chatForm) {
       const chatFormHeight = chatForm.offsetHeight;
       // Update the CSS variable directly
-      document.documentElement.style.setProperty('--chat-form-height', `${chatFormHeight}px`);
+      document.documentElement.style.setProperty(
+        '--chat-form-height',
+        `${chatFormHeight}px`
+      );
     }
   }
 
@@ -930,19 +991,18 @@ export class ChatRoomComponent
   }
 
   private updateTypingIndicatorPosition() {
-    // Force update of mobile layout metrics
-    this.mobileChatLayoutService.forceUpdate();
-    
-    // Keep desktop positioning logic for backwards compatibility
-    const chatForm = document.querySelector('.chat-form') as HTMLElement;
-    if (chatForm && window.innerWidth > 599) {
-      const chatFormHeight = chatForm.offsetHeight;
-      const typingIndicatorHeight = 35; // Desktop typing indicator height
-      const spacing = 15; // More spacing for desktop
-      document.documentElement.style.setProperty(
-        '--scroll-button-bottom-desktop', 
-        `calc(${chatFormHeight + typingIndicatorHeight + spacing}px)`
-      );
+    // Only update on desktop to avoid mobile performance issues
+    if (window.innerWidth > 599) {
+      const chatForm = document.querySelector('.chat-form') as HTMLElement;
+      if (chatForm) {
+        const chatFormHeight = chatForm.offsetHeight;
+        const typingIndicatorHeight = 35; // Desktop typing indicator height
+        const spacing = 15; // More spacing for desktop
+        document.documentElement.style.setProperty(
+          '--scroll-button-bottom-desktop',
+          `calc(${chatFormHeight + typingIndicatorHeight + spacing}px)`
+        );
+      }
     }
   }
 
@@ -1318,28 +1378,105 @@ export class ChatRoomComponent
   }
 
   /**
+   * Initialize mobile layout with retry mechanism for better browser compatibility
+   */
+  private initializeMobileLayout(): void {
+    if (window.innerWidth > 599) return;
+
+    // Force immediate update
+    this.mobileChatLayoutService.forceUpdate();
+
+    // Set up retry mechanism using requestAnimationFrame for browsers that need more time
+    let retryCount = 0;
+    const maxRetries = 5;
+
+    const retryLayoutUpdate = () => {
+      retryCount++;
+
+      this.ngZone.runOutsideAngular(() => {
+        // Use requestAnimationFrame chain instead of setTimeout
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            this.ngZone.run(() => {
+              this.mobileChatLayoutService.forceUpdate();
+
+              // Check if layout was applied correctly
+              const chatForm = document.querySelector('.chat-form') as HTMLElement;
+              const chatWindow = document.querySelector('.chat-window') as HTMLElement;
+
+              if (chatForm && chatWindow) {
+                const chatFormHeight = chatForm.offsetHeight;
+                const chatWindowHeight = chatWindow.offsetHeight;
+                const windowHeight = window.innerHeight;
+
+                // Check if height looks reasonable
+                const expectedHeight = windowHeight - 56 - 60 - chatFormHeight; // viewport - header - chat-header - form
+                const heightDiff = Math.abs(chatWindowHeight - expectedHeight);
+
+                if (heightDiff > 50 && retryCount < maxRetries) {
+                  retryLayoutUpdate();
+                }
+              } else if (retryCount < maxRetries) {
+                retryLayoutUpdate();
+              }
+            });
+          });
+        });
+      });
+    };
+
+    // Start retries after DOM settles
+    this.ngZone.runOutsideAngular(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          this.ngZone.run(() => {
+            retryLayoutUpdate();
+          });
+        });
+      });
+    });
+
+    // Also force updates on window events
+    const forceUpdate = () => {
+      this.mobileChatLayoutService.forceUpdate();
+    };
+
+    window.addEventListener('resize', forceUpdate);
+    window.addEventListener('orientationchange', forceUpdate);
+
+    // Clean up listeners in component destroy
+    this.subs.add({
+      unsubscribe: () => {
+        window.removeEventListener('resize', forceUpdate);
+        window.removeEventListener('orientationchange', forceUpdate);
+      },
+    });
+  }
+
+  /**
    * Updates the mobile body background to match the current theme
    */
   private updateMobileBodyBackground(): void {
-    const cardBg = getComputedStyle(document.documentElement).getPropertyValue('--card-background').trim();
+    const cardBg = getComputedStyle(document.documentElement)
+      .getPropertyValue('--card-background')
+      .trim();
     const defaultBg = this.themeService.isDarkTheme() ? '#0c2524' : '#fafafa';
     document.body.style.backgroundColor = cardBg || defaultBg;
   }
 
   ngOnDestroy() {
     document.body.classList.remove('chat-room-page');
-    
+
     // Reset body background and clear mobile layout CSS variables
     if (window.innerWidth <= 599) {
       document.body.style.backgroundColor = '';
-      
+
       // Restore overall page scroll
       document.documentElement.style.overflow = '';
       document.body.style.overflow = '';
       document.documentElement.style.height = '';
       document.body.style.height = '';
-      
-      
+
       // Clean up mobile layout CSS variables
       const root = document.documentElement;
       root.style.removeProperty('--chat-window-height');
@@ -1357,6 +1494,19 @@ export class ChatRoomComponent
     if (this.messageInput?.nativeElement) {
       this.messageInput.nativeElement.removeEventListener('input', this.handleTyping);
       this.messageInput.nativeElement.removeEventListener('keydown', this.handleKeydown);
+      this.messageInput.nativeElement.removeEventListener(
+        'focus',
+        this.handleChatInputFocus
+      );
+
+      // Only remove focus/blur listeners if they were added (desktop only)
+      if (window.innerWidth > 599) {
+        this.messageInput.nativeElement.removeEventListener(
+          'focus',
+          this.handleInputFocus
+        );
+        this.messageInput.nativeElement.removeEventListener('blur', this.handleInputBlur);
+      }
     }
 
     // Remove scroll listener
@@ -1380,6 +1530,11 @@ export class ChatRoomComponent
       clearTimeout(this.scrollTimeout);
     }
 
+    // Complete RxJS subjects to prevent memory leaks
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.typingStateSubject.complete();
+
     try {
       if (this.chat) {
         // Any specific cleanup needed
@@ -1397,6 +1552,22 @@ export class ChatRoomComponent
   }
 
   /**
+   * Handle input focus - update layout for potential keyboard appearance
+   */
+  private handleInputFocus(): void {
+    // Skip layout updates completely on mobile to prevent keyboard freezing
+    // The CSS dvh units will handle the layout automatically
+  }
+
+  /**
+   * Handle input blur - update layout for potential keyboard disappearance
+   */
+  private handleInputBlur(): void {
+    // Skip layout updates completely on mobile to prevent keyboard freezing
+    // The CSS dvh units will handle the layout automatically
+  }
+
+  /**
    * Handle emoji selection from picker
    */
   onEmojiSelected(emoji: string): void {
@@ -1406,16 +1577,9 @@ export class ChatRoomComponent
       this.newMessage += emoji;
     }
 
-    // Auto-resize the textarea after adding emoji
-    this.ngZone.runOutsideAngular(() => {
-      requestAnimationFrame(() => {
-        if (this.editing && this.editInput?.nativeElement) {
-          this.autoResizeTextarea(this.editInput.nativeElement);
-        } else if (this.messageInput?.nativeElement) {
-          this.autoResizeTextarea(this.messageInput.nativeElement);
-        }
-      });
-    });
+    // Skip expensive layout operations for emoji selection
+    // The textarea will auto-resize naturally on next input event
+    // This prevents virtual keyboard freezing on mobile
   }
 
   onImageSelected(compressedImage: CompressedImage): void {
@@ -1485,7 +1649,10 @@ export class ChatRoomComponent
       return 'Encrypted message (from partner)';
     }
     if (text.includes('🔒 Encrypted message (sent by you)')) {
-      return text.replace('🔒 Encrypted message (sent by you)', 'Encrypted message (sent by you)');
+      return text.replace(
+        '🔒 Encrypted message (sent by you)',
+        'Encrypted message (sent by you)'
+      );
     }
     if (text.includes('💬 Message sent')) {
       return text.replace('💬 Message sent', 'Message sent');
@@ -1500,10 +1667,12 @@ export class ChatRoomComponent
    * Check if message is a system message that needs special icon treatment
    */
   isSystemMessage(text: string): boolean {
-    return text === '🔒 Encrypted message (from partner)' ||
-           text.includes('🔒 Encrypted message (sent by you)') ||
-           text.includes('💬 Message sent') ||
-           text === '⋯ message deleted ⋯';
+    return (
+      text === '🔒 Encrypted message (from partner)' ||
+      text.includes('🔒 Encrypted message (sent by you)') ||
+      text.includes('💬 Message sent') ||
+      text === '⋯ message deleted ⋯'
+    );
   }
 
   /**
@@ -1547,7 +1716,8 @@ export class ChatRoomComponent
           let frameCount = 0;
           const cleanup = () => {
             frameCount++;
-            if (frameCount < 60) { // Approximately 1 second at 60fps
+            if (frameCount < 60) {
+              // Approximately 1 second at 60fps
               requestAnimationFrame(cleanup);
             } else {
               URL.revokeObjectURL(blobUrl);
@@ -1569,5 +1739,4 @@ export class ChatRoomComponent
       document.body.removeChild(link);
     }
   }
-
 }

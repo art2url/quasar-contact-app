@@ -15,17 +15,7 @@
 }
 
 .emoji-button:hover {
-  background-color: var(--nav-hover);
   color: var(--primary-color);
-  transform: scale(1.05);
-}
-
-.emoji-button:hover .emoji-icon {
-  transform: scale(1);
-}
-
-.emoji-button:active .emoji-icon {
-  transform: scale(0.95);
 }
 
 .emoji-button:disabled {
@@ -48,7 +38,9 @@
   background: var(--card-background);
   border: none;
   border-radius: 12px;
-  box-shadow: var(--shadow-xs);
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.15),
+    0 4px 10px rgba(0, 0, 0, 0.1);
   z-index: 100;
   width: 348px;
   max-height: 300px;
@@ -60,9 +52,7 @@
 /* Adjust emoji picker position when message input is dirty (expanded) - desktop/tablet */
 @media (min-width: 600px) {
   .chat-form:has(.message-input.ng-dirty) app-emoji-picker .emoji-picker {
-    bottom: calc(
-      var(--chat-form-height, 70px) + calc(var(--spacing-xl) + var(--spacing-md))
-    ) !important;
+    bottom: calc(var(--chat-form-height, 70px) + var(--spacing-lg)) !important;
   }
 }
 
@@ -153,7 +143,7 @@
   }
 
   .emoji-button:hover {
-    transform: none;
+    color: var(--primary-color);
   }
 
   .emoji-icon {
@@ -180,5 +170,11 @@
     grid-template-columns: repeat(6, 1fr);
     gap: 8px;
     padding: var(--spacing-md);
+  }
+}
+
+@media (max-width: 600px) {
+  .chat-form:has(.message-input.ng-dirty) app-emoji-picker .emoji-picker {
+    bottom: calc(var(--chat-form-height, 70px) + var(--spacing-sm)) !important;
   }
 }

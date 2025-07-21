@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, Input, HostListener } from '@angular/core';
+import { Component, EventEmitter, Output, Input, HostListener, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -6,7 +6,8 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './emoji-picker.component.html',
-  styleUrls: ['./emoji-picker.component.css']
+  styleUrls: ['./emoji-picker.component.css'],
+  encapsulation: ViewEncapsulation.None
 })
 export class EmojiPickerComponent {
   @Input() disabled = false;
@@ -49,9 +50,13 @@ export class EmojiPickerComponent {
   /**
    * Handle emoji selection
    */
-  onEmojiClick(emoji: string): void {
+  onEmojiClick(emoji: string, event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
     this.emojiSelected.emit(emoji);
-    this.showPicker = false;
+    // Don't close picker automatically - let user pick multiple emojis
   }
 
   /**
