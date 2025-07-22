@@ -78,7 +78,10 @@ router.post(
     body('password')
       .isLength({ min: 6 })
       .withMessage('Password must be at least 6 characters long.'),
-    body('recaptchaToken').optional().isString().withMessage('Invalid reCAPTCHA token.'),
+    body('recaptchaToken')
+      .optional()
+      .isString()
+      .withMessage('Invalid reCAPTCHA token.'),
   ],
   authLimiter,
   validateHoneypot(),
@@ -109,7 +112,9 @@ router.post(
         },
       });
       if (existingUser) {
-        return res.status(409).json({ message: 'Username or email already taken.' });
+        return res
+          .status(409)
+          .json({ message: 'Username or email already taken.' });
       }
 
       // Hash password
@@ -140,7 +145,10 @@ router.post(
   [
     body('username').notEmpty().withMessage('Username or email is required.'),
     body('password').notEmpty().withMessage('Password is required.'),
-    body('recaptchaToken').optional().isString().withMessage('Invalid reCAPTCHA token.'),
+    body('recaptchaToken')
+      .optional()
+      .isString()
+      .withMessage('Invalid reCAPTCHA token.'),
   ],
   authLimiter,
   validateHoneypot(),
@@ -220,7 +228,10 @@ router.post(
   '/forgot-password',
   [
     body('email').isEmail().withMessage('Valid email is required.'),
-    body('recaptchaToken').optional().isString().withMessage('Invalid reCAPTCHA token.'),
+    body('recaptchaToken')
+      .optional()
+      .isString()
+      .withMessage('Invalid reCAPTCHA token.'),
   ],
   authLimiter,
   validateHoneypot(),
@@ -274,7 +285,10 @@ router.post(
 
       // Generate reset token
       const resetToken = crypto.randomBytes(32).toString('hex');
-      const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+      const hashedToken = crypto
+        .createHash('sha256')
+        .update(resetToken)
+        .digest('hex');
 
       // Create password reset record
       await prisma.passwordReset.create({
@@ -297,7 +311,9 @@ router.post(
       });
     } catch (error) {
       console.error('[Forgot Password Error]', error);
-      res.status(500).json({ message: 'Server error during password reset request.' });
+      res
+        .status(500)
+        .json({ message: 'Server error during password reset request.' });
     }
   },
 );
@@ -324,7 +340,9 @@ router.get('/reset-password/validate', async (req: Request, res: Response) => {
     });
 
     if (!resetRecord) {
-      return res.status(400).json({ valid: false, message: 'Invalid or expired token.' });
+      return res
+        .status(400)
+        .json({ valid: false, message: 'Invalid or expired token.' });
     }
 
     res.status(200).json({ valid: true });
@@ -353,7 +371,10 @@ router.post(
 
     try {
       // Hash the token to compare with stored version
-      const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+      const hashedToken = crypto
+        .createHash('sha256')
+        .update(token)
+        .digest('hex');
 
       // Find valid reset record
       const resetRecord = await prisma.passwordReset.findFirst({
@@ -365,11 +386,15 @@ router.post(
       });
 
       if (!resetRecord) {
-        return res.status(400).json({ message: 'Invalid or expired reset token.' });
+        return res
+          .status(400)
+          .json({ message: 'Invalid or expired reset token.' });
       }
 
       // Find the user
-      const user = await prisma.user.findUnique({ where: { id: resetRecord.userId } });
+      const user = await prisma.user.findUnique({
+        where: { id: resetRecord.userId },
+      });
       if (!user) {
         return res.status(404).json({ message: 'User not found.' });
       }
@@ -405,7 +430,8 @@ router.post(
       await emailService.sendPasswordResetConfirmation(user.email);
 
       res.status(200).json({
-        message: 'Password reset successful. All previous messages have been deleted.',
+        message:
+          'Password reset successful. All previous messages have been deleted.',
       });
     } catch (error) {
       console.error('[Reset Password Error]', error);

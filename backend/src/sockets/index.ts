@@ -64,7 +64,9 @@ const replayQueuedEvents = (socket: Socket, userId: string) => {
   if (!queue || queue.length === 0) return;
 
   const now = Date.now();
-  const validEvents = queue.filter(event => now - event.timestamp < EVENT_QUEUE_TTL);
+  const validEvents = queue.filter(
+    event => now - event.timestamp < EVENT_QUEUE_TTL,
+  );
 
   // Replaying queued events for reconnected user
 
@@ -77,7 +79,12 @@ const replayQueuedEvents = (socket: Socket, userId: string) => {
 };
 
 // Enhanced socket emission with queueing fallback
-const emitToUser = (io: Server, userId: string, eventType: string, data: any) => {
+const emitToUser = (
+  io: Server,
+  userId: string,
+  eventType: string,
+  data: any,
+) => {
   const socketId = getSocketId(userId);
 
   if (socketId) {
@@ -318,45 +325,48 @@ export const setupSocket = (io: Server) => {
     );
 
     // Enhanced delete-message with better synchronization
-    socket.on('delete-message', async ({ messageId }: { messageId: string }) => {
-      try {
-        const msg = await prisma.message.update({
-          where: {
-            id: messageId,
-            senderId: userId,
-          },
-          data: {
-            deleted: true,
-            deletedAt: new Date(),
-            ciphertext: '',
-          },
-        });
-
-        if (!msg) {
-          socket.emit('message-error', {
-            error: 'Message not found or permission denied',
+    socket.on(
+      'delete-message',
+      async ({ messageId }: { messageId: string }) => {
+        try {
+          const msg = await prisma.message.update({
+            where: {
+              id: messageId,
+              senderId: userId,
+            },
+            data: {
+              deleted: true,
+              deletedAt: new Date(),
+              ciphertext: '',
+            },
           });
-          return;
+
+          if (!msg) {
+            socket.emit('message-error', {
+              error: 'Message not found or permission denied',
+            });
+            return;
+          }
+
+          const eventData = {
+            messageId: msg.id,
+            deletedAt: msg.deletedAt,
+          };
+
+          // Always update sender immediately
+          socket.emit('message-deleted', eventData);
+
+          // Send to recipient with queueing
+          const receiverId = msg.receiverId;
+          emitToUser(io, receiverId, 'message-deleted', eventData);
+        } catch (err) {
+          console.error('[Socket] delete-message error:', err);
+          socket.emit('message-error', {
+            error: 'Failed to delete message',
+          });
         }
-
-        const eventData = {
-          messageId: msg.id,
-          deletedAt: msg.deletedAt,
-        };
-
-        // Always update sender immediately
-        socket.emit('message-deleted', eventData);
-
-        // Send to recipient with queueing
-        const receiverId = msg.receiverId;
-        emitToUser(io, receiverId, 'message-deleted', eventData);
-      } catch (err) {
-        console.error('[Socket] delete-message error:', err);
-        socket.emit('message-error', {
-          error: 'Failed to delete message',
-        });
-      }
-    });
+      },
+    );
 
     // Enhanced disconnect handling
     socket.on('disconnect', _reason => {

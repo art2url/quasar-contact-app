@@ -20,7 +20,7 @@ router.get('/', authenticateToken, async (_req, res) => {
     });
 
     // Convert to match expected frontend format
-    const formattedUsers = users.map((user: typeof users[0]) => ({
+    const formattedUsers = users.map((user: (typeof users)[0]) => ({
       _id: user.id,
       username: user.username,
       avatarUrl: user.avatarUrl,
@@ -39,7 +39,8 @@ router.get('/', authenticateToken, async (_req, res) => {
  */
 router.put('/me/avatar', authenticateToken, async (req: AuthRequest, res) => {
   const { avatarUrl } = req.body;
-  if (!avatarUrl) return res.status(400).json({ message: 'avatarUrl required' });
+  if (!avatarUrl)
+    return res.status(400).json({ message: 'avatarUrl required' });
 
   if (!req.user) return res.sendStatus(401); // safety check
 

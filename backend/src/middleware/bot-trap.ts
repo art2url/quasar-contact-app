@@ -73,7 +73,11 @@ export const isIPTrapped = (ip: string): boolean => {
 };
 
 // ─── Trap Check Middleware ─────────────────────────────────
-export const checkTrappedIP = (req: Request, res: Response, next: NextFunction): void => {
+export const checkTrappedIP = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void => {
   const clientIP = getClientIP(req);
 
   if (isIPTrapped(clientIP)) {
