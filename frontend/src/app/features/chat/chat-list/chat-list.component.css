@@ -202,6 +202,7 @@
   align-items: center;
   width: 100%;
   padding: var(--spacing-md);
+  border-radius: var(--border-radius);
   border: none;
   background: var(--card-background);
   color: var(--text-color);

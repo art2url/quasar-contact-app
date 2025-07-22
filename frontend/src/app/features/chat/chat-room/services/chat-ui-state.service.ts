@@ -197,7 +197,8 @@ export class ChatUiStateService {
     if (localStorage.getItem('cacheInfoDismissed') === 'true') {
       return;
     }
-
+    
+    // TODO: Fix this
     // Check if there are any messages sent by me that show cache-related text
     const hasUnreadableSentMessages = messages.some(
       m =>
