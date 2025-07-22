@@ -17,7 +17,9 @@ router.post('/send', authenticateToken, async (req: AuthRequest, res) => {
   const { receiverId, ciphertext } = req.body;
 
   if (!receiverId || !ciphertext) {
-    return res.status(400).json({ message: 'Missing receiverId or ciphertext.' });
+    return res
+      .status(400)
+      .json({ message: 'Missing receiverId or ciphertext.' });
   }
 
   try {
@@ -57,8 +59,8 @@ router.get('/overview', authenticateToken, async (req: AuthRequest, res) => {
 
     // Group messages by sender and calculate unread count
     const peerMap = new Map();
-    
-    messages.forEach((msg: typeof messages[0]) => {
+
+    messages.forEach((msg: (typeof messages)[0]) => {
       const senderId = msg.senderId;
       if (!peerMap.has(senderId)) {
         peerMap.set(senderId, {
@@ -67,7 +69,7 @@ router.get('/overview', authenticateToken, async (req: AuthRequest, res) => {
           unread: 0,
         });
       }
-      
+
       if (!msg.read) {
         peerMap.get(senderId).unread++;
       }
@@ -115,58 +117,63 @@ router.get('/:userId', authenticateToken, async (req: AuthRequest, res) => {
 });
 
 // GET /api/messages/history/:userId - FIXED TO PROPERLY RETURN TIMESTAMP
-router.get('/history/:userId', authenticateToken, async (req: AuthRequest, res) => {
-  const currentUserId = req.user?.userId;
-  const otherUserId = req.params.userId;
+router.get(
+  '/history/:userId',
+  authenticateToken,
+  async (req: AuthRequest, res) => {
+    const currentUserId = req.user?.userId;
+    const otherUserId = req.params.userId;
 
-  if (!currentUserId) return res.status(401).json({ message: 'Unauthorized' });
+    if (!currentUserId)
+      return res.status(401).json({ message: 'Unauthorized' });
 
-  try {
-    const messages = await prisma.message.findMany({
-      where: {
-        OR: [
-          { senderId: currentUserId, receiverId: otherUserId },
-          { senderId: otherUserId, receiverId: currentUserId },
-        ],
-      },
-      orderBy: {
-        timestamp: 'asc',
-      },
-      select: {
-        id: true,
-        senderId: true,
-        receiverId: true,
-        ciphertext: true,
-        timestamp: true,
-        read: true,
-        avatarUrl: true,
-        editedAt: true,
-        deleted: true,
-        deletedAt: true,
-        createdAt: true,
-      },
-    });
+    try {
+      const messages = await prisma.message.findMany({
+        where: {
+          OR: [
+            { senderId: currentUserId, receiverId: otherUserId },
+            { senderId: otherUserId, receiverId: currentUserId },
+          ],
+        },
+        orderBy: {
+          timestamp: 'asc',
+        },
+        select: {
+          id: true,
+          senderId: true,
+          receiverId: true,
+          ciphertext: true,
+          timestamp: true,
+          read: true,
+          avatarUrl: true,
+          editedAt: true,
+          deleted: true,
+          deletedAt: true,
+          createdAt: true,
+        },
+      });
 
-    res.json({
-      messages: messages.map((m: typeof messages[0]) => ({
-        _id: m.id,
-        senderId: m.senderId,
-        receiverId: m.receiverId,
-        ciphertext: m.ciphertext,
-        timestamp: m.timestamp,
-        createdAt: m.timestamp || m.createdAt,
-        read: m.read,
-        avatarUrl: m.avatarUrl ?? null,
-        editedAt: m.editedAt ?? null,
-        deleted: m.deleted,
-        deletedAt: m.deletedAt ?? null,
-      })),
-    });
-  } catch (err) {
-    console.error('[Message History Error]', err);
-    res.status(500).json({ message: 'Server error while fetching history.' });
-  }
-});
+      res.json({
+        messages: messages.map((m: (typeof messages)[0]) => ({
+          _id: m.id,
+          senderId: m.senderId,
+          receiverId: m.receiverId,
+          ciphertext: m.ciphertext,
+          timestamp: m.timestamp,
+          createdAt: m.timestamp || m.createdAt,
+          read: m.read,
+          avatarUrl: m.avatarUrl ?? null,
+          editedAt: m.editedAt ?? null,
+          deleted: m.deleted,
+          deletedAt: m.deletedAt ?? null,
+        })),
+      });
+    } catch (err) {
+      console.error('[Message History Error]', err);
+      res.status(500).json({ message: 'Server error while fetching history.' });
+    }
+  },
+);
 
 // GET /api/messages/last/:withUserId
 router.get('/last/:id', async (req, res) => {
@@ -187,7 +194,7 @@ router.get('/last/:id', async (req, res) => {
 
   /* 2️⃣ find the last message between me ↔︎ them */
   const them = req.params.id;
-  
+
   try {
     const last = await prisma.message.findFirst({
       where: {
@@ -205,7 +212,9 @@ router.get('/last/:id', async (req, res) => {
     res.json(last || {});
   } catch (err) {
     console.error('[Last Message Error]', err);
-    res.status(500).json({ message: 'Server error while fetching last message.' });
+    res
+      .status(500)
+      .json({ message: 'Server error while fetching last message.' });
   }
 });
 
@@ -292,32 +301,38 @@ router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
 });
 
 // PUT /api/messages/mark-read/:senderId - Mark all messages from a specific sender as read
-router.put('/mark-read/:senderId', authenticateToken, async (req: AuthRequest, res) => {
-  const receiverId = req.user!.userId;
-  const senderId = req.params.senderId;
+router.put(
+  '/mark-read/:senderId',
+  authenticateToken,
+  async (req: AuthRequest, res) => {
+    const receiverId = req.user!.userId;
+    const senderId = req.params.senderId;
 
-  try {
-    // Mark all unread messages from the sender as read
-    const result = await prisma.message.updateMany({
-      where: {
-        senderId,
-        receiverId,
-        read: false,
-        deleted: false,
-      },
-      data: {
-        read: true,
-      },
-    });
+    try {
+      // Mark all unread messages from the sender as read
+      const result = await prisma.message.updateMany({
+        where: {
+          senderId,
+          receiverId,
+          read: false,
+          deleted: false,
+        },
+        data: {
+          read: true,
+        },
+      });
 
-    res.json({
-      message: 'Messages marked as read',
-      count: result.count,
-    });
-  } catch (err) {
-    console.error('[Mark Read Error]', err);
-    res.status(500).json({ message: 'Server error while marking messages as read' });
-  }
-});
+      res.json({
+        message: 'Messages marked as read',
+        count: result.count,
+      });
+    } catch (err) {
+      console.error('[Mark Read Error]', err);
+      res
+        .status(500)
+        .json({ message: 'Server error while marking messages as read' });
+    }
+  },
+);
 
 export default router;

@@ -93,14 +93,18 @@ router.get('/my-dms', authenticateToken, async (req: AuthRequest, res) => {
     });
 
     // Extract the other member from each room
-    const list = rooms.map((room: typeof rooms[0]) => {
-      const otherMember = room.members[0];
-      return otherMember ? {
-        _id: otherMember.id,
-        username: otherMember.username,
-        avatarUrl: otherMember.avatarUrl,
-      } : null;
-    }).filter(Boolean);
+    const list = rooms
+      .map((room: (typeof rooms)[0]) => {
+        const otherMember = room.members[0];
+        return otherMember
+          ? {
+              _id: otherMember.id,
+              username: otherMember.username,
+              avatarUrl: otherMember.avatarUrl,
+            }
+          : null;
+      })
+      .filter(Boolean);
 
     res.json(list);
   } catch (err) {

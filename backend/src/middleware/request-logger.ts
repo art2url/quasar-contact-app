@@ -45,7 +45,11 @@ export const logSuspiciousRequest = (
     const userAgent = req.get('User-Agent') || 'Unknown';
 
     // Only log 4xx and 5xx responses or suspicious paths
-    if (res.statusCode >= 400 || req.path.includes('admin') || req.path.includes('wp')) {
+    if (
+      res.statusCode >= 400 ||
+      req.path.includes('admin') ||
+      req.path.includes('wp')
+    ) {
       const logEntry = {
         timestamp: formatDate(),
         ip: clientIP,
@@ -77,7 +81,11 @@ export const logSuspiciousRequest = (
 };
 
 // ─── Access Log for All Requests ──────────────────────────
-export const accessLogger = (req: Request, res: Response, next: NextFunction): void => {
+export const accessLogger = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void => {
   const startTime = Date.now();
 
   res.on('finish', () => {
