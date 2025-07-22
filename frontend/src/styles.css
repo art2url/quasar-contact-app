@@ -311,7 +311,7 @@ input[ng-reflect] {
   --input-border: #3c4f4f;
   --button-background: var(--primary-color);
   --button-text: #001011;
-  --header-background: rgb(12, 37, 36);
+  --header-background: #051a1a;
   --nav-hover: rgba(195, 247, 58, 0.1);
   --warning-background: rgba(255, 183, 77, 0.1);
   --warning-text: #ffb74d;
