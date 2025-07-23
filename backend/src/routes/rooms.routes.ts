@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import Room from '../models/Room';
+import { prisma } from '../services/database.service';
 import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
 
 /**
  * POST /api/rooms/dm
- * Body: { userId }  → ensures a DM room exists and returns its _id.
+ * Body: { userId }  → ensures a DM room exists and returns its id.
  */
 router.post('/dm', authenticateToken, async (req: AuthRequest, res) => {
   const me = req.user?.userId;
@@ -17,16 +17,43 @@ router.post('/dm', authenticateToken, async (req: AuthRequest, res) => {
   }
 
   try {
-    let room = await Room.findOne({
-      isDm: true,
-      members: { $all: [me, other] },
+    // Check if a DM room already exists between these two users
+    let room = await prisma.room.findFirst({
+      where: {
+        isDm: true,
+        members: {
+          every: {
+            id: { in: [me, other] },
+          },
+        },
+      },
+      include: {
+        members: true,
+      },
     });
 
-    if (!room) {
-      room = await Room.create({ isDm: true, members: [me, other] });
+    // Make sure the room has exactly 2 members and contains both users
+    if (room && room.members.length === 2) {
+      const memberIds = room.members.map((m: any) => m.id);
+      if (memberIds.includes(me) && memberIds.includes(other)) {
+        return res.json({ roomId: room.id });
+      }
     }
 
-    res.json({ roomId: room._id });
+    // Create a new DM room
+    room = await prisma.room.create({
+      data: {
+        isDm: true,
+        members: {
+          connect: [{ id: me }, { id: other }],
+        },
+      },
+      include: {
+        members: true,
+      },
+    });
+
+    res.json({ roomId: room.id });
   } catch (err) {
     console.error('[DM room error]', err);
     res.status(500).json({ message: 'Server error while creating DM' });
@@ -35,22 +62,49 @@ router.post('/dm', authenticateToken, async (req: AuthRequest, res) => {
 
 /**
  * GET /api/rooms/my-dms
- * Return the other member’s _id, username & avatar for each DM I’m in.
+ * Return the other member's id, username & avatar for each DM I'm in.
  */
 router.get('/my-dms', authenticateToken, async (req: AuthRequest, res) => {
   const me = req.user?.userId;
   if (!me) return res.sendStatus(401);
 
   try {
-    const rooms = await Room.find({ isDm: true, members: me })
-      .populate({
-        path: 'members',
-        match: { _id: { $ne: me } }, // only the other person
-        select: '_id username avatarUrl',
-      })
-      .lean();
+    const rooms = await prisma.room.findMany({
+      where: {
+        isDm: true,
+        members: {
+          some: {
+            id: me,
+          },
+        },
+      },
+      include: {
+        members: {
+          where: {
+            id: { not: me },
+          },
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
 
-    const list = rooms.map(r => r.members[0]).filter(Boolean); // drop empty (shouldn’t happen)
+    // Extract the other member from each room
+    const list = rooms
+      .map((room: (typeof rooms)[0]) => {
+        const otherMember = room.members[0];
+        return otherMember
+          ? {
+              _id: otherMember.id,
+              username: otherMember.username,
+              avatarUrl: otherMember.avatarUrl,
+            }
+          : null;
+      })
+      .filter(Boolean);
 
     res.json(list);
   } catch (err) {

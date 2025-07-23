@@ -6,7 +6,7 @@ dotenv.config();
 interface EnvConfig {
   PORT: number;
   NODE_ENV: string;
-  MONGO_URI: string;
+  DATABASE_PUBLIC_URL: string;
   APP_NAME: string;
   JWT_SECRET: string;
   CLIENT_ORIGIN: string;
@@ -28,7 +28,7 @@ interface EnvConfig {
 export const env: EnvConfig = {
   PORT: parseInt(process.env.PORT || '5000', 10),
   NODE_ENV: process.env.NODE_ENV || 'development',
-  MONGO_URI: process.env.MONGO_URI || '',
+  DATABASE_PUBLIC_URL: process.env.DATABASE_PUBLIC_URL || '',
   APP_NAME: process.env.APP_NAME || 'Quasar Contact',
   JWT_SECRET: process.env.JWT_SECRET || '',
   CLIENT_ORIGIN: process.env.CLIENT_ORIGIN || 'http://localhost:4200',
@@ -39,7 +39,9 @@ export const env: EnvConfig = {
 
   // Email settings (optional)
   SMTP_HOST: process.env.SMTP_HOST,
-  SMTP_PORT: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : undefined,
+  SMTP_PORT: process.env.SMTP_PORT
+    ? parseInt(process.env.SMTP_PORT, 10)
+    : undefined,
   SMTP_SECURE: process.env.SMTP_SECURE === 'true',
   SMTP_USER: process.env.SMTP_USER,
   SMTP_PASS: process.env.SMTP_PASS,
@@ -48,12 +50,17 @@ export const env: EnvConfig = {
 
 // Validate required environment variables
 const validateEnv = () => {
-  if (!env.MONGO_URI) {
-    throw new Error('MONGO_URI is required');
+  // Only validate JWT_SECRET as it's critical for auth
+  if (!env.JWT_SECRET) {
+    console.error('❌ JWT_SECRET is required');
+    throw new Error('JWT_SECRET is required');
   }
 
-  if (!env.JWT_SECRET) {
-    throw new Error('JWT_SECRET is required');
+  // Warn about missing DATABASE_PUBLIC_URL but don't block startup
+  if (!env.DATABASE_PUBLIC_URL) {
+    console.warn(
+      '⚠️  DATABASE_PUBLIC_URL not set - database features may not work',
+    );
   }
 
   if (env.JWT_SECRET.length < 32) {

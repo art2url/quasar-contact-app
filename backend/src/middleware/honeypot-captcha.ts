@@ -57,7 +57,9 @@ export const validateHoneypot = (options: HoneypotValidationOptions = {}) => {
                 `🍯 HONEYPOT TRIGGERED: Bot filled field '${field}' with value '${body[field]}' from ${clientIP}`,
               );
               console.log(`   User-Agent: ${userAgent}`);
-              console.log(`   Request body keys: ${Object.keys(body).join(', ')}`);
+              console.log(
+                `   Request body keys: ${Object.keys(body).join(', ')}`,
+              );
             }
 
             // Return a response that looks like success but isn't

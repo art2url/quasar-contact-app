@@ -5,6 +5,7 @@ import {
   AfterViewInit,
   ElementRef,
   ViewChild,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -23,6 +24,7 @@ import { AuthService } from '@services/auth.service';
 import { RecaptchaService } from '@services/recaptcha.service';
 import { ThemeService } from '@services/theme.service';
 import { HoneypotService } from '@services/honeypot.service';
+import { ScrollService } from '@services/scroll.service';
 import { environment } from '@environments/environment';
 
 @Component({
@@ -66,7 +68,9 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
     private http: HttpClient,
     private recaptchaService: RecaptchaService,
     private themeService: ThemeService,
-    public honeypotService: HoneypotService
+    public honeypotService: HoneypotService,
+    private cdr: ChangeDetectorRef,
+    private scrollService: ScrollService
   ) {}
 
   ngOnInit(): void {
@@ -105,85 +109,48 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
 
       if (this.recaptchaWidgetId !== undefined) {
         // Re-rendering reCAPTCHA for theme change
-
-        // Reset the widget first
-        this.recaptchaService.resetRecaptcha(this.recaptchaWidgetId);
         this.recaptchaToken = '';
 
-        // Completely remove and recreate the DOM element
-        const recaptchaElement = document.getElementById('recaptcha-login');
-        if (recaptchaElement && recaptchaElement.parentNode) {
-          const parent = recaptchaElement.parentNode;
-          const newElement = document.createElement('div');
-          newElement.id = 'recaptcha-login';
-          parent.replaceChild(newElement, recaptchaElement);
-          // Recreated reCAPTCHA DOM element
-        }
-
-        // Re-render with delay
-        setTimeout(() => {
-          try {
-            this.recaptchaWidgetId = this.recaptchaService.renderRecaptcha(
-              'recaptcha-login',
-              (token: string) => {
-                this.recaptchaToken = token;
-                this.error = '';
-              }
-            );
-            // New reCAPTCHA widget created
-          } catch (error) {
-            console.error('Failed to re-render reCAPTCHA after theme change:', error);
-            // Don't show error to user for theme switching failures
-            // The form will still work, just without reCAPTCHA theme update
-          }
-        }, 300);
+        // Re-render with change detection
+        this.cdr.detectChanges();
+        this.recaptchaService.reRenderRecaptcha(
+          'recaptcha-login',
+          (token: string) => {
+            this.recaptchaToken = token;
+            this.error = '';
+          },
+          this.recaptchaWidgetId
+        ).then((widgetId) => {
+          this.recaptchaWidgetId = widgetId;
+          // New reCAPTCHA widget created
+        }).catch(() => {
+          // Don't log theme change errors - they're not critical
+          // The form will still work, just without reCAPTCHA theme update
+        });
       }
     });
   }
 
-  private initializeRecaptcha(retryCount = 0): void {
-    const maxRetries = 3;
-    const baseDelay = 500;
-
-    setTimeout(() => {
-      try {
-        this.recaptchaWidgetId = this.recaptchaService.renderRecaptcha(
-          'recaptcha-login',
-          (token: string) => {
-            this.recaptchaToken = token;
-            this.error = ''; // Clear any reCAPTCHA-related errors
-          }
-        );
-        // reCAPTCHA initialized successfully
-      } catch (error) {
-        console.error(
-          'Failed to initialize reCAPTCHA (attempt',
-          retryCount + 1,
-          '):',
-          error
-        );
-
-        if (retryCount < maxRetries) {
-          // Retrying reCAPTCHA initialization
-          setTimeout(
-            () => {
-              this.initializeRecaptcha(retryCount + 1);
-            },
-            (retryCount + 1) * 1000
-          ); // Exponential backoff: 1s, 2s, 3s
-        } else {
-          console.error('Max retries reached. reCAPTCHA initialization failed.');
-          this.error = 'Failed to load security verification. Please refresh the page.';
+  private async initializeRecaptcha(): Promise<void> {
+    this.cdr.detectChanges();
+    
+    try {
+      this.recaptchaWidgetId = await this.recaptchaService.initializeRecaptcha(
+        'recaptcha-login',
+        (token: string) => {
+          this.recaptchaToken = token;
+          this.error = ''; // Clear any reCAPTCHA-related errors
         }
-      }
-    }, baseDelay);
+      );
+      // reCAPTCHA initialized successfully
+    } catch (error) {
+      this.error = (error as Error).message;
+    }
   }
 
   private resetRecaptcha(): void {
     this.recaptchaToken = '';
-    if (this.recaptchaWidgetId !== undefined) {
-      this.recaptchaService.resetRecaptcha(this.recaptchaWidgetId);
-    }
+    this.recaptchaService.resetRecaptchaWidget(this.recaptchaWidgetId);
   }
 
   async onLogin(): Promise<void> {
@@ -227,6 +194,8 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
       );
       // Login successful, navigating
 
+      // Ensure page scrolls to top before navigation
+      this.scrollService.scrollToTop();
       await this.router.navigate(['/chat']);
     } catch (error) {
       console.error('[Login] Login failed:', error);
@@ -273,9 +242,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnDestroy(): void {
-    if (this.recaptchaWidgetId !== undefined) {
-      this.recaptchaService.resetRecaptcha(this.recaptchaWidgetId);
-    }
+    this.recaptchaService.resetRecaptchaWidget(this.recaptchaWidgetId);
     this.themeSubscription?.unsubscribe();
   }
 }

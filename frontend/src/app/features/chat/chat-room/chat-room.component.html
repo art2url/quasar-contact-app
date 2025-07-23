@@ -143,7 +143,7 @@
     </div>
 
     <!-- Chat window -->
-    <div #messageContainer class="chat-window">
+    <div #messageContainer class="chat-window" (scroll)="handleScroll()">
       <!-- Loading state for messages -->
       <div *ngIf="isLoadingMessages" class="messages-loading">
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px">
@@ -178,14 +178,35 @@
             [class.unreadable]="isMessageUnreadable(m)"
             [class.encrypted]="isMessageEncrypted(m)">
             <div class="message-bubble">
-              <p class="message-content">{{ m.text }}</p>
+              <div *ngIf="m.hasImage && m.imageUrl" class="message-image">
+                <img
+                  [src]="m.imageUrl"
+                  [alt]="'Image attachment'"
+                  class="attached-image"
+                  (click)="openImageModal(m.imageUrl)"
+                  (keydown.enter)="openImageModal(m.imageUrl)"
+                  (keydown.space)="openImageModal(m.imageUrl)"
+                  tabindex="0"
+                  role="button"
+                  [attr.aria-label]="'Open image in new tab'"
+                  loading="lazy" />
+              </div>
+
+              <!-- Text content -->
+              <p *ngIf="m.text" class="message-content">
+                <ng-container *ngIf="isSystemMessage(m.text); else regularText">
+                  <mat-icon class="system-message-icon">{{ getSystemMessageIcon(m.text) }}</mat-icon>
+                  <span class="system-message-text">{{ formatMessageText(m.text) }}</span>
+                </ng-container>
+                <ng-template #regularText>{{ getDisplayText(m.text, m.hasImage) }}</ng-template>
+              </p>
 
               <div class="message-meta">
                 <span class="message-time" [title]="getFullTimestamp(m.ts)">
                   {{ formatMessageTime(m.ts) }}
                 </span>
 
-                <span *ngIf="m.sender === 'You'" class="message-status">
+                <span *ngIf="m.sender === 'You' && !isMessageUnreadable(m)" class="message-status">
                   <ng-container [ngSwitch]="m.status">
                     <mat-icon *ngSwitchCase="'pending'" class="status-icon">schedule</mat-icon>
                     <mat-icon *ngSwitchCase="'sent'" class="status-icon">check</mat-icon>
@@ -193,7 +214,7 @@
                   </ng-container>
                 </span>
 
-                <small *ngIf="!m.deletedAt && m.editedAt">&nbsp;(edited)</small>
+                <small *ngIf="!m.deletedAt && m.editedAt && !isMessageUnreadable(m) && !isMessageEncrypted(m)">&nbsp;(edited)</small>
 
                 <!-- Show indicator for unreadable messages -->
                 <small *ngIf="isMessageUnreadable(m)" class="unreadable-indicator"> &nbsp;(text unavailable) </small>
@@ -238,8 +259,24 @@
       </span>
     </button>
 
+    <div *ngIf="attachedImage" class="attachment-preview">
+      <div class="preview-content">
+        <img [src]="attachedImage.preview" alt="Image preview" class="preview-image" />
+        <div class="preview-info">
+          <div class="preview-text">
+            <span class="preview-filename">{{ getTruncatedFilename(attachedImage.file.name) }}</span>
+            <span class="preview-size">{{ (attachedImage.compressedSize / 1024).toFixed(1) }}KB</span>
+          </div>
+          <button type="button" class="remove-preview" (click)="removeAttachedImage()" title="Remove image">✕</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Message form - keep inside container for desktop, fixed for mobile -->
     <form class="chat-form" (ngSubmit)="editing ? confirmEdit() : send()">
+      <app-image-attachment [disabled]="isChatBlocked()" (imageSelected)="onImageSelected($event)">
+      </app-image-attachment>
+
       <textarea
         *ngIf="!editing"
         class="message-input"
@@ -248,7 +285,7 @@
         [placeholder]="getChatInputPlaceholder()"
         required
         (input)="onType()"
-        [rows]="1"
+        rows="1"
         #messageInput
         (keydown.enter)="onKeydownEnter($event)"
         (keydown.enter.control)="onKeydownCtrlEnter($event)"
@@ -262,11 +299,14 @@
         name="editDraft"
         placeholder="Edit message..."
         required
-        [rows]="1"
+        rows="1"
         #editInput
+        (input)="onTypeEdit()"
         (keydown.enter)="onKeydownEnterEdit($event)"
         (keydown.enter.control)="onKeydownCtrlEnterEdit($event)"
         (keydown.enter.meta)="onKeydownMetaEnterEdit($event)"></textarea>
+
+      <app-emoji-picker [disabled]="isChatBlocked()" (emojiSelected)="onEmojiSelected($event)"> </app-emoji-picker>
 
       <button
         type="submit"
@@ -276,30 +316,26 @@
         "
         [attr.aria-label]="editing ? 'Save edited message' : 'Send message'">
         <svg
-          *ngIf="!editing"
-          width="20"
-          height="20"
           viewBox="0 0 512 512"
-          fill="currentColor"
+          *ngIf="!editing"
           class="custom-send-icon"
-          aria-hidden="true">
-          <g clip-path="url(#clip0_232_1230)">
-            <path
-              d="M159.696 330.41C151.681 322.841 123.113 298.291 122.797 288.033C122.347 273.451 140.755 265.773 147.374 254.886C149.432 251.499 150.714 247.264 152.3 243.622C195.242 145.034 267.375 69.2821 368.582 29.6213C403.181 16.063 450.781 1.83022 486.868 0.785166C505 1.5 510.005 14.3739 508.74 29.5799C503.359 94.3054 479.301 162.876 444.247 217C405.678 276.553 349.21 322.543 285.801 353.882C274.182 359.626 271.832 359.609 262.691 368.9C255.587 376.12 241.96 393.7 231.975 394.243C219.443 394.925 198.248 368.289 187.789 358.898C161.714 386.657 132.98 414.632 105.713 441.184C98.2434 448.458 91.0838 457.932 82.1252 463.288C69.4189 468.997 54.1791 459.736 54.0014 445.747C53.8223 431.707 70.7442 420.643 80.0159 411.037C106.253 383.848 133.183 357.329 159.696 330.41ZM351.121 101.957C275.933 109.553 286.236 214.322 358.554 212.358C434.416 204.269 421.037 97.2963 351.121 101.957Z" />
-            <path
-              d="M27.6805 419.681C17.4519 421.618 7.33802 415.186 5.20379 404.818C2.12955 389.878 17.1002 379.733 26.3795 370.561C33.0655 363.952 39.631 357.221 46.2399 350.534L61.8915 334.611C67.8373 328.518 72.0712 322.903 80.7621 321.08C99.2849 319.854 109.993 339.214 97.2072 353.273C87.7818 363.635 76.8716 373.601 67.0073 383.705L46.6773 404.347C41.0441 410.043 35.683 417.45 27.6805 419.681Z" />
-            <path
-              d="M264.795 419.094L280.363 402.935C292.884 390.123 295.812 390.47 311.326 381.842C331.474 370.638 351.404 357.884 369.828 343.961C376.981 338.555 383.793 332.395 391.634 328.024C391.991 328.877 391.643 347.123 391.642 349.726C391.635 370.533 382.417 483.704 368.12 498.192C353.298 513.215 339.935 495.599 330.422 485.87L306.862 462.022C294.984 450.094 274.639 431.564 264.795 419.094Z" />
-            <path
-              d="M94.7251 251.024L110.884 235.333C123.696 222.714 123.349 219.763 131.978 204.127C143.182 183.82 155.936 163.733 169.859 145.164C175.264 137.955 181.424 131.089 185.795 123.187C184.942 122.827 166.696 123.177 164.093 123.179C143.286 123.186 30.1149 132.476 15.6272 146.885C0.604461 161.825 18.2207 175.292 27.9493 184.88L51.7971 208.626C63.7252 220.598 82.2549 241.103 94.7251 251.024Z" />
-            <path
-              d="M124.521 511.671C114.142 513.614 103.696 507.382 101.288 496.932C98.0386 482.833 111.583 473.81 120.439 465.109L156.436 429.269C161.919 423.694 166.466 417.961 174.457 416.201C184.215 415.104 193.278 419.106 196.645 428.834C201.354 442.447 190.628 449.798 182.147 458.359L141.227 498.992C135.972 504.248 131.818 509.392 124.521 511.671Z" />
-          </g>
-          <defs>
-            <clipPath id="clip0_232_1230">
-              <rect width="512" height="512" fill="white" />
-            </clipPath>
-          </defs>
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M159.169 330.116C151.139 322.535 122.522 297.949 122.206 287.675C121.755 273.072 140.195 265.382 146.825 254.479C148.887 251.087 150.171 246.846 151.76 243.199C194.776 144.463 267.033 68.5989 368.415 28.879C403.073 15.3006 450.756 1.04661 486.905 0C505.068 0.715898 510.082 13.6089 508.815 28.8376C503.424 93.6595 479.325 162.333 444.211 216.537C405.574 276.179 349.009 322.236 285.491 353.622C273.852 359.374 271.498 359.357 262.341 368.662C255.225 375.893 241.574 393.5 231.572 394.043C219.019 394.726 197.787 368.051 187.31 358.646C161.19 386.446 132.406 414.463 105.092 441.054C97.6097 448.339 90.4378 457.827 81.4637 463.191C68.7355 468.908 53.4693 459.634 53.2914 445.624C53.112 431.563 70.0631 420.483 79.3508 410.862C105.633 383.633 132.609 357.074 159.169 330.116ZM350.923 101.322C275.606 108.93 285.926 213.855 358.369 211.888C434.362 203.786 420.961 96.6548 350.923 101.322Z"
+            fill="currentColor" />
+          <path
+            d="M26.9251 419.519C16.6788 421.459 6.54749 415.018 4.40958 404.634C1.33003 389.672 16.3266 379.512 25.6218 370.326C32.3194 363.708 38.8961 356.966 45.5164 350.269L61.1951 334.322C67.1511 328.22 71.3924 322.597 80.0982 320.771C98.653 319.544 109.38 338.932 96.5718 353.012C87.13 363.389 76.201 373.371 66.3197 383.49L45.9546 404.162C40.3118 409.867 34.9414 417.285 26.9251 419.519Z"
+            fill="currentColor" />
+          <path
+            d="M264.449 418.931L280.044 402.748C292.586 389.917 295.519 390.265 311.06 381.623C331.243 370.403 351.207 357.63 369.663 343.686C376.828 338.272 383.653 332.104 391.506 327.726C391.864 328.58 391.516 346.853 391.514 349.46C391.507 370.298 382.273 483.638 367.952 498.147C353.104 513.192 339.719 495.55 330.189 485.807L306.588 461.923C294.689 449.978 274.309 431.42 264.449 418.931Z"
+            fill="currentColor" />
+          <path
+            d="M94.0854 250.612L110.272 234.897C123.107 222.259 122.759 219.304 131.402 203.645C142.626 183.308 155.402 163.19 169.349 144.594C174.764 137.374 180.934 130.497 185.312 122.584C184.458 122.223 166.181 122.574 163.573 122.575C142.73 122.583 29.3637 131.887 14.851 146.318C-0.197689 161.279 17.4489 174.767 27.1943 184.369L51.0833 208.15C63.032 220.14 81.5936 240.676 94.0854 250.612Z"
+            fill="currentColor" />
+          <path
+            d="M123.933 511.646C113.535 513.592 103.072 507.351 100.66 496.886C97.4046 482.765 110.972 473.729 119.843 465.015L155.903 429.121C161.395 423.538 165.95 417.797 173.955 416.034C183.73 414.935 192.809 418.943 196.181 428.685C200.898 442.319 190.154 449.681 181.658 458.255L140.667 498.948C135.404 504.212 131.243 509.364 123.933 511.646Z"
+            fill="currentColor" />
         </svg>
 
         <mat-icon *ngIf="editing" aria-hidden="true">check</mat-icon>
