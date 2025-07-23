@@ -1,6 +1,10 @@
 <div class="chat-container">
   <div class="chat-header">
-    <button *ngIf="showBackButton" mat-icon-button class="back-button" (click)="goBack()">
+    <button 
+      mat-icon-button 
+      class="back-button" 
+      [disabled]="!showBackButton"
+      (click)="goBack()">
       <mat-icon>arrow_back</mat-icon>
     </button>
     <h2>Your Chats</h2>
@@ -86,7 +90,7 @@
             </span>
           </div>
           <p class="last-message">
-            {{ chat.lastMessage || '— no messages yet —' }}
+            {{ getDisplayMessage(chat.lastMessage) }}
             <span *ngIf="chat.unread" class="badge">{{ chat.unread }}</span>
           </p>
         </div>

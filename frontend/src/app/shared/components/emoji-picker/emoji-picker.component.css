@@ -1,0 +1,180 @@
+/* Emoji button styles */
+.emoji-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--input-background);
+  color: var(--text-secondary);
+  border: none;
+  cursor: pointer;
+  margin-right: var(--spacing-md);
+  transition: all 0.2s ease;
+}
+
+.emoji-button:hover {
+  color: var(--primary-color);
+}
+
+.emoji-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.emoji-icon {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+  transition: transform 0.2s ease;
+}
+
+/* Emoji picker styles */
+.emoji-picker {
+  position: fixed;
+  bottom: calc(var(--chat-form-height, 70px) + var(--spacing-md));
+  right: calc(var(--spacing-xl) + var(--spacing-md));
+  background: var(--card-background);
+  border: none;
+  border-radius: 12px;
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.15),
+    0 4px 10px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  width: 348px;
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  animation: fadeInUp 0.2s ease-out;
+}
+
+/* Adjust emoji picker position when message input is dirty (expanded) - desktop/tablet */
+@media (min-width: 600px) {
+  .chat-form:has(.message-input.ng-dirty) app-emoji-picker .emoji-picker {
+    bottom: calc(var(--chat-form-height, 70px) + var(--spacing-lg)) !important;
+  }
+}
+
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+  padding: var(--spacing-sm);
+}
+
+.emoji-option {
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.emoji-option:hover {
+  background-color: var(--nav-hover);
+  transform: scale(1.1);
+}
+
+.emoji-option:active {
+  transform: scale(0.95);
+}
+
+/* Dark theme emoji picker */
+.dark-theme .emoji-picker {
+  background: var(--card-background);
+  border: none;
+  box-shadow: var(--shadow-md);
+}
+
+.dark-theme .emoji-option:hover {
+  background-color: var(--nav-hover);
+}
+
+/* Animation */
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Tablet adjustments for emoji picker */
+@media (max-width: 768px) and (min-width: 600px) {
+  .emoji-picker {
+    right: calc(var(--spacing-md) + var(--spacing-md));
+    max-height: 240px;
+  }
+
+  .emoji-picker .emoji-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    padding: var(--spacing-md);
+  }
+
+  .emoji-picker .emoji-grid .emoji-option {
+    width: 38px;
+    height: 38px;
+    font-size: 28px;
+    min-height: 38px;
+    min-width: 38px;
+    border-radius: 8px;
+  }
+}
+
+/* Mobile button adjustments */
+@media (max-width: 599px) {
+  .emoji-button {
+    width: 28px;
+    height: 28px;
+    margin-right: var(--spacing-sm);
+  }
+
+  .emoji-button:hover {
+    color: var(--primary-color);
+  }
+
+  .emoji-icon {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* Mobile screens - properly aligned with chat form */
+@media only screen and (max-width: 599px) {
+  .emoji-picker {
+    position: fixed;
+    bottom: calc(
+      var(--chat-form-height, 58px) + env(safe-area-inset-bottom, 0px) + var(--spacing-sm)
+    );
+    right: var(--spacing-sm);
+    left: var(--spacing-sm);
+    width: auto;
+    max-width: none;
+    max-height: 200px;
+  }
+
+  .emoji-picker .emoji-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    padding: var(--spacing-md);
+  }
+}
+
+@media (max-width: 600px) {
+  .chat-form:has(.message-input.ng-dirty) app-emoji-picker .emoji-picker {
+    bottom: calc(var(--chat-form-height, 70px) + var(--spacing-sm)) !important;
+  }
+}

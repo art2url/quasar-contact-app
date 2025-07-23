@@ -65,7 +65,10 @@ class EmailService {
       await this.transporter.verify();
       // SMTP connection verified successfully
     } catch (error) {
-      console.error('[EmailService] SMTP connection verification failed:', error);
+      console.error(
+        '[EmailService] SMTP connection verification failed:',
+        error,
+      );
       this.isConfigured = false;
     }
   }
@@ -94,7 +97,10 @@ class EmailService {
     }
   }
   // Send password reset email with reset link
-  async sendPasswordResetEmail(email: string, resetToken: string): Promise<void> {
+  async sendPasswordResetEmail(
+    email: string,
+    resetToken: string,
+  ): Promise<void> {
     // Ensure we use the correct app path
     const baseUrl = env.CLIENT_ORIGIN || 'http://localhost:3000';
     const resetUrl = `${baseUrl}/app/auth/reset-password?token=${resetToken}`;

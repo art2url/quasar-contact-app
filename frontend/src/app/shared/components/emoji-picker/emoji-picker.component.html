@@ -1,0 +1,54 @@
+<!-- Emoji button -->
+<button
+  type="button"
+  class="emoji-button"
+  (click)="togglePicker($event)"
+  [disabled]="disabled"
+  [attr.aria-label]="'Add emoji'"
+  tabindex="-1">
+  <svg viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" class="emoji-icon">
+    <g clip-path="url(#clip0_770_20169)">
+      <path
+        d="M244.521 0.262264C385.608 -6.07044 505.171 103.05 511.721 244.125C518.272 385.201 409.335 504.932 268.269 511.7L266.614 511.775C126.509 517.608 7.75243 409.558 0.360696 269.529L0.278645 267.874C-6.2607 127.04 103.927 7.46581 244.521 0.262264ZM472.379 245.952C466.836 126.582 365.667 34.249 246.286 39.6071C126.644 44.9774 34.0663 146.413 39.6212 266.047C45.1761 385.679 146.756 478.101 266.381 472.36C385.744 466.633 477.921 365.323 472.379 245.952Z"
+        fill="currentColor" />
+      <path
+        d="M186.14 243.605C167.622 246.437 150.304 233.754 147.414 215.245C144.524 196.735 157.152 179.377 175.652 176.428C194.234 173.468 211.687 186.165 214.59 204.756C217.493 223.348 204.741 240.761 186.14 243.605Z"
+        fill="currentColor" />
+      <path
+        d="M330.453 244C311.377 243.973 295.943 228.694 296.002 209.896C296.061 191.096 311.59 175.912 330.667 176C349.697 176.09 365.061 191.349 365.002 210.105C364.944 228.86 349.485 244.026 330.453 244Z"
+        fill="currentColor" />
+      <path
+        d="M322.179 314.102C329.114 305.756 341.518 304.599 349.883 311.518C358.249 318.437 359.408 330.812 352.474 339.159C303.199 398.464 209.863 394.008 159.65 339.302C152.781 331.201 153.605 319.066 161.594 311.969C169.582 304.873 182.934 306.754 190.205 314.497C225.695 353.158 289.463 353.479 322.179 314.102Z"
+        fill="currentColor" />
+    </g>
+    <defs>
+      <clipPath id="clip0_770_20169">
+        <rect width="512" height="512" fill="currentColor" />
+      </clipPath>
+    </defs>
+  </svg>
+</button>
+
+<!-- Emoji picker dropdown -->
+<div
+  *ngIf="showPicker"
+  class="emoji-picker"
+  (click)="onPickerClick($event)"
+  (keydown)="onKeyDown($event)"
+  tabindex="-1"
+  aria-label="Emoji picker">
+  <div class="emoji-grid">
+    <button
+      *ngFor="let emoji of popularEmojis"
+      type="button"
+      class="emoji-option"
+      (click)="onEmojiClick(emoji, $event)"
+      (keydown.enter)="onEmojiClick(emoji, $event)"
+      (keydown.space)="onEmojiClick(emoji, $event)"
+      [title]="emoji"
+      [attr.aria-label]="emoji"
+      tabindex="-1">
+      {{ emoji }}
+    </button>
+  </div>
+</div>

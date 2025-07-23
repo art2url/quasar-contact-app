@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { STOCK_AVATARS } from '@constants/avatars';
@@ -8,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { CryptoService } from '@services/crypto.service';
 import { UserService } from '@services/user.service';
 import { VaultService, VAULT_KEYS } from '@services/vault.service';
+import { ScrollService } from '@services/scroll.service';
 
 @Component({
   standalone: true,
@@ -16,7 +17,7 @@ import { VaultService, VAULT_KEYS } from '@services/vault.service';
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.css'],
 })
-export class SettingsComponent {
+export class SettingsComponent implements OnInit {
   /** UI state */
   importError = '';
   selectedFileName = ''; // Added for the new file input UI
@@ -30,8 +31,15 @@ export class SettingsComponent {
     private location: Location,
     private router: Router,
     private users: UserService,
-    private vault: VaultService
+    private vault: VaultService,
+    private scrollService: ScrollService
   ) {}
+
+  ngOnInit() {
+    // IMPORTANT: Always scroll to top when settings page loads
+    // This prevents the page from staying at bottom position when navigating back from chat-room
+    this.scrollService.scrollToTop();
+  }
 
   /* ── download current private key ─────────────────────────── */
   async downloadKey(): Promise<void> {

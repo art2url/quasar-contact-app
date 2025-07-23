@@ -35,10 +35,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
           <div class='faq-answer'>
             <p>
-              I use client-side encryption with the Web Crypto API, implementing AES-GCM encryption.
-              Your messages are encrypted on your device before being sent, and only the intended
-              recipient can decrypt them. The server never has access to your encryption keys or
-              plaintext messages.
+              I use client-side encryption with the Web Crypto API, implementing RSA-OAEP with
+              AES-GCM encryption. Your messages and images are encrypted on your device before being
+              sent, and only the intended recipient can decrypt them. The server never has access to
+              your encryption keys or plaintext content. Each user has their own RSA key pair for
+              secure key exchange.
             </p>
           </div>
         </div>
@@ -52,8 +53,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <p>
               I collect minimal data - only your email address for user identification and
               authentication. I do not collect, store, or analyze your message content, contacts, or
-              any other personal information. All messages are stored encrypted and cannot be read
-              by me.
+              any other personal information. All messages are stored encrypted in a secure
+              PostgreSQL database and cannot be read by me. Only encrypted ciphertext is stored on
+              servers.
             </p>
           </div>
         </div>
@@ -92,9 +94,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
           <div class='faq-answer'>
             <p>
-              I believe in transparency and plan to open-source parts of my codebase in the future.
-              This will allow security researchers and the community to audit my encryption
-              implementation.
+              Yes! Quasar Contact is completely open source and available on GitHub at
+              <a
+                href='https://github.com/art2url/quasar-contact-app'
+                target='_blank'
+                rel='noopener noreferrer'
+                class='security-email'
+              >
+                github.com/art2url/quasar-contact-app
+              </a>. I believe in transparency and welcome security researchers and the community to
+              audit my encryption implementation. You can review the code, contribute improvements,
+              or report security issues directly on GitHub.
             </p>
           </div>
         </div>
@@ -106,8 +116,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
           <div class='faq-answer'>
             <p>
-              To delete your account, please email me at artem.turlenko@quasar.contact with your
-              account email. I will permanently remove all your data within 48 hours. Self-service
+              To delete your account, please email me at <a
+                href='mailto:artem.turlenko@quasar.contact'
+                class='security-email'>artem.turlenko@quasar.contact</a
+              > with your account email. I will permanently remove all your data within 48 hours. Self-service
               deletion will be added in a future update.
             </p>
           </div>
@@ -120,25 +132,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
           <div class='faq-answer'>
             <p>
-              Your encryption keys are stored locally on your device. If you lose your device,
-              you'll need to reset your password, which automatically generates new encryption keys.
-              However, all previous messages will be permanently lost as they were encrypted with
-              the old keys for security reasons.
-            </p>
-          </div>
-        </div>
-
-        <div class='faq-item'>
-          <div class='faq-question' onclick='toggleFaq(this)'>
-            <span>Do you comply with GDPR?</span>
-            <span class='faq-toggle'>+</span>
-          </div>
-          <div class='faq-answer'>
-            <p>
-              Yes, I am fully GDPR compliant. I collect minimal data (only email addresses) and
-              implement privacy by design. You can manage cookies through your browser settings or
-              my cookie preferences. To access, modify, or delete your account data, please contact
-              me at artem.turlenko@quasar.contact.
+              Your encryption keys are stored locally on your device. If you lose your device or
+              clear your browser cache, you can regenerate new encryption keys through the app's key
+              recovery system. However, all previous messages will be permanently lost as they were
+              encrypted with the old keys for security reasons. For this reason, you can backup your
+              encryption keys as secure .pem files from the settings page.
             </p>
           </div>
         </div>
@@ -151,8 +149,66 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <div class='faq-answer'>
             <p>
               If you discover a security vulnerability, please contact me immediately at
-              artem.turlenko@quasar.contact. I take security issues very seriously and will respond
-              promptly to any reports.
+              <a href='mailto:artem.turlenko@quasar.contact' class='security-email'
+                >artem.turlenko@quasar.contact</a
+              >. I take security issues very seriously and will respond promptly to any reports.
+            </p>
+          </div>
+        </div>
+
+        <div class='faq-item'>
+          <div class='faq-question' onclick='toggleFaq(this)'>
+            <span>Can I send images and files?</span>
+            <span class='faq-toggle'>+</span>
+          </div>
+          <div class='faq-answer'>
+            <p>
+              Yes! You can send images that are automatically compressed and encrypted before
+              transmission. All image attachments are processed client-side to maintain your
+              privacy. The app supports common image formats like PNG, JPEG, and GIF.
+            </p>
+          </div>
+        </div>
+
+        <div class='faq-item'>
+          <div class='faq-question' onclick='toggleFaq(this)'>
+            <span>Does Quasar Contact support emojis?</span>
+            <span class='faq-toggle'>+</span>
+          </div>
+          <div class='faq-answer'>
+            <p>
+              Absolutely! Quasar Contact includes a built-in emoji picker with a wide selection of
+              emojis to make your conversations more expressive and fun. You can access the emoji
+              picker from the chat interface.
+            </p>
+          </div>
+        </div>
+
+        <div class='faq-item'>
+          <div class='faq-question' onclick='toggleFaq(this)'>
+            <span>Can I edit or delete messages?</span>
+            <span class='faq-toggle'>+</span>
+          </div>
+          <div class='faq-answer'>
+            <p>
+              Yes! You can edit or delete your own messages after sending them. When you edit a
+              message, it's re-encrypted with the updated content. Deleted messages are permanently
+              removed from the conversation for all participants. These features work seamlessly
+              with the end-to-end encryption.
+            </p>
+          </div>
+        </div>
+
+        <div class='faq-item'>
+          <div class='faq-question' onclick='toggleFaq(this)'>
+            <span>How do you protect against spam and bots?</span>
+            <span class='faq-toggle'>+</span>
+          </div>
+          <div class='faq-answer'>
+            <p>
+              I use reCAPTCHA and advanced honeypot techniques to protect against automated attacks
+              and spam. The platform also includes rate limiting and other security measures to
+              ensure a safe environment for legitimate users.
             </p>
           </div>
         </div>
@@ -167,6 +223,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               While Quasar Contact already works great on mobile browsers and can be installed as a
               PWA, I'm considering native mobile apps in the future based on user demand and
               feedback.
+            </p>
+          </div>
+        </div>
+
+        <div class='faq-item'>
+          <div class='faq-question' onclick='toggleFaq(this)'>
+            <span>Do you comply with GDPR?</span>
+            <span class='faq-toggle'>+</span>
+          </div>
+          <div class='faq-answer'>
+            <p>
+              Yes, I am fully GDPR compliant. I collect minimal data (only email addresses) and
+              implement privacy by design. You can manage cookies through your browser settings or
+              my cookie preferences. To access, modify, or delete your account data, please contact
+              me at <a href='mailto:artem.turlenko@quasar.contact' class='security-email'
+                >artem.turlenko@quasar.contact</a
+              >.
             </p>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { Injectable, OnDestroy, NgZone } from '@angular/core';
-import { BehaviorSubject, Subject, Subscription, debounceTime, filter } from 'rxjs';
+import { BehaviorSubject, Subject, Subscription, debounceTime, filter, timer } from 'rxjs';
 import { Router, NavigationEnd } from '@angular/router';
 
 import { WebSocketService } from './websocket.service';
@@ -83,7 +83,9 @@ export class NotificationService implements OnDestroy {
       this.ws.isConnected$.subscribe(connected => {
         if (connected) {
           // When reconnected, refresh notifications with longer delay to avoid rate limiting
-          setTimeout(() => this.loadNotifications(), 5000);
+          this.subs.add(
+            timer(5000).subscribe(() => this.loadNotifications())
+          );
         }
       })
     );

@@ -231,10 +231,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <div class='content-text'>
             <h3>Key Features</h3>
             <p>
-              All messages are encrypted using Web Crypto API (AES-GCM) before leaving your device.
-              Server never has access to decryption keys or plaintext messages. Instant message
-              delivery via WebSocket connections. Installable on desktop and mobile devices with
-              offline support.
+              Hybrid RSA-OAEP + AES-GCM encryption via Web Crypto API. Server never sees decryption
+              keys or plaintext. Features: instant WebSocket delivery, image attachments, message
+              editing/deletion, read receipts, and PWA installation with cached message viewing.
             </p>
           </div>
         </div>
@@ -355,8 +354,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <h3>Technology Stack</h3>
             <p>
               Quasar Contact is built using modern web technologies including Angular 18, Node.js,
-              Socket.IO, and MongoDB. The encryption is handled client-side using the Web Crypto
-              API, ensuring maximum security and privacy.
+              Socket.IO, and PostgreSQL with Prisma ORM. Client-side hybrid RSA-OAEP + AES-GCM
+              encryption via Web Crypto API.
             </p>
           </div>
         </div>
@@ -464,7 +463,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <p>
               Privacy is at the core of everything I do. I collect minimal data (only email
               addresses for user identification), implement end-to-end encryption, and maintain a
-              zero-knowledge architecture. I do not sell, share, or analyze your personal data.
+              zero-knowledge architecture. No selling, sharing, or analyzing personal data.
             </p>
           </div>
         </div>

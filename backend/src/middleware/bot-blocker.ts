@@ -238,7 +238,10 @@ export const blockBots = async (
 
   try {
     // Skip bot blocking for whitelisted paths
-    if (WHITELISTED_PATHS.some(whitePath => path.startsWith(whitePath)) || path === '/') {
+    if (
+      WHITELISTED_PATHS.some(whitePath => path.startsWith(whitePath)) ||
+      path === '/'
+    ) {
       return next();
     }
     // Check if IP is blacklisted
@@ -286,14 +289,18 @@ export const blockBots = async (
 
     // Check user agent
     if (isUserAgentBlocked(userAgent)) {
-      console.log(`🤖 BLOCKED BOT: ${userAgent.substring(0, 50)} from ${clientIP}`);
+      console.log(
+        `🤖 BLOCKED BOT: ${userAgent.substring(0, 50)} from ${clientIP}`,
+      );
       res.status(403).end();
       return;
     }
 
     // Apply general rate limiting only for non-static resources
     if (
-      !path.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webmanifest)$/)
+      !path.match(
+        /\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webmanifest)$/,
+      )
     ) {
       try {
         await rateLimiter.consume(clientIP);

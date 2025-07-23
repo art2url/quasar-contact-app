@@ -296,7 +296,16 @@ export class CryptoService {
 
   /* ──────────────────────────────────────────────────────── */
   private buf2b64(buf: ArrayBuffer): string {
-    return btoa(String.fromCharCode(...new Uint8Array(buf)));
+    const bytes = new Uint8Array(buf);
+    const chunkSize = 8192; // Process in 8KB chunks to avoid stack overflow
+    const chunks: string[] = [];
+    
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.slice(i, i + chunkSize);
+      chunks.push(String.fromCharCode(...chunk));
+    }
+    
+    return btoa(chunks.join(''));
   }
 
   private b64ToBuf(b64: string): ArrayBuffer {

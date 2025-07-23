@@ -11,9 +11,7 @@ import env from '../config/env';
 import { authLimiter } from '../config/ratelimits';
 import { validateCSRF } from '../middleware/csrf.middleware';
 import { validateHoneypot } from '../middleware/honeypot-captcha';
-import Message from '../models/Message';
-import PasswordReset from '../models/PasswordReset';
-import User from '../models/User';
+import { prisma } from '../services/database.service';
 import emailService from '../services/email.service';
 import {
   clearAuthCookie,
@@ -80,7 +78,10 @@ router.post(
     body('password')
       .isLength({ min: 6 })
       .withMessage('Password must be at least 6 characters long.'),
-    body('recaptchaToken').optional().isString().withMessage('Invalid reCAPTCHA token.'),
+    body('recaptchaToken')
+      .optional()
+      .isString()
+      .withMessage('Invalid reCAPTCHA token.'),
   ],
   authLimiter,
   validateHoneypot(),
@@ -105,11 +106,15 @@ router.post(
       }
 
       // Optionally check if username or email already exists.
-      const existingUser = await User.findOne({
-        $or: [{ username }, { email }],
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          OR: [{ username }, { email }],
+        },
       });
       if (existingUser) {
-        return res.status(409).json({ message: 'Username or email already taken.' });
+        return res
+          .status(409)
+          .json({ message: 'Username or email already taken.' });
       }
 
       // Hash password
@@ -117,13 +122,14 @@ router.post(
       const passwordHash = await bcrypt.hash(password, salt);
 
       // Create new user with email included.
-      const newUser = new User({
-        username,
-        email,
-        passwordHash,
-        avatarUrl: avatarUrl || '',
+      await prisma.user.create({
+        data: {
+          username,
+          email,
+          passwordHash,
+          avatarUrl: avatarUrl || '',
+        },
       });
-      await newUser.save();
 
       res.status(201).json({ message: 'User registered successfully.' });
     } catch (error) {
@@ -139,7 +145,10 @@ router.post(
   [
     body('username').notEmpty().withMessage('Username or email is required.'),
     body('password').notEmpty().withMessage('Password is required.'),
-    body('recaptchaToken').optional().isString().withMessage('Invalid reCAPTCHA token.'),
+    body('recaptchaToken')
+      .optional()
+      .isString()
+      .withMessage('Invalid reCAPTCHA token.'),
   ],
   authLimiter,
   validateHoneypot(),
@@ -163,8 +172,10 @@ router.post(
       }
 
       // Search for a user by either username or email.
-      const user = await User.findOne({
-        $or: [{ username }, { email: username }],
+      const user = await prisma.user.findFirst({
+        where: {
+          OR: [{ username }, { email: username }],
+        },
       });
       if (!user) {
         // User not found for login attempt
@@ -181,7 +192,7 @@ router.post(
 
       const token = jwt.sign(
         {
-          userId: user._id,
+          userId: user.id,
           username: user.username,
           avatarUrl: user.avatarUrl,
         },
@@ -200,7 +211,7 @@ router.post(
         message: 'Login successful.',
         csrfToken, // Send CSRF token to client
         user: {
-          id: user._id,
+          id: user.id,
           username: user.username,
           avatarUrl: user.avatarUrl,
         },
@@ -217,7 +228,10 @@ router.post(
   '/forgot-password',
   [
     body('email').isEmail().withMessage('Valid email is required.'),
-    body('recaptchaToken').optional().isString().withMessage('Invalid reCAPTCHA token.'),
+    body('recaptchaToken')
+      .optional()
+      .isString()
+      .withMessage('Invalid reCAPTCHA token.'),
   ],
   authLimiter,
   validateHoneypot(),
@@ -241,7 +255,7 @@ router.post(
       }
 
       // Find user by email
-      const user = await User.findOne({ email });
+      const user = await prisma.user.findUnique({ where: { email } });
 
       // Always return success to prevent email enumeration
       if (!user) {
@@ -253,10 +267,12 @@ router.post(
       }
 
       // Check if there's a recent reset request (rate limiting)
-      const recentReset = await PasswordReset.findOne({
-        userId: user._id,
-        createdAt: { $gte: new Date(Date.now() - 5 * 60 * 1000) }, // 5 minutes
-        used: false,
+      const recentReset = await prisma.passwordReset.findFirst({
+        where: {
+          userId: user.id,
+          createdAt: { gte: new Date(Date.now() - 5 * 60 * 1000) }, // 5 minutes
+          used: false,
+        },
       });
 
       if (recentReset) {
@@ -269,14 +285,19 @@ router.post(
 
       // Generate reset token
       const resetToken = crypto.randomBytes(32).toString('hex');
-      const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+      const hashedToken = crypto
+        .createHash('sha256')
+        .update(resetToken)
+        .digest('hex');
 
       // Create password reset record
-      await PasswordReset.create({
-        userId: user._id,
-        email: user.email,
-        token: hashedToken,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
+      await prisma.passwordReset.create({
+        data: {
+          userId: user.id,
+          email: user.email,
+          token: hashedToken,
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
+        },
       });
 
       // Send email with just the token (email service will build the URL)
@@ -290,7 +311,9 @@ router.post(
       });
     } catch (error) {
       console.error('[Forgot Password Error]', error);
-      res.status(500).json({ message: 'Server error during password reset request.' });
+      res
+        .status(500)
+        .json({ message: 'Server error during password reset request.' });
     }
   },
 );
@@ -308,14 +331,18 @@ router.get('/reset-password/validate', async (req: Request, res: Response) => {
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
     // Find valid reset record
-    const resetRecord = await PasswordReset.findOne({
-      token: hashedToken,
-      expiresAt: { $gt: new Date() },
-      used: false,
+    const resetRecord = await prisma.passwordReset.findFirst({
+      where: {
+        token: hashedToken,
+        expiresAt: { gt: new Date() },
+        used: false,
+      },
     });
 
     if (!resetRecord) {
-      return res.status(400).json({ valid: false, message: 'Invalid or expired token.' });
+      return res
+        .status(400)
+        .json({ valid: false, message: 'Invalid or expired token.' });
     }
 
     res.status(200).json({ valid: true });
@@ -344,21 +371,30 @@ router.post(
 
     try {
       // Hash the token to compare with stored version
-      const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+      const hashedToken = crypto
+        .createHash('sha256')
+        .update(token)
+        .digest('hex');
 
       // Find valid reset record
-      const resetRecord = await PasswordReset.findOne({
-        token: hashedToken,
-        expiresAt: { $gt: new Date() },
-        used: false,
+      const resetRecord = await prisma.passwordReset.findFirst({
+        where: {
+          token: hashedToken,
+          expiresAt: { gt: new Date() },
+          used: false,
+        },
       });
 
       if (!resetRecord) {
-        return res.status(400).json({ message: 'Invalid or expired reset token.' });
+        return res
+          .status(400)
+          .json({ message: 'Invalid or expired reset token.' });
       }
 
       // Find the user
-      const user = await User.findById(resetRecord.userId);
+      const user = await prisma.user.findUnique({
+        where: { id: resetRecord.userId },
+      });
       if (!user) {
         return res.status(404).json({ message: 'User not found.' });
       }
@@ -368,19 +404,23 @@ router.post(
       const passwordHash = await bcrypt.hash(password, salt);
 
       // Update user password
-      user.passwordHash = passwordHash;
-      // DO NOT clear public key - password reset should not affect encryption keys
-      // user.publicKeyBundle = null; // REMOVED - this was wrong!
-      await user.save();
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash },
+      });
 
       // Mark reset token as used
-      resetRecord.used = true;
-      await resetRecord.save();
+      await prisma.passwordReset.update({
+        where: { id: resetRecord.id },
+        data: { used: true },
+      });
 
       // Delete all messages for this user (both sent and received)
       // Since messages are encrypted with the old password-derived keys
-      await Message.deleteMany({
-        $or: [{ senderId: user._id }, { receiverId: user._id }],
+      await prisma.message.deleteMany({
+        where: {
+          OR: [{ senderId: user.id }, { receiverId: user.id }],
+        },
       });
 
       // Password reset successful
@@ -390,7 +430,8 @@ router.post(
       await emailService.sendPasswordResetConfirmation(user.email);
 
       res.status(200).json({
-        message: 'Password reset successful. All previous messages have been deleted.',
+        message:
+          'Password reset successful. All previous messages have been deleted.',
       });
     } catch (error) {
       console.error('[Reset Password Error]', error);

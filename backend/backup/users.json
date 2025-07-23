@@ -1,0 +1,67 @@
+[
+  {
+    "_id": "686e37dc31da1cc56c9441bd",
+    "username": "johny",
+    "email": "sendtodev@aol.com",
+    "passwordHash": "$2a$10$.8QiSFJLTiMJ54N8utoSNOwrkom3Zpj.sX5OkItA4mT8arDfhOVSe",
+    "publicKeyBundle": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApSHAMVhDPjBZHJRP8sKSzMTHwLmn4QS9rkQCPoweJxD+1REj2a9qem1Zpmm5nrbcGjBXxO6ngXYOtMIZHx2tqLfIfYAptyEI1KgdRwP2t3H4iNOImWr6vQ8JMClyAxYr/bMDXNa5M+pIsvqw/1G6PK31g8VgVyO2Tu3uM3AVyAI177CEEIoJGDZ+rexIyBOXseKopubimo4QMCtV03HhtSiHS7Z7wnD2dkeKDOLnUw3kMPiEx2wekvWY2hYREGwnsMoi+5YwNSjBYqgtBIzZCTScIgZUp6iqFx7HLfnWVPHUjn53mRBnpKLiWaeFYI/cCU1ChXm2xBLCVsno4GalZwIDAQAB",
+    "avatarUrl": "assets/images/avatars/03.svg",
+    "isKeyMissing": false,
+    "createdAt": "2025-07-09T09:35:24.543Z",
+    "__v": 0,
+    "keyMarkCount": 12,
+    "lastKeyMarkTime": 1752515804232
+  },
+  {
+    "_id": "686e389831da1cc56c9441c0",
+    "username": "Marko",
+    "email": "sentfromdev@aol.com",
+    "passwordHash": "$2a$10$nR0RvoNcq/sk6mQNB6HkQenC9qBSZuYrmPE9sPOoxanwvqfzLk/ye",
+    "publicKeyBundle": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5B1CBEB4rNVbN3ex7EFHAINWLaRuRhN3wdBH6YH2nSegcmsG8VuTaN814f6RtL5MOLVRVkY2RTje/Ratk8U99zOCrBr2mh5SbPi7siV/6+QPtP57kSp53gXvuDehYblmcUfMgrKWJw+mU+ykhaIm75J4nVJlUwXigeHXEZj1MNSz2ATO0qbNXzUcmvXs/usaK/olpEtXH0qslHO3rB8p/bNx6SOdU5wBfa6csz0q/+fbR1T6XNXCviyTIXHVXW+yklI5+NhDuZgBs3NXbhgumB4sINxlP4BRugJy+/xPGnZUynSrxWCKUQeRw6bvsvs2LjgqKbIvCdXeRe6XOHRj0QIDAQAB",
+    "avatarUrl": "assets/images/avatars/07.svg",
+    "isKeyMissing": false,
+    "createdAt": "2025-07-09T09:38:32.974Z",
+    "__v": 0,
+    "keyMarkCount": 5,
+    "lastKeyMarkTime": 1752578892050
+  },
+  {
+    "_id": "686e83bcdd7ba3e24a6f9d85",
+    "username": "Hanz",
+    "email": "sicridis@gmail.com",
+    "passwordHash": "$2a$10$7/RWT6c7JBoB4QtcfJ7Sd.J9lnBf71oYBk0i9MduDvAqEaIPKX7Ge",
+    "publicKeyBundle": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsGGxHjUKxfZjN/2kdof4bhd1YphjYqM7xFoQo+YKNFR59PTJuswvoIAAEg3ZkiO7mEQMk3HOmmBfa//zNgiWnssdLm1dNsfEqRhZtzHR056vqggMSxAVcN7Iys9MBqO4g0aqhbIB6yTw04O3iDAlhFfes6nm3Roehf8vEw1IiQ9OZ0vFA7eLHU0RHRNl7zwCsdG34QMkwX3DL22Vgui20mQr2V1F+eElcFYKy/eRzyXqyb5GjkSkG6X+7rd5yej0vNyhPSKHgVTB3hVIm0+ZV83MXJUpSZHZqJvLSgsB+5wvdzeeF6e3XtluKoHALGZ/smMUU3+3doLJjYfjTRt7CwIDAQAB",
+    "avatarUrl": "assets/images/avatars/02.svg",
+    "isKeyMissing": false,
+    "createdAt": "2025-07-09T14:59:08.372Z",
+    "__v": 0,
+    "keyMarkCount": 6,
+    "lastKeyMarkTime": 1752583000679
+  },
+  {
+    "_id": "6874049c96922931b4db6d6e",
+    "username": "lol",
+    "email": "sex3s@proton.me",
+    "passwordHash": "$2a$10$5LAdCS4g2.0MAnHmCc5WT.yc.BdKADue0l0/NsREVel0Awb/wWBl6",
+    "publicKeyBundle": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyOrdlGoHzc0YFhF7IHkWesm6KvhxfvwSkLbAzI64zX1PHq2AjAs+zV9ggwaeXYvPKJ1sQl5F+uZiaVlxMLZHzEu7l5wbg0CBtzemeKZ3B0IS/m6iJMbtlhH3oEEB+yywNtDwW7NkGUkECwtcHY0Cto/+SAFOA1DbTj7YiskYq309nxsoXLX7aB4U2L+IDz95dWm51LReaf3DpwK5ywZaMw/yYOcKSYMhQklW38OVoVTFlkcHtjYnj4CTdy6DI3g1flBnnOyAC9mcyZFyjbTL0FOsZ2kyubXn6M9Hcevc9D3Ob6HZCAw6TypYhOHZ6F1r/rsO5YqQTGJUsEytlRJCVwIDAQAB",
+    "avatarUrl": "assets/images/avatars/28.svg",
+    "isKeyMissing": false,
+    "lastKeyMarkTime": null,
+    "keyMarkCount": 0,
+    "createdAt": "2025-07-13T19:10:20.989Z",
+    "__v": 0
+  },
+  {
+    "_id": "6874054296922931b4db6d8c",
+    "username": "fuk",
+    "email": "fuk@fuk.fuk",
+    "passwordHash": "$2a$10$EtBJIptXUlvtE8g3e3hzlehLaEQMAln8CBiRPvsv2W8RuMYR64c9y",
+    "publicKeyBundle": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuDoU/kdwOl2ZcTGarF+3JoQn/ADn95wpBwQ3G9W61dTb1RjGwLT6OOVL973/gttJs6bpCG3UKeTKoAf5JWy9I/7xY5/V4paNCqhWCsN1NkOzCFbUwhdw4GYLk2DZQzu15A1eM/SdVUyowuVE4yV9/qVOix6OiI81XEO7SCf3Iic2G0SUMdq2nJZsisVZYrRphfwLXAPhUoATB1COL1DoQYaWutoWlT+CpRf6vmNujVqEqmvvB4kdbq3UnbfUKL724sc7Xja2nAAepJQv427PuBrUzXNPSjz1bAm/W8fmvVGN7QmoIso+nuSUuMPiw3TUsgNPrRIcLXWmUmXBZI+TUQIDAQAB",
+    "avatarUrl": "assets/images/avatars/27.svg",
+    "isKeyMissing": false,
+    "lastKeyMarkTime": null,
+    "keyMarkCount": 0,
+    "createdAt": "2025-07-13T19:13:06.630Z",
+    "__v": 0
+  }
+]

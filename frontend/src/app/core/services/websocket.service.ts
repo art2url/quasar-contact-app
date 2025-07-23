@@ -1,5 +1,5 @@
 import { Injectable, NgZone } from '@angular/core';
-import { BehaviorSubject, Subject, interval, Subscription } from 'rxjs';
+import { BehaviorSubject, Subject, interval, Subscription, timer } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '@environments/environment';
 
@@ -40,9 +40,9 @@ export class WebSocketService {
   };
 
   // Connection management
-  private reconnectionTimer: ReturnType<typeof setTimeout> | null = null;
+  private reconnectionTimer?: Subscription;
   private healthCheckInterval: Subscription | null = null;
-  private connectionTimeout: ReturnType<typeof setTimeout> | null = null;
+  private connectionTimeout: Subscription | null = null;
 
   // Message handlers tracking
   private messageHandlers: ((msg: IncomingSocketMessage) => void)[] = [];
@@ -327,7 +327,7 @@ export class WebSocketService {
    */
   private scheduleReconnection(): void {
     if (this.reconnectionTimer) {
-      clearTimeout(this.reconnectionTimer);
+      this.reconnectionTimer.unsubscribe();
     }
 
     // Check if user is authenticated (JWT is now in HttpOnly cookies)
@@ -351,8 +351,8 @@ export class WebSocketService {
       })`
     );
 
-    this.reconnectionTimer = setTimeout(() => {
-      this.reconnectionTimer = null;
+    this.reconnectionTimer = timer(backoffDelay).subscribe(() => {
+      this.reconnectionTimer = undefined;
       this.connectionState.reconnectAttempts++;
 
       // Give up after too many attempts
@@ -365,24 +365,24 @@ export class WebSocketService {
         `Attempting reconnection (attempt ${this.connectionState.reconnectAttempts})`
       );
       this.connect(); // Uses cookies for auth
-    }, backoffDelay);
+    });
   }
 
   /**
    * Connection timeout handling
    */
   private startConnectionTimeout(): void {
-    this.connectionTimeout = setTimeout(() => {
+    this.connectionTimeout = timer(15000).subscribe(() => {
       if (!this.connectionState.connected) {
         logWs('Connection timeout, forcing cleanup');
         this.onConnectionError(new Error('Connection timeout'));
       }
-    }, 15000); // 15 second timeout
+    }); // 15 second timeout
   }
 
   private clearConnectionTimeout(): void {
     if (this.connectionTimeout) {
-      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout.unsubscribe();
       this.connectionTimeout = null;
     }
   }
@@ -453,8 +453,8 @@ export class WebSocketService {
     this.clearConnectionTimeout();
 
     if (this.reconnectionTimer) {
-      clearTimeout(this.reconnectionTimer);
-      this.reconnectionTimer = null;
+      this.reconnectionTimer.unsubscribe();
+      this.reconnectionTimer = undefined;
     }
 
     if (this.socket) {
@@ -697,8 +697,8 @@ export class WebSocketService {
     logWs('Force reconnection requested');
     this.disconnect();
 
-    setTimeout(() => {
+    timer(1000).subscribe(() => {
       this.connect(); // Uses cookies for auth
-    }, 1000);
+    });
   }
 }

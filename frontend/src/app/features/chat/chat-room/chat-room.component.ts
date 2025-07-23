@@ -1,50 +1,42 @@
+import { CommonModule } from '@angular/common';
 import {
+  AfterViewChecked,
+  AfterViewInit,
+  ChangeDetectorRef,
   Component,
   ElementRef,
-  ViewChild,
-  AfterViewChecked,
-  OnInit,
-  OnDestroy,
   HostListener,
-  AfterViewInit,
   Injectable,
-  ChangeDetectorRef,
-  NgZone,
+  OnDestroy,
+  OnInit,
+  ViewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-  HammerModule,
   HAMMER_GESTURE_CONFIG,
   HammerGestureConfig,
+  HammerModule,
 } from '@angular/platform-browser';
-import { Subscription } from 'rxjs';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import * as Hammer from 'hammerjs';
+import { Subject } from 'rxjs';
 
-import { MatIconModule } from '@angular/material/icon';
+import { ChatMsg } from '@models/chat.model';
+import { CompressedImage } from '@shared/components/image-attachment/image-attachment.component';
+import { MessageGroup } from './services/chat-message.service';
+
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
-import { ChatSessionService } from '@services/chat-session.service';
-import { ChatMsg } from '@models/chat.model';
-import { WebSocketService } from '@services/websocket.service';
-import { LoadingService } from '@services/loading.service';
-import { NotificationService } from '@services/notification.service';
-
-// Import the cache info banner component
+// Import components
 import { CacheInfoBannerComponent } from '@shared/components/cache-info-banner/cache-info-banner.component';
+import { EmojiPickerComponent } from '@shared/components/emoji-picker/emoji-picker.component';
+import { ImageAttachmentComponent } from '@shared/components/image-attachment/image-attachment.component';
 
-// Import updated date utilities
-import { formatMessageTime, formatDateHeader, getStartOfDay } from '@utils/date.util';
-
-// Interface for grouped messages
-interface MessageGroup {
-  date: string;
-  dateTimestamp: number;
-  messages: ChatMsg[];
-}
+// Import the facade service that handles all logic
+import { ChatRoomFacadeService } from './services/chat-room-facade.service';
 
 // Custom Hammer configuration
 @Injectable()
@@ -68,1117 +60,177 @@ export class MyHammerConfig extends HammerGestureConfig {
     MatProgressSpinnerModule,
     HammerModule,
     CacheInfoBannerComponent,
+    EmojiPickerComponent,
+    ImageAttachmentComponent,
   ],
   providers: [
-    ChatSessionService,
     {
       provide: HAMMER_GESTURE_CONFIG,
       useClass: MyHammerConfig,
     },
+    ChatRoomFacadeService,
   ],
   templateUrl: './chat-room.component.html',
   styleUrls: ['./chat-room.component.css'],
   encapsulation: ViewEncapsulation.None,
 })
-export class ChatRoomComponent
-  implements OnInit, AfterViewChecked, AfterViewInit, OnDestroy
-{
+export class ChatRoomComponent implements OnInit, AfterViewInit, AfterViewChecked, OnDestroy {
   @ViewChild('messageContainer') private messageContainer!: ElementRef;
-  private subs = new Subscription();
   @ViewChild('messageInput') private messageInput!: ElementRef;
   @ViewChild('editInput') private editInput!: ElementRef;
-
-  // More reliable swipe detection for mobile
-  @HostListener('swiperight')
-  onSwipeRight() {
-    this.navigateToList();
-  }
-
-  receiverId!: string;
-  newMessage = '';
-  partnerAvatar?: string;
-
-  // Better online status tracking
-  isPartnerOnline = false;
-
-  editing: ChatMsg | null = null;
-  editDraft = '';
-
-  // Just use a single property for typing indicator state
-  isPartnerTyping = false;
-
-  // Better avatar handling with fallback
-  myAvatar = localStorage.getItem('myAvatar') || 'assets/images/avatars/01.svg';
-
-  private reported = new Set<string>();
-
-  // Add initialization tracking
-  private isInitialized = false;
-
-  // Track if we should show the cache info banner
-  showCacheInfoBanner = false;
-
-  // Track if messages have been marked as read to avoid duplicate calls
-  private hasMarkedMessagesAsRead = false;
-
-  // New scroll management properties with scroll direction tracking
-  private isUserAtBottom = true;
-  private shouldAutoScroll = true;
-  showScrollToBottomButton = false;
-  newMessagesCount = 0;
-  private lastMessageCount = 0;
-  private scrollTimeout: NodeJS.Timeout | null = null;
-  private lastScrollTop = 0; // ADDED: Track scroll direction
-
-  // Grouped messages for date separation
-  messageGroups: MessageGroup[] = [];
-
-  // Loading state tracking
-  isLoadingMessages = true;
-  private hasInitiallyScrolled = false;
   
-  // Flags for Angular hook-based operations (instead of setTimeout)
-  private needsSecondaryEventEmit = false;
-  private needsNotificationRefresh = false;
+  private destroy$ = new Subject<void>();
 
+  // All component logic is delegated to the facade service
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    public chat: ChatSessionService,
-    private ws: WebSocketService,
-    private loadingService: LoadingService,
     private cdr: ChangeDetectorRef,
-    private ngZone: NgZone,
-    private notificationService: NotificationService
-  ) {
+    public facade: ChatRoomFacadeService
+  ) {}
+
+  // Expose facade properties for template binding
+  get chat() { return this.facade.chat; }
+  get isPartnerOnline() { return this.facade.isPartnerOnline; }
+  get isPartnerTyping() { return this.facade.isPartnerTyping; }
+  get showCacheInfoBanner() { return this.facade.showCacheInfoBanner; }
+  get isLoadingMessages() { return this.facade.isLoadingMessages; }
+  get messageGroups() { return this.facade.messageGroups; }
+  get newMessagesCount() { return this.facade.newMessagesCount; }
+  get showScrollToBottomButton() { return this.facade.showScrollToBottomButton; }
+  get newMessage() { return this.facade.newMessage; }
+  set newMessage(value: string) { this.facade.newMessage = value; }
+  get editing() { return this.facade.editing; }
+  get editDraft() { return this.facade.editDraft; }
+  set editDraft(value: string) { this.facade.editDraft = value; }
+  get attachedImage() { return this.facade.attachedImage; }
+
+  // Host listeners delegate to facade
+  @HostListener('swiperight')
+  onSwipeRight() {
+    this.facade.navigateToList();
   }
 
   @HostListener('window:resize')
   onResize() {
-    if (this.isUserAtBottom) {
-      this.scrollToBottom(false);
-    }
+    this.facade.onResize(this.messageContainer?.nativeElement);
   }
 
   @HostListener('window:focus')
   onWindowFocus() {
-    // When user returns to the app, check if partner key status changed
-    this.chat.manuallyCheckKeyStatus();
+    this.facade.onWindowFocus();
   }
 
   @HostListener('window:visibilitychange')
   onVisibilityChange() {
-    // When tab becomes visible again, check for key changes
-    if (!document.hidden) {
-      this.chat.manuallyCheckKeyStatus();
-    }
+    this.facade.onVisibilityChange();
   }
 
+  // Lifecycle methods
   async ngOnInit(): Promise<void> {
-    document.body.classList.add('chat-room-page');
-    
-    // Reset the flag for this chat room
-    this.hasMarkedMessagesAsRead = false;
-
-    this.receiverId = this.route.snapshot.paramMap.get('id')!;
-
-    if (!this.receiverId) {
-      this.navigateToList();
+    const receiverId = this.route.snapshot.paramMap.get('id');
+    if (!receiverId) {
+      this.router.navigate(['/chat']);
       return;
     }
-
-    // Emit chat room entered event for header badge updates
-    this.emitChatRoomEnteredEvent();
-
-
-    // Initialize once only
-    try {
-      await this.initializeOnce();
-    } catch {
-      this.loadingService.hide();
-      this.navigateToList();
-    }
+    await this.facade.initialize(receiverId);
   }
 
-  /**
-   * Emit event when entering chat room for immediate header updates
-   */
-  /**
-   * Emit event when entering chat room for immediate header updates
-   */
-  private emitChatRoomEnteredEvent(): void {
-    // Don't mark messages as read immediately - wait until messages are loaded and visible
-    // Just emit the chat room entered event for now
-    const emitEvent = () => {
-      window.dispatchEvent(
-        new CustomEvent('chat-room-entered', {
-          detail: { roomId: this.receiverId },
-        })
-      );
-    };
-
-    // Emit immediately
-    emitEvent();
-  }
-
-  /**
-   * Mark messages as read when they are actually loaded and visible to the user
-   */
-  private markMessagesAsReadWhenVisible(): void {
-    // Mark messages as read in the notification service
-    this.notificationService.markUserMessagesAsRead(this.receiverId);
-
-    // Don't emit custom events - they cause duplicate markUserMessagesAsRead calls
-    // The notification service handles the state updates directly
-  }
-
-  /**
-   * Single initialization method that prevents multiple calls
-   */
-  private async initializeOnce(): Promise<void> {
-    if (this.isInitialized) {
-      return;
-    }
-
-    this.loadingService.show('chat-room-init');
-
-    try {
-      // Initialize chat session ONCE
-      await this.chat.init(this.receiverId);
-      
-
-      // Subscribe to loading state first
-      this.subs.add(
-        this.chat.messagesLoading$.subscribe(loading => {
-          this.isLoadingMessages = loading;
-
-          // Only allow autoscroll after initial loading is complete
-          if (!loading && !this.hasInitiallyScrolled) {
-            this.hasInitiallyScrolled = true;
-            this.shouldAutoScroll = true;
-
-            // Scroll to bottom after a brief delay to ensure DOM is updated
-            setTimeout(() => {
-              this.scrollToBottom(true);
-            }, 100);
-
-            // Don't mark messages as read just because they loaded
-            // Only mark as read when user actually sees them (after scroll)
-          }
-        })
-      );
-
-      // Subscribe to message updates ONCE
-      this.subs.add(
-        this.chat.messages$.subscribe(messages => {
-          // Check if we should show the cache info banner
-          this.checkForCacheIssues(messages);
-
-          // Group messages by date
-          this.groupMessagesByDate(messages);
-
-          // Only handle message updates if not in loading state
-          if (!this.isLoadingMessages) {
-            this.handleMessagesUpdate(messages);
-          }
-        })
-      );
-
-      // Set up typing indicator subscription ONCE
-      this.setupTypingIndicatorSubscription();
-
-      // Set up connection status subscription ONCE
-      this.subs.add(
-        this.ws.isConnected$.subscribe(() => {
-          // Connection status changed
-        })
-      );
-
-      // Enhanced partner online status tracking
-      this.setupOnlineStatusTracking();
-
-      // Get partner's avatar ONCE
-      this.subs.add(
-        this.chat.theirAvatar$.subscribe(avatar => {
-          this.partnerAvatar = avatar;
-        })
-      );
-
-      // DEBUG: Monitor observable states for recovery UI debugging
-      this.subs.add(
-        this.chat.keyLoading$.subscribe(() => {
-          // Key loading state changed
-        })
-      );
-      
-      this.subs.add(
-        this.chat.myPrivateKeyMissing$.subscribe(missing => {
-          if (missing === true && !this.chat.keyLoading$.value) {
-            // Only mark keys as missing if this is genuine key loss, not artificial blocking
-            if (!this.chat.isArtificialKeyMissingState) {
-              this.chat.ensureKeysMissingFlagSet();
-            }
-            
-            // Force change detection
-            setTimeout(() => this.cdr.detectChanges(), 0);
-          }
-        })
-      );
-
-      /* Enhanced auto-mark messages as read and update header counter */
-      this.subs.add(
-        this.chat.messages$.subscribe({
-          next: msgs => {
-            // Only process read receipts if not loading
-            if (!this.isLoadingMessages) {
-              // Mark unread messages from partner as read
-              const unreadFromPartner = msgs.filter(
-                m => m.sender !== 'You' && !m.readAt && m.id && !this.reported.has(m.id)
-              );
-
-              if (unreadFromPartner.length > 0) {
-
-                unreadFromPartner.forEach(m => {
-                  this.ws.markMessageRead(m.id!);
-                  this.reported.add(m.id!);
-                });
-
-                // Messages are now handled directly without custom events
-              }
-            }
-          },
-          error: err => console.error('Error in messages subscription:', err),
-        })
-      );
-
-      this.isInitialized = true;
-    } finally {
-      this.loadingService.hide();
-    }
-  }
-
-  /**
-   * Group messages by date for better organization
-   */
-  private groupMessagesByDate(messages: ChatMsg[]): void {
-    const groups: MessageGroup[] = [];
-    let currentGroup: MessageGroup | null = null;
-
-    messages.forEach(message => {
-      const messageTimestamp = message.ts;
-      const dayStart = getStartOfDay(messageTimestamp);
-
-      // If this is a new day or first message, create a new group
-      if (!currentGroup || currentGroup.dateTimestamp !== dayStart) {
-        currentGroup = {
-          date: formatDateHeader(messageTimestamp),
-          dateTimestamp: dayStart,
-          messages: [],
-        };
-        groups.push(currentGroup);
-      }
-
-      // Add message to current group
-      currentGroup.messages.push(message);
+  ngAfterViewInit(): void {
+    // Set up change detection callback
+    this.facade.setChangeDetectionCallback(() => {
+      this.cdr.detectChanges();
     });
 
-    this.messageGroups = groups;
+    if (this.messageContainer?.nativeElement && this.messageInput?.nativeElement) {
+      this.facade.initializeView(
+        this.messageContainer.nativeElement,
+        this.messageInput.nativeElement,
+        this.editInput?.nativeElement
+      );
+    }
   }
 
-  /**
-   * Handle messages updates with intelligent scrolling (only when not loading)
-   */
-  private handleMessagesUpdate(messages: ChatMsg[]): void {
-    if (this.isLoadingMessages) {
-      return;
+  ngAfterViewChecked(): void {
+    // Auto-scroll logic handled by facade - intentionally minimal for optimal mobile performance
+    if (this.messageContainer?.nativeElement) {
+      this.facade.handleViewChecked(this.messageContainer.nativeElement);
     }
-
-    const currentMessageCount = messages.length;
-    const hasNewMessages = currentMessageCount > this.lastMessageCount;
-
-    if (hasNewMessages) {
-      const newMessageCount = currentMessageCount - this.lastMessageCount;
-
-      // If user is not at bottom, increment new messages counter
-      if (!this.isUserAtBottom && this.lastMessageCount > 0) {
-        this.newMessagesCount += newMessageCount;
-        // REMOVED: this.showScrollToBottomButton = true;
-        // Let handleScroll method control button visibility based on scroll position
-      } else {
-        // User is at bottom, reset counter and auto-scroll
-        this.newMessagesCount = 0;
-        this.shouldAutoScroll = true;
-        setTimeout(() => this.scrollToBottom(true), 0);
-      }
-    }
-
-    this.lastMessageCount = currentMessageCount;
   }
 
-  /**
-   * Enhanced partner online status tracking
-   */
-  private setupOnlineStatusTracking(): void {
-
-    // Subscribe to main online users list
-    this.subs.add(
-      this.ws.onlineUsers$.subscribe(onlineUsers => {
-        const wasOnline = this.isPartnerOnline;
-        this.isPartnerOnline = Array.isArray(onlineUsers)
-          ? onlineUsers.includes(this.receiverId)
-          : false;
-
-        if (wasOnline !== this.isPartnerOnline) {
-          // Partner online status changed
-        }
-      })
+  ngOnDestroy(): void {
+    this.facade.cleanup(
+      this.messageContainer?.nativeElement,
+      this.messageInput?.nativeElement
     );
-
-    // Subscribe to individual user online events
-    this.subs.add(
-      this.ws.userOnline$.subscribe(userId => {
-        if (userId === this.receiverId) {
-          this.isPartnerOnline = true;
-        }
-      })
-    );
-
-    // Subscribe to individual user offline events
-    this.subs.add(
-      this.ws.userOffline$.subscribe(userId => {
-        if (userId === this.receiverId) {
-          this.isPartnerOnline = false;
-        }
-      })
-    );
-
-    // Handle WebSocket disconnection
-    this.subs.add(
-      this.ws.isConnected$.subscribe(connected => {
-        if (!connected) {
-          this.isPartnerOnline = false;
-        } else {
-          // When reconnected, check current status
-          const currentStatus = this.ws.isUserOnline(this.receiverId);
-          this.isPartnerOnline = currentStatus;
-        }
-      })
-    );
-
-    // Set initial status
-    this.isPartnerOnline = this.ws.isUserOnline(this.receiverId);
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  /**
-   * Set up subscription to typing indicator with proper change detection
-   */
-  private setupTypingIndicatorSubscription(): void {
-    this.subs.add(
-      this.chat.partnerTyping$.subscribe(isTyping => {
-        // Use NgZone to ensure Angular detects the change
-        this.ngZone.run(() => {
-          this.isPartnerTyping = isTyping;
-        });
-      })
-    );
-  }
-
-  /* Improved typing event sender with throttling */
-  private typingThrottle: ReturnType<typeof setTimeout> | null = null;
-  private lastTypingEvent = 0;
-  private readonly TYPING_THROTTLE = 1000; // ms
-
-  onUserTyping(): void {
-    const now = Date.now();
-
-    // Only send typing event if enough time has passed since last one
-    if (now - this.lastTypingEvent > this.TYPING_THROTTLE) {
-      this.lastTypingEvent = now;
-
-      this.chat.sendTyping();
-
-      // Clear any existing throttle
-      if (this.typingThrottle) {
-        clearTimeout(this.typingThrottle);
-      }
-
-      // Set throttle to prevent sending too many events
-      this.typingThrottle = setTimeout(() => {
-        this.typingThrottle = null;
-      }, this.TYPING_THROTTLE);
+  // Event handlers - all delegate to facade
+  handleScroll(): void {
+    if (this.messageContainer?.nativeElement) {
+      this.facade.handleScroll(this.messageContainer.nativeElement);
     }
-  }
-
-  ngAfterViewInit() {
-    // Set up input event listeners for typing detection
-    setTimeout(() => {
-      if (this.messageInput?.nativeElement) {
-        // Use more reliable input events to detect typing
-        this.messageInput.nativeElement.addEventListener(
-          'input',
-          this.handleTyping.bind(this)
-        );
-        this.messageInput.nativeElement.addEventListener(
-          'keydown',
-          this.handleKeydown.bind(this)
-        );
-        
-        // Re-check partner key status when user focuses on chat input
-        this.messageInput.nativeElement.addEventListener(
-          'focus',
-          this.handleChatInputFocus.bind(this)
-        );
-      }
-    }, 100);
-
-    // Set up scroll listener for intelligent scrolling
-    this.setupScrollListener();
-    
-    // Handle delayed operations using Angular hook instead of setTimeout
-    this.handleDelayedOperations();
-  }
-  
-  /**
-   * Handle delayed operations using Angular lifecycle instead of setTimeout
-   */
-  private handleDelayedOperations(): void {
-    // Secondary event emit (replaces setTimeout(emitEvent, 300))
-    if (this.needsSecondaryEventEmit) {
-      this.ngZone.runOutsideAngular(() => {
-        // Use requestAnimationFrame for better performance than setTimeout
-        requestAnimationFrame(() => {
-          window.dispatchEvent(
-            new CustomEvent('chat-room-entered', {
-              detail: { roomId: this.receiverId },
-            })
-          );
-          // Messages are now handled directly without custom events
-        });
-      });
-      this.needsSecondaryEventEmit = false;
-    }
-    
-    // Notification refresh (replaces setTimeout for notification refresh)
-    if (this.needsNotificationRefresh) {
-      this.ngZone.runOutsideAngular(() => {
-        // Use requestAnimationFrame chain for delayed execution
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            this.ngZone.run(() => {
-              this.notificationService.refreshNotificationsImmediate();
-            });
-          });
-        });
-      });
-      this.needsNotificationRefresh = false;
-    }
-    
-  }
-
-  /**
-   * Set up scroll listener to track user position
-   */
-  private setupScrollListener(): void {
-    setTimeout(() => {
-      if (this.messageContainer?.nativeElement) {
-        this.messageContainer.nativeElement.addEventListener(
-          'scroll',
-          this.handleScroll.bind(this),
-          { passive: true }
-        );
-      }
-    }, 200);
-  }
-
-  /**
-   * Enhanced scroll detection with stricter button visibility rules
-   */
-  private handleScroll(): void {
-    if (!this.messageContainer?.nativeElement || this.isLoadingMessages) return;
-
-    const container = this.messageContainer.nativeElement;
-    const scrollTop = container.scrollTop;
-    const scrollHeight = container.scrollHeight;
-    const clientHeight = container.clientHeight;
-
-    // Track scroll direction for more responsive button behavior
-    const scrollDirection = scrollTop > this.lastScrollTop ? 'down' : 'up';
-    this.lastScrollTop = scrollTop;
-
-    // More intelligent detection
-    const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-    const isNearBottom = distanceFromBottom <= 50; // Within 50px of bottom
-
-    // FIXED: Show button ONLY when user scrolls up significantly
-    const shouldShowButton = scrollDirection === 'up' && distanceFromBottom > 150;
-
-    // Update user position
-    this.isUserAtBottom = isNearBottom;
-
-    // Show/hide scroll to bottom button
-    this.showScrollToBottomButton = shouldShowButton;
-
-    // Reset new messages counter if user scrolled to bottom
-    if (isNearBottom && this.newMessagesCount > 0) {
-      this.newMessagesCount = 0;
-    }
-
-    // Mark messages as read when user manually scrolls to bottom
-    if (isNearBottom && !this.hasMarkedMessagesAsRead) {
-      this.hasMarkedMessagesAsRead = true; // Set immediately to prevent multiple calls
-      setTimeout(() => {
-        this.markMessagesAsReadWhenVisible();
-      }, 500); // Wait a bit to ensure user actually sees the messages
-    }
-  }
-
-  private handleTyping(): void {
-    const now = Date.now();
-
-    // Only send typing event if enough time has passed
-    if (now - this.lastTypingEvent > this.TYPING_THROTTLE) {
-      this.lastTypingEvent = now;
-
-      // Send typing event to chat session
-      this.chat.sendTyping();
-    }
-  }
-
-  private handleKeydown(event: KeyboardEvent): void {
-    // Send typing indicator on most keystrokes, but not on special keys
-    if (
-      !event.ctrlKey &&
-      !event.metaKey &&
-      event.key !== 'Enter' &&
-      event.key !== 'Tab' &&
-      event.key !== 'Escape'
-    ) {
-      this.handleTyping();
-    }
-  }
-
-  // Only auto-scroll after initial loading is complete
-  ngAfterViewChecked() {
-    // Only auto-scroll if conditions are met and not loading
-    if (this.shouldAutoScroll && this.isUserAtBottom && !this.isLoadingMessages) {
-      this.scrollToBottom(false);
-      this.shouldAutoScroll = false;
-    }
-  }
-
-  // For normal text input
-  onKeydownEnter(event: Event): void {
-    const kbdEvent = event as KeyboardEvent;
-    if (kbdEvent.ctrlKey || kbdEvent.metaKey) {
-      return;
-    }
-
-    event.preventDefault();
-    this.send();
-  }
-
-  onKeydownCtrlEnter(event: Event): void {
-    event.preventDefault();
-    this.newMessage = this.newMessage + '\n';
-  }
-
-  onKeydownMetaEnter(event: Event): void {
-    event.preventDefault();
-    this.newMessage = this.newMessage + '\n';
-  }
-
-  // For edit mode
-  onKeydownEnterEdit(event: Event): void {
-    const kbdEvent = event as KeyboardEvent;
-    if (kbdEvent.ctrlKey || kbdEvent.metaKey) {
-      return;
-    }
-
-    event.preventDefault();
-    this.confirmEdit();
-  }
-
-  onKeydownCtrlEnterEdit(event: Event): void {
-    event.preventDefault();
-    this.editDraft = this.editDraft + '\n';
-  }
-
-  onKeydownMetaEnterEdit(event: Event): void {
-    event.preventDefault();
-    this.editDraft = this.editDraft + '\n';
-  }
-
-  send(): void {
-    if (!this.newMessage || !this.newMessage.trim()) {
-      return;
-    }
-
-    // Store message content before sending
-    const messageContent = this.newMessage;
-
-    // Clear input immediately for better UX
-    this.newMessage = '';
-
-    // Auto resize the textarea
-    if (this.messageInput?.nativeElement) {
-      this.messageInput.nativeElement.value = '';
-      this.autoResizeTextarea(this.messageInput.nativeElement);
-    }
-
-    // Auto-scroll to bottom when user sends message
-    this.isUserAtBottom = true;
-    this.shouldAutoScroll = true;
-    this.newMessagesCount = 0;
-    this.showScrollToBottomButton = false;
-
-    // Send message
-    this.chat
-      .send('', messageContent)
-      .then(() => {
-        // Re-focus the input after sending
-        setTimeout(() => {
-          if (this.messageInput?.nativeElement) {
-            this.messageInput.nativeElement.focus();
-          }
-        }, 0);
-
-        // Scroll to bottom after sending
-        setTimeout(() => this.scrollToBottom(true), 0);
-      })
-      .catch(error => {
-        console.error('[ChatRoom] Error sending message:', error);
-
-        // Handle send failure - potentially restore the message
-        this.newMessage = messageContent;
-      });
   }
 
   onType(): void {
-    this.handleTyping();
-
-    // Auto-resize the textarea
     if (this.messageInput?.nativeElement) {
-      this.autoResizeTextarea(this.messageInput.nativeElement);
+      this.facade.onType(this.messageInput.nativeElement);
     }
   }
 
-  autoResizeTextarea(textarea: HTMLTextAreaElement) {
-    // Reset height to auto to get the correct scrollHeight
-    textarea.style.height = 'auto';
-
-    // Set new height based on scrollHeight (with a max height)
-    const newHeight = Math.min(textarea.scrollHeight, 100);
-    textarea.style.height = `${newHeight}px`;
-  }
-
-  trackByTs(_: number, m: { ts: number }) {
-    return m.ts;
-  }
-
-  /**
-   * Track function for message groups
-   */
-  trackByDate(_: number, group: MessageGroup): number {
-    return group.dateTimestamp;
-  }
-
-  /**
-   * Format message timestamp for display using updated utility
-   */
-  formatMessageTime(timestamp: number): string {
-    return formatMessageTime(timestamp);
-  }
-
-  /**
-   * Get full timestamp for tooltip
-   */
-  getFullTimestamp(timestamp: number): string {
-    return new Date(timestamp).toLocaleString();
-  }
-
-  /**
-   * Get avatar URL for a message with proper fallback
-   */
-  getMessageAvatar(message: ChatMsg): string {
-    // For messages sent by me, use my avatar
-    if (message.sender === 'You') {
-      return message.avatarUrl || this.myAvatar || 'assets/images/avatars/01.svg';
-    }
-
-    // For messages from partner, use their avatar
-    return message.avatarUrl || this.partnerAvatar || 'assets/images/avatars/01.svg';
-  }
-
-  /**
-   * Get partner's avatar with fallback
-   */
-  getPartnerAvatar(): string {
-    return this.partnerAvatar || 'assets/images/avatars/01.svg';
-  }
-
-  /**
-   * Handle broken avatar images
-   */
-  onAvatarError(event: Event): void {
-    const img = event.target as HTMLImageElement;
-    img.src = 'assets/images/avatars/01.svg';
-  }
-
-  /**
-   * Handle message avatar errors
-   */
-  onMessageAvatarError(event: Event, message: ChatMsg): void {
-    const img = event.target as HTMLImageElement;
-
-    // Set fallback based on message sender
-    if (message.sender === 'You') {
-      img.src = this.myAvatar;
-    } else {
-      img.src = this.getPartnerAvatar();
+  onTypeEdit(): void {
+    if (this.editInput?.nativeElement) {
+      this.facade.onTypeEdit(this.editInput.nativeElement);
     }
   }
 
-  /**
-   * Check if we should show the cache info banner
-   */
-  private checkForCacheIssues(messages: ChatMsg[]): void {
-    // Don't show if user has already dismissed it
-    if (localStorage.getItem('cacheInfoDismissed') === 'true') {
-      return;
-    }
-
-    // Check if there are any messages sent by me that show cache-related text
-    const hasUnreadableSentMessages = messages.some(
-      m =>
-        m.sender === 'You' &&
-        (m.text.includes('💬 Message sent') || m.text.includes('🔒 Encrypted message'))
-    );
-
-    if (hasUnreadableSentMessages && !this.showCacheInfoBanner) {
-      this.showCacheInfoBanner = true;
-    }
-  }
-
-  /**
-   * Check if a message is unreadable (cached message that can't be decrypted)
-   */
-  isMessageUnreadable(message: ChatMsg): boolean {
-    if (message.sender !== 'You') return false;
-
-    return (
-      message.text.includes('💬 Message sent') ||
-      message.text.includes('🔒 Encrypted message (sent by you)')
-    );
-  }
-
-  /**
-   * Check if a message is encrypted (from partner)
-   *
-   * NOTE: This uses text matching which can have false positives if users
-   * type the exact encrypted message text. For 100% accuracy, backend should
-   * provide explicit encryption status flags.
-   */
-  isMessageEncrypted(message: ChatMsg): boolean {
-    if (message.sender === 'You') return false;
-
-    // Check for exact encrypted message text
-    // Most users won't type this exact system message, so risk is minimal
-    const isEncryptedText = message.text === '🔒 Encrypted message (from partner)';
-
-    return isEncryptedText;
-
-    // TODO: Replace with proper backend flag when available:
-    // return message.decryptionFailed === true;
-  }
-
-  /**
-   * Check if a message can be edited/deleted
-   */
-  canEditMessage(message: ChatMsg): boolean {
-    return (
-      message.sender === 'You' && !message.deletedAt && !this.isMessageUnreadable(message)
-    );
-  }
-
-  /**
-   * Scroll to bottom button handler
-   */
-  scrollToBottomClick(): void {
-    this.isUserAtBottom = true;
-    this.shouldAutoScroll = true;
-    this.newMessagesCount = 0;
-    this.showScrollToBottomButton = false;
-    this.scrollToBottom(true, true); // Mark as read when user explicitly scrolls
-
-    // Messages are now handled directly without custom events
-  }
-
-  /**
-   * Navigate back to chat list with explicit handling for mobile
-   */
-  navigateToList(event?: Event): void {
-    if (event) {
-      event.preventDefault();
-    }
-
-    this.loadingService.show('navigation');
-
-    // Use timeout to ensure the navigation happens after current event cycle
-    setTimeout(() => {
-      this.router
-        .navigate(['/chat'])
-        .then(() => {
-          this.loadingService.hide();
-        })
-        .catch(err => {
-          console.error('Navigation to chat list failed:', err);
-          this.loadingService.hide();
-
-          // Fallback for stubborn mobile browsers
-          window.location.href = '/chat';
-        });
-    }, 50);
-  }
-
-  /**
-   * Improved scroll to bottom with smooth scrolling option
-   */
-  private scrollToBottom(smooth = false, markAsRead = false) {
-    try {
-      const el = this.messageContainer?.nativeElement;
-      if (el) {
-        if (smooth) {
-          el.scrollTo({
-            top: el.scrollHeight,
-            behavior: 'smooth',
-          });
-        } else {
-          el.scrollTop = el.scrollHeight;
-        }
-
-        // Clear any pending scroll timeout
-        if (this.scrollTimeout) {
-          clearTimeout(this.scrollTimeout);
-          this.scrollTimeout = null;
-        }
-
-        // Only mark messages as read if explicitly requested (user action)
-        if (markAsRead && !this.hasMarkedMessagesAsRead) {
-          this.hasMarkedMessagesAsRead = true; // Set immediately to prevent multiple calls
-          setTimeout(() => {
-            this.markMessagesAsReadWhenVisible();
-          }, 300); // Wait for scroll to complete
-        }
-      }
-    } catch (error) {
-      console.error('Error scrolling to bottom:', error);
-    }
-  }
-
-  beginEdit(m: ChatMsg) {
-    // Check if message can be edited
-    if (!this.canEditMessage(m)) {
-      alert('Cannot edit this message - original text is no longer available.');
-      return;
-    }
-
-    this.editing = m;
-    this.editDraft = m.text;
-
-    // Focus edit input after a short delay
-    setTimeout(() => {
-      if (this.editInput?.nativeElement) {
-        this.editInput.nativeElement.focus();
-        this.autoResizeTextarea(this.editInput.nativeElement);
-      }
-    }, 0);
-  }
-
-  cancelEdit() {
-    this.editing = null;
-    this.editDraft = '';
-
-    // Re-focus the main input
-    setTimeout(() => {
-      if (this.messageInput?.nativeElement) {
-        this.messageInput.nativeElement.focus();
-      }
-    }, 0);
-  }
-
-  async confirmEdit() {
-    if (!this.editing || !this.editDraft.trim()) return;
-
-    await this.chat.editMessage(this.editing.id!, this.editDraft.trim());
-    this.cancelEdit();
-  }
-
-  delete(m: ChatMsg) {
-    if (!m.id) return;
-
-    // Check if message can be deleted
-    if (!this.canEditMessage(m)) {
-      alert('Cannot delete this message - original text is no longer available.');
-      return;
-    }
-
-    // Use Material Dialog or a custom confirmation
-    if (confirm('Delete this message for everyone?')) {
-      this.chat.deleteMessage(m.id);
-    }
-  }
-
-
-
-  /**
-   * Handle private key regeneration when user's own key is missing
-   */
-  async regenerateEncryptionKeys(): Promise<void> {
-    if (confirm('Your encryption keys are missing. This will generate new keys, but you will lose access to previous messages. Continue?')) {
-      try {
-        await this.chat.regenerateKeys();
-      } catch (error) {
-        console.error('[ChatRoom] Failed to regenerate keys:', error);
-        alert('Failed to regenerate encryption keys. Please try again or contact support.');
-      }
-    }
-  }
-
-  /**
-   * Reload the page when partner regenerates keys
-   */
-  reloadPage(): void {
-    window.location.reload();
-  }
-
-  /**
-   * Manually check for updated partner keys
-   */
-  checkPartnerKeyStatus(): void {
-    // Use the new event-driven approach
-    this.chat.manuallyCheckKeyStatus();
-  }
-
-
-
-
-  /**
-   * Check if chat is blocked due to various key issues
-   */
-  isChatBlocked(): boolean {
-    // Check if we're loading messages
-    if (this.isLoadingMessages) {
-      return true;
-    }
-    
-    // Check if WE have missing private keys (our own recovery UI is visible)
-    const myPrivateKeyMissing = this.chat.myPrivateKeyMissing$.value;
-    if (myPrivateKeyMissing) {
-      return true;
-    }
-    
-    // Check if partner's key is missing
-    const keyMissing = this.chat.keyMissing$.value;
-    if (keyMissing) {
-      return true;
-    }
-    
-    // Check if partner has regenerated keys and we need to reload
-    const partnerKeyRegenerated = this.chat.showPartnerKeyRegeneratedNotification$.value;
-    if (partnerKeyRegenerated) {
-      return true;
-    }
-    
-    // Chat not blocked - all checks passed
-    
-    return false;
-  }
-
-  /**
-   * Get appropriate placeholder text for chat input
-   */
-  getChatInputPlaceholder(): string {
-    if (this.isLoadingMessages) {
-      return 'Loading messages...';
-    }
-    
-    // Check if WE have missing private keys first
-    const myPrivateKeyMissing = this.chat.myPrivateKeyMissing$.value;
-    if (myPrivateKeyMissing) {
-      // Check if this is due to partner losing keys
-      const artificialState = this.chat.artificialKeyMissingState;
-      if (artificialState) {
-        const username = this.chat.theirUsername$.value || 'Your contact';
-        return `Chat blocked - ${username} has lost their keys and must regenerate them`;
-      } else {
-        return 'Cannot send messages - you need to regenerate your encryption keys';
-      }
-    }
-    
-    const partnerKeyRegenerated = this.chat.showPartnerKeyRegeneratedNotification$.value;
-    if (partnerKeyRegenerated) {
-      const username = this.chat.theirUsername$.value || 'your contact';
-      return `Chat blocked - ${username} is recovering their keys. Refresh to check status.`;
-    }
-    
-    const keyMissing = this.chat.keyMissing$.value;
-    if (keyMissing) {
-      const username = this.chat.theirUsername$.value || 'Your contact';
-      return `Cannot send messages - ${username} needs to set up encryption`;
-    }
-    
-    return 'Type a message...';
-  }
-
-  ngOnDestroy() {
-    document.body.classList.remove('chat-room-page');
-    
-    // Reset the flag for next visit
-    this.hasMarkedMessagesAsRead = false;
-
-    // Remove event listeners from input element
-    if (this.messageInput?.nativeElement) {
-      this.messageInput.nativeElement.removeEventListener('input', this.handleTyping);
-      this.messageInput.nativeElement.removeEventListener('keydown', this.handleKeydown);
-    }
-
-    // Remove scroll listener
-    if (this.messageContainer?.nativeElement) {
-      this.messageContainer.nativeElement.removeEventListener(
-        'scroll',
-        this.handleScroll
-      );
-    }
-
-    // Cleanup subscriptions
-    this.subs.unsubscribe();
-
-    // Clear typing throttle
-    if (this.typingThrottle) {
-      clearTimeout(this.typingThrottle);
-    }
-
-    // Clear scroll timeout
-    if (this.scrollTimeout) {
-      clearTimeout(this.scrollTimeout);
-    }
-
-    try {
-      if (this.chat) {
-        // Any specific cleanup needed
-      }
-    } catch (error) {
-      console.warn('[ChatRoom] Error during cleanup:', error);
-    }
-  }
-
-
-
-
-  /**
-   * Handle chat input focus - re-check partner key status
-   */
-  private handleChatInputFocus(): void {
-    this.chat.manuallyCheckKeyStatus();
-  }
+  // All other methods are simple delegations to facade
+  onKeydownEnter = (event: Event) => this.facade.onKeydownEnter(event);
+  onKeydownCtrlEnter = (event: Event) => this.facade.onKeydownCtrlEnter(event);
+  onKeydownMetaEnter = (event: Event) => this.facade.onKeydownMetaEnter(event);
+  onKeydownEnterEdit = (event: Event) => this.facade.onKeydownEnterEdit(event);
+  onKeydownCtrlEnterEdit = (event: Event) => this.facade.onKeydownCtrlEnterEdit(event);
+  onKeydownMetaEnterEdit = (event: Event) => this.facade.onKeydownMetaEnterEdit(event);
+  
+  send = () => this.facade.send();
+  scrollToBottomClick = () => this.facade.scrollToBottomClick();
+  beginEdit = (m: ChatMsg) => this.facade.beginEdit(m);
+  cancelEdit = () => this.facade.cancelEdit();
+  confirmEdit = () => this.facade.confirmEdit();
+  delete = (m: ChatMsg) => this.facade.delete(m);
+  
+  onEmojiSelected = (emoji: string) => this.facade.onEmojiSelected(emoji);
+  onImageSelected = (image: CompressedImage) => this.facade.onImageSelected(image);
+  removeAttachedImage = () => this.facade.removeAttachedImage();
+  openImageModal = (url: string) => this.facade.openImageModal(url);
+  
+  // Template helpers
+  trackByTs = (i: number, m: { ts: number }) => this.facade.trackByTs(i, m);
+  trackByDate = (i: number, g: MessageGroup) => this.facade.trackByDate(i, g);
+  formatMessageTime = (ts: number) => this.facade.formatMessageTime(ts);
+  getFullTimestamp = (ts: number) => this.facade.getFullTimestamp(ts);
+  getMessageAvatar = (m: ChatMsg) => this.facade.getMessageAvatar(m);
+  getPartnerAvatar = () => this.facade.getPartnerAvatar();
+  onAvatarError = (e: Event) => this.facade.onAvatarError(e);
+  onMessageAvatarError = (e: Event, m: ChatMsg) => this.facade.onMessageAvatarError(e, m);
+  
+  // Message utilities
+  isMessageUnreadable = (m: ChatMsg) => this.facade.isMessageUnreadable(m);
+  isMessageEncrypted = (m: ChatMsg) => this.facade.isMessageEncrypted(m);
+  canEditMessage = (m: ChatMsg) => this.facade.canEditMessage(m);
+  formatMessageText = (text: string) => this.facade.formatMessageText(text);
+  isSystemMessage = (text: string) => this.facade.isSystemMessage(text);
+  getSystemMessageIcon = (text: string) => this.facade.getSystemMessageIcon(text);
+  getTruncatedFilename = (name: string) => this.facade.getTruncatedFilename(name);
+  getDisplayText = (text: string, hasImage?: boolean) => this.facade.getDisplayText(text, hasImage);
+  
+  // Navigation and state
+  navigateToList = (e?: Event) => this.facade.navigateToList(e);
+  isChatBlocked = () => this.facade.isChatBlocked();
+  getChatInputPlaceholder = () => this.facade.getChatInputPlaceholder();
+  regenerateEncryptionKeys = () => this.facade.regenerateEncryptionKeys();
+  reloadPage = () => this.facade.reloadPage();
+  checkPartnerKeyStatus = () => this.facade.checkPartnerKeyStatus();
 }

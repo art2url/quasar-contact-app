@@ -1,9 +1,10 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { firstValueFrom, Subscription } from 'rxjs';
+import { firstValueFrom, Subscription, Subject, timer } from 'rxjs';
+import { debounceTime, takeUntil } from 'rxjs/operators';
 
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -23,6 +24,7 @@ import { VaultService } from '@services/vault.service';
 import { LoadingService } from '@services/loading.service';
 import { AuthService } from '@services/auth.service';
 import { NotificationService, ChatNotification } from '@services/notification.service';
+import { ScrollService } from '@services/scroll.service';
 
 import { UserSummary } from '@models/user.model';
 import { ChatEntry } from '@models/chat.model';
@@ -57,13 +59,15 @@ export class ChatListComponent implements OnInit, OnDestroy {
   // Add sorting control to prevent bouncing
   private sortingInProgress = false;
   private pendingSortOperations = 0;
-  private lastSortTime = 0;
-  private readonly SORT_DEBOUNCE_MS = 300;
 
   // Private properties
   private subs = new Subscription();
   private readonly me = localStorage.getItem('userId')!;
   private pendingNotifications: ChatNotification[] = [];
+  
+  // RxJS subjects for debouncing
+  private sortSubject = new Subject<void>();
+  private destroy$ = new Subject<void>();
 
   constructor(
     private http: HttpClient,
@@ -77,15 +81,36 @@ export class ChatListComponent implements OnInit, OnDestroy {
     public authService: AuthService,
     private cdr: ChangeDetectorRef,
     private notificationService: NotificationService,
-    private location: Location
+    private location: Location,
+    private ngZone: NgZone,
+    private scrollService: ScrollService
   ) {}
 
   ngOnInit() {
+    // IMPORTANT: Always scroll to top when chat-list loads
+    // This prevents the page from staying at bottom position when navigating back from chat-room
+    // Use multiple timing approaches to ensure it works from login page too
+    this.scrollService.scrollToTop();
+    
+    // Additional scroll after view initialization for navigation from login
+    this.ngZone.runOutsideAngular(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          this.ngZone.run(() => {
+            this.scrollService.scrollToTop();
+          });
+        });
+      });
+    });
+
     // Determine if back button should be shown
     this.checkBackButtonVisibility();
 
     // Set up event handlers
     this.setupEventHandlers();
+
+    // Set up debounced sorting
+    this.setupDebouncedSorting();
 
     // Load chats immediately - no delays, no complex logic
     this.loadChatsNow();
@@ -98,6 +123,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
 
     // Router event handling removed - notification service handles refresh automatically
   }
+
 
   /**
    * Determine if the back button should be visible
@@ -149,6 +175,20 @@ export class ChatListComponent implements OnInit, OnDestroy {
           });
         }
         // Preserve existing unread counts when notifications are empty
+      })
+    );
+  }
+
+  /**
+   * Set up debounced sorting using RxJS operators
+   */
+  private setupDebouncedSorting(): void {
+    this.subs.add(
+      this.sortSubject.pipe(
+        debounceTime(100),
+        takeUntil(this.destroy$)
+      ).subscribe(() => {
+        this.performFinalSort();
       })
     );
   }
@@ -221,12 +261,14 @@ export class ChatListComponent implements OnInit, OnDestroy {
           this.cdr.detectChanges();
         } else {
           // When reconnected, get fresh online status
-          // Wait a moment for the connection to stabilize
-          setTimeout(() => {
-            const currentOnlineUsers = this.ws.getCurrentOnlineUsers();
-            this.applyOnlineStatus(currentOnlineUsers);
-            this.ws.debugOnlineStatus();
-          }, 1000);
+          // Use timer to wait for connection stabilization
+          this.subs.add(
+            timer(1000).subscribe(() => {
+              const currentOnlineUsers = this.ws.getCurrentOnlineUsers();
+              this.applyOnlineStatus(currentOnlineUsers);
+              this.ws.debugOnlineStatus();
+            })
+          );
         }
       })
     );
@@ -452,19 +494,9 @@ export class ChatListComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Debounced sorting to prevent bouncing
+   * Perform final sort without debouncing (debouncing is handled by RxJS)
    */
   private performFinalSort(): void {
-    const now = Date.now();
-
-    // Debounce rapid sort calls
-    if (now - this.lastSortTime < this.SORT_DEBOUNCE_MS) {
-      setTimeout(() => this.performFinalSort(), this.SORT_DEBOUNCE_MS);
-      return;
-    }
-
-    this.lastSortTime = now;
-
     this.chats.sort((a, b) => (b.lastTs || 0) - (a.lastTs || 0));
 
     // Force change detection after final sort
@@ -511,16 +543,8 @@ export class ChatListComponent implements OnInit, OnDestroy {
     this.debouncedSort();
   };
 
-  private sortTimeout: ReturnType<typeof setTimeout> | null = null;
-
   private debouncedSort(): void {
-    if (this.sortTimeout) {
-      clearTimeout(this.sortTimeout);
-    }
-
-    this.sortTimeout = setTimeout(() => {
-      this.performFinalSort();
-    }, 100);
+    this.sortSubject.next();
   }
 
   /**
@@ -531,6 +555,29 @@ export class ChatListComponent implements OnInit, OnDestroy {
 
     // For chat list, use relative time format
     return getRelativeTime(timestamp);
+  }
+
+  /**
+   * Parse and display last message properly for image messages
+   */
+  getDisplayMessage(lastMessage: string | undefined): string {
+    if (!lastMessage) return '— no messages yet —';
+    
+    // Check if it's a JSON payload from image message
+    if (lastMessage.startsWith('{"text":') && lastMessage.includes('imageData')) {
+      try {
+        const parsed = JSON.parse(lastMessage);
+        if (parsed.hasImage) {
+          return parsed.text ? `📷 ${parsed.text}` : '📷 Image';
+        }
+        return parsed.text || '— no messages yet —';
+      } catch {
+        // If parsing fails, return as-is
+        return lastMessage;
+      }
+    }
+    
+    return lastMessage;
   }
 
   // Public methods
@@ -613,11 +660,13 @@ export class ChatListComponent implements OnInit, OnDestroy {
 
   public findNewContact(): void {
     this.searchTerm = ' ';
-    setTimeout(() => {
-      this.searchTerm = '';
-      const searchInput = document.querySelector('input[matInput]') as HTMLInputElement;
-      if (searchInput) searchInput.focus();
-    }, 100);
+    this.ngZone.runOutsideAngular(() => {
+      requestAnimationFrame(() => {
+        this.searchTerm = '';
+        const searchInput = document.querySelector('input[matInput]') as HTMLInputElement;
+        if (searchInput) searchInput.focus();
+      });
+    });
   }
 
   public trackByChatId(_index: number, chat: ChatEntry): string {
@@ -645,13 +694,17 @@ export class ChatListComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    // Clear timeouts
-    if (this.sortTimeout) {
-      clearTimeout(this.sortTimeout);
-      this.sortTimeout = null;
-    }
+    // Trigger completion of all subscriptions
+    this.destroy$.next();
+    this.destroy$.complete();
 
+    // Complete the sort subject
+    this.sortSubject.complete();
+
+    // Unsubscribe from all subscriptions
     this.subs.unsubscribe();
+    
+    // Remove WebSocket event handlers
     this.ws.offReceiveMessage(this.handleIncomingMessage);
     this.ws.offMessageSent(this.handleMessageSent);
   }

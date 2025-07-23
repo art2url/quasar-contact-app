@@ -1,5 +1,5 @@
 import { Injectable, OnDestroy, NgZone } from '@angular/core';
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, timer, Subscription } from 'rxjs';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter, takeUntil } from 'rxjs';
 
@@ -11,7 +11,7 @@ export class LoadingService implements OnDestroy {
   public loading$: Observable<boolean> = this.loadingSubject.asObservable();
 
   // Simple state tracking
-  private currentTimeout: ReturnType<typeof setTimeout> | null = null;
+  private currentTimeout: Subscription | null = null;
   private isAuthenticated = false;
   private lastSource = '';
 
@@ -46,10 +46,10 @@ export class LoadingService implements OnDestroy {
   setAuthState(isAuthenticated: boolean): void {
     this.isAuthenticated = isAuthenticated;
     if (!isAuthenticated) {
-      // Use setTimeout to prevent change detection error
-      setTimeout(() => {
-        this.forceHideLoading();
-      }, 0);
+      // Use NgZone to prevent change detection error
+      this.ngZone.runOutsideAngular(() => {
+        this.ngZone.run(() => this.forceHideLoading());
+      });
     }
   }
 
@@ -62,39 +62,41 @@ export class LoadingService implements OnDestroy {
       return;
     }
 
-    // Use setTimeout to prevent change detection errors
-    setTimeout(() => {
-      this.showInternal(source, this.MAX_LOADING_TIME);
-    }, 0);
+    // Use NgZone to prevent change detection errors
+    this.ngZone.runOutsideAngular(() => {
+      this.ngZone.run(() => this.showInternal(source, this.MAX_LOADING_TIME));
+    });
   }
 
   /**
    * Show for auth operations
    */
   showForAuth(source = 'auth'): void {
-    setTimeout(() => {
-      this.showInternal(source, this.MAX_LOADING_TIME);
-    }, 0);
+    this.ngZone.runOutsideAngular(() => {
+      this.ngZone.run(() => this.showInternal(source, this.MAX_LOADING_TIME));
+    });
   }
 
   /**
    * Show for navigation
    */
   showForNavigation(source = 'nav'): void {
-    setTimeout(() => {
-      this.showInternal(source, 5000); // Shorter timeout for navigation
-    }, 0);
+    this.ngZone.runOutsideAngular(() => {
+      this.ngZone.run(() => this.showInternal(source, 5000)); // Shorter timeout for navigation
+    });
   }
 
   /**
    * Hide loading - with proper change detection
    */
   hide(): void {
-    // Use setTimeout to prevent change detection errors
-    setTimeout(() => {
-      this.clearCurrentTimeout();
-      this.loadingSubject.next(false);
-    }, 0);
+    // Use NgZone to prevent change detection errors
+    this.ngZone.runOutsideAngular(() => {
+      this.ngZone.run(() => {
+        this.clearCurrentTimeout();
+        this.loadingSubject.next(false);
+      });
+    });
   }
 
   /**
@@ -110,21 +112,23 @@ export class LoadingService implements OnDestroy {
     this.loadingSubject.next(true);
 
     // Set timeout to prevent infinite loading
-    this.currentTimeout = setTimeout(() => {
+    this.currentTimeout = timer(timeoutMs).subscribe(() => {
       console.error(`[Loading] Timeout for ${source} (${timeoutMs}ms)`);
       this.forceHideLoading();
-    }, timeoutMs);
+    });
   }
 
   /**
    * Force hide loading - with proper async handling
    */
   forceHideLoading(): void {
-    // Use setTimeout to prevent change detection errors
-    setTimeout(() => {
-      this.clearCurrentTimeout();
-      this.loadingSubject.next(false);
-    }, 0);
+    // Use NgZone to prevent change detection errors
+    this.ngZone.runOutsideAngular(() => {
+      this.ngZone.run(() => {
+        this.clearCurrentTimeout();
+        this.loadingSubject.next(false);
+      });
+    });
   }
 
   /**
@@ -134,10 +138,12 @@ export class LoadingService implements OnDestroy {
     console.error(`[Loading] Emergency stop: ${reason}`);
     this.clearCurrentTimeout();
 
-    // Use setTimeout for emergency stops to prevent cascading errors
-    setTimeout(() => {
-      this.loadingSubject.next(false);
-    }, 0);
+    // Use NgZone for emergency stops to prevent cascading errors
+    this.ngZone.runOutsideAngular(() => {
+      this.ngZone.run(() => {
+        this.loadingSubject.next(false);
+      });
+    });
   }
 
   /**
@@ -145,7 +151,7 @@ export class LoadingService implements OnDestroy {
    */
   private clearCurrentTimeout(): void {
     if (this.currentTimeout) {
-      clearTimeout(this.currentTimeout);
+      this.currentTimeout.unsubscribe();
       this.currentTimeout = null;
     }
   }

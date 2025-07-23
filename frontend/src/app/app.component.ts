@@ -1,5 +1,5 @@
 import { AsyncPipe, CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import {
   NavigationCancel,
   NavigationEnd,
@@ -58,9 +58,10 @@ declare global {
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
-export class AppComponent implements OnInit, OnDestroy {
+export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   title = 'quasar-secure-chat';
   private subs = new Subscription();
+  private initializationPending = false;
   // Removed: globalHandlerSetup property no longer needed
 
   constructor(
@@ -69,7 +70,8 @@ export class AppComponent implements OnInit, OnDestroy {
     private ws: WebSocketService,
     private authService: AuthService,
     private vault: VaultService,
-    private crypto: CryptoService
+    private crypto: CryptoService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   /**
@@ -196,41 +198,38 @@ export class AppComponent implements OnInit, OnDestroy {
     // Ensure global handler is set up early
     // Removed: Global partner key recovery handler now handled via database flag
 
-    // Delay initialization to prevent change detection error
-    setTimeout(() => {
-      this.initializeApp();
-    }, 100); // Slightly longer delay
+    // Mark initialization as pending for ngAfterViewInit
+    this.initializationPending = true;
 
     // Subscribe to authentication changes
     this.subs.add(
       this.authService.isAuthenticated$.subscribe(isAuthenticated => {
         // Auth state changed
 
-        // Use longer setTimeout to prevent change detection errors
-        setTimeout(() => {
-          this.loadingService.setAuthState(isAuthenticated);
+        // Use change detection ref to handle auth state changes
+        this.cdr.detectChanges();
+        this.loadingService.setAuthState(isAuthenticated);
 
-          if (isAuthenticated) {
-            const userId = localStorage.getItem('userId');
-            if (localStorage.getItem('username') && userId) {
-              // Removed: Global partner key recovery handler now handled via database flag
+        if (isAuthenticated) {
+          const userId = localStorage.getItem('userId');
+          if (localStorage.getItem('username') && userId) {
+            // Removed: Global partner key recovery handler now handled via database flag
 
-              if (!this.ws.isConnected()) {
-                // Connecting WebSocket for authenticated user
-                this.ws.connect(); // Uses cookies for auth
-                // Reconnection is now handled automatically by enhanced WebSocketService
-              }
-            }
-          } else {
-            // Disconnecting WebSocket for unauthenticated user
-            this.ws.disconnect();
-
-            if (!this.router.url.includes('/auth/')) {
-              // Redirecting unauthenticated user to login
-              this.router.navigate(['/auth/login']);
+            if (!this.ws.isConnected()) {
+              // Connecting WebSocket for authenticated user
+              this.ws.connect(); // Uses cookies for auth
+              // Reconnection is now handled automatically by enhanced WebSocketService
             }
           }
-        }, 100); // Longer delay
+        } else {
+          // Disconnecting WebSocket for unauthenticated user
+          this.ws.disconnect();
+
+          if (!this.router.url.includes('/auth/')) {
+            // Redirecting unauthenticated user to login
+            this.router.navigate(['/auth/login']);
+          }
+        }
       })
     );
 
@@ -240,23 +239,28 @@ export class AppComponent implements OnInit, OnDestroy {
         if (event instanceof NavigationStart) {
           // Only show for authenticated users or auth pages
           if (this.authService.isAuthenticated() || event.url.includes('/auth/')) {
-            // Delay loading service call
-            setTimeout(() => {
-              this.loadingService.showForNavigation(`nav:${event.url}`);
-            }, 0);
+            // Use change detection for loading service call
+            this.cdr.detectChanges();
+            this.loadingService.showForNavigation(`nav:${event.url}`);
           }
         } else if (
           event instanceof NavigationEnd ||
           event instanceof NavigationCancel ||
           event instanceof NavigationError
         ) {
-          // Delay loading service call
-          setTimeout(() => {
-            this.loadingService.hide();
-          }, 0);
+          // Use change detection for loading service call
+          this.cdr.detectChanges();
+          this.loadingService.hide();
         }
       })
     );
+  }
+
+  ngAfterViewInit(): void {
+    if (this.initializationPending) {
+      this.initializationPending = false;
+      this.initializeApp();
+    }
   }
 
   /**
