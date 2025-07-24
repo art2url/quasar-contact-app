@@ -17,7 +17,7 @@ interface TurnstileOptions {
   'expired-callback'?: () => void;
   'error-callback'?: () => void;
   theme?: 'light' | 'dark' | 'auto';
-  size?: 'normal' | 'compact';
+  size?: 'normal' | 'compact' | 'flexible';
   action?: string;
 }
 
@@ -51,7 +51,7 @@ export class TurnstileService {
       sitekey: this.siteKey,
       callback: callback,
       theme: turnstileTheme,
-      size: 'normal',
+      size: 'flexible',
       'expired-callback': () => {
         // Turnstile token expired
       },
