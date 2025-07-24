@@ -62,6 +62,42 @@
   width: 100%;
 }
 
+/* Turnstile styling */
+.turnstile-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 16px 0;
+  width: 100%;
+}
+
+.turnstile-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.turnstile-error {
+  color: var(--danger-color);
+  font-size: 0.75rem;
+  margin-top: 8px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.turnstile-error::before {
+  content: "⚠️";
+  font-size: 0.875rem;
+}
+
+/* Dark theme support for Turnstile error */
+:host-context(.dark-theme) .turnstile-error {
+  color: var(--danger-color);
+}
+
 /* Material form field customizations */
 ::ng-deep .auth-container .mat-mdc-form-field {
   width: 100%;

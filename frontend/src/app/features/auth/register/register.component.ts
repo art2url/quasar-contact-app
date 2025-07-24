@@ -21,7 +21,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { AuthService } from '@services/auth.service';
 import { LoadingService } from '@services/loading.service';
-import { RecaptchaService } from '@services/recaptcha.service';
+import { TurnstileService } from '@services/turnstile.service';
 import { ThemeService } from '@services/theme.service';
 import { HoneypotService } from '@services/honeypot.service';
 import { defaultAvatarFor } from '@utils/avatar.util';
@@ -49,8 +49,8 @@ interface ValidationError {
   styleUrls: ['./register.component.css'],
 })
 export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
-  @ViewChild('recaptchaElement', { static: false })
-  recaptchaElement!: ElementRef;
+  @ViewChild('turnstileElement', { static: false })
+  turnstileElement!: ElementRef;
 
   username = '';
   email = '';
@@ -59,8 +59,8 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
   isLoading = false;
   hidePassword = true;
   formSubmitted = false;
-  recaptchaToken = '';
-  recaptchaWidgetId: number | undefined;
+  turnstileToken = '';
+  turnstileWidgetId: string | undefined;
   private themeSubscription?: Subscription;
   
   // Honeypot fields
@@ -71,7 +71,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
     private authService: AuthService,
     private router: Router,
     private loadingService: LoadingService,
-    private recaptchaService: RecaptchaService,
+    private turnstileService: TurnstileService,
     private themeService: ThemeService,
     public honeypotService: HoneypotService,
     private cdr: ChangeDetectorRef
@@ -87,22 +87,23 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.initializeRecaptcha();
+    this.initializeTurnstile();
     this.setupThemeSubscription();
   }
 
-  private async initializeRecaptcha(): Promise<void> {
+
+  private async initializeTurnstile(): Promise<void> {
     this.cdr.detectChanges();
     
     try {
-      this.recaptchaWidgetId = await this.recaptchaService.initializeRecaptcha(
-        'recaptcha-register',
+      this.turnstileWidgetId = await this.turnstileService.initializeTurnstile(
+        'turnstile-register',
         (token: string) => {
-          this.recaptchaToken = token;
-          this.error = ''; // Clear any reCAPTCHA-related errors
+          this.turnstileToken = token;
+          this.error = ''; // Clear any Turnstile-related errors
         }
       );
-      // reCAPTCHA initialized successfully
+      // Turnstile initialized successfully
     } catch (error) {
       this.error = (error as Error).message;
     }
@@ -121,39 +122,39 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
         return;
       }
 
-      // reCAPTCHA widget ID available
+      // Turnstile widget ID available
 
-      if (this.recaptchaWidgetId !== undefined) {
-        // Re-rendering reCAPTCHA for theme change
-        this.recaptchaToken = '';
+      if (this.turnstileWidgetId !== undefined) {
+        // Re-rendering Turnstile for theme change
+        this.turnstileToken = '';
 
         // Re-render with change detection
         this.cdr.detectChanges();
-        this.recaptchaService.reRenderRecaptcha(
-          'recaptcha-register',
+        this.turnstileService.reRenderTurnstile(
+          'turnstile-register',
           (token: string) => {
-            this.recaptchaToken = token;
+            this.turnstileToken = token;
             this.error = '';
           },
-          this.recaptchaWidgetId
+          this.turnstileWidgetId
         ).then((widgetId) => {
-          this.recaptchaWidgetId = widgetId;
-          // New reCAPTCHA widget created
+          this.turnstileWidgetId = widgetId;
+          // New Turnstile widget created
         }).catch((error) => {
           console.error(
-              '[Register] Failed to re-render reCAPTCHA after theme change:',
+              '[Register] Failed to re-render Turnstile after theme change:',
               error
             );
             // Don't show error to user for theme switching failures
-            // The form will still work, just without reCAPTCHA theme update
+            // The form will still work, just without Turnstile theme update
           });
       }
     });
   }
 
-  private resetRecaptcha(): void {
-    this.recaptchaToken = '';
-    this.recaptchaService.resetRecaptchaWidget(this.recaptchaWidgetId);
+  private resetTurnstile(): void {
+    this.turnstileToken = '';
+    this.turnstileService.resetTurnstileWidget(this.turnstileWidgetId);
   }
 
   isValidEmail(email: string): boolean {
@@ -166,7 +167,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
       this.username.length >= 3 &&
       this.isValidEmail(this.email) &&
       this.password.length >= 6 &&
-      this.recaptchaToken.length > 0
+      this.turnstileToken.length > 0
     );
   }
 
@@ -209,7 +210,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
     this.error = '';
 
     if (!this.isFormValid()) {
-      if (!this.recaptchaToken) {
+      if (!this.turnstileToken) {
         this.error = 'Please complete the security verification';
       } else {
         this.error = 'Please fix the errors above';
@@ -236,7 +237,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
       email: this.email,
       password: this.password,
       avatarUrl: avatarUrl,
-      recaptchaToken: this.recaptchaToken
+      turnstileToken: this.turnstileToken
     }, this.formStartTime);
 
     this.authService
@@ -251,7 +252,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
         },
         error: err => {
           console.error('[Register] Registration failed:', err);
-          this.resetRecaptcha(); // Reset reCAPTCHA on failed attempt
+          this.resetTurnstile(); // Reset Turnstile on failed attempt
 
           this.isLoading = false;
           this.loadingService.hide();
@@ -267,7 +268,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
             } else {
               this.error = 'Invalid input. Please check your information.';
             }
-          } else if (err.status === 400 && err.error?.message?.includes('recaptcha')) {
+          } else if (err.status === 400 && err.error?.message?.includes('turnstile')) {
             this.error = 'Security verification failed. Please try again.';
           } else if (err.status === 0) {
             this.error = 'Cannot connect to server. Please check your connection.';
@@ -285,7 +286,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnDestroy(): void {
-    this.recaptchaService.resetRecaptchaWidget(this.recaptchaWidgetId);
+    this.turnstileService.resetTurnstileWidget(this.turnstileWidgetId);
     this.themeSubscription?.unsubscribe();
   }
 }
