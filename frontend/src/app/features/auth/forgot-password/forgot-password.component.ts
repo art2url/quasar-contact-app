@@ -1,28 +1,28 @@
 import {
-  Component,
-  OnInit,
-  OnDestroy,
   AfterViewInit,
-  ElementRef,
-  ViewChild,
   ChangeDetectorRef,
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
 } from '@angular/core';
 import { Subscription, timer } from 'rxjs';
 
-import { FormsModule } from '@angular/forms';
 import { CommonModule, KeyValuePipe } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { RouterModule } from '@angular/router';
 
 import { AuthService } from '@services/auth.service';
+import { HoneypotService } from '@services/honeypot.service';
 import { ThemeService } from '@services/theme.service';
 import { TurnstileService } from '@services/turnstile.service';
-import { HoneypotService } from '@services/honeypot.service';
 
 @Component({
   selector: 'app-forgot-password',
@@ -57,7 +57,7 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
   private themeSubscription?: Subscription;
 
   private resendTimer: Subscription | undefined;
-  
+
   // Security fields
   securityFields: Record<string, string> = {};
   formStartTime = 0;
@@ -75,7 +75,7 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
     this.error = '';
     this.emailSent = false;
     this.resendCooldown = 0;
-    
+
     // Initialize security fields
     this.securityFields = this.honeypotService.createHoneypotData();
     this.formStartTime = this.honeypotService.addFormStartTime();
@@ -88,10 +88,12 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
 
   private async initializeTurnstile(): Promise<void> {
     this.cdr.detectChanges();
-    
+
     try {
       // Use different element ID based on email sent state
-      const elementId = this.emailSent ? 'turnstile-forgot-password-resend' : 'turnstile-forgot-password';
+      const elementId = this.emailSent
+        ? 'turnstile-forgot-password-resend'
+        : 'turnstile-forgot-password';
       this.turnstileWidgetId = await this.turnstileService.initializeTurnstile(
         elementId,
         (token: string) => {
@@ -121,25 +123,28 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
       // Turnstile widget ID available
 
       if (this.turnstileWidgetId !== undefined) {
-        // Re-rendering Turnstile for theme change
+        // Re-rendering Turnstile for theme change with width preservation
         this.turnstileToken = '';
 
         // Re-render with change detection
         this.cdr.detectChanges();
-        this.turnstileService.reRenderTurnstile(
-          'turnstile-forgot-password',
-          (token: string) => {
-            this.turnstileToken = token;
-            this.error = '';
-          },
-          this.turnstileWidgetId
-        ).then((widgetId) => {
-          this.turnstileWidgetId = widgetId;
-          // New Turnstile widget created
-        }).catch(() => {
-          // Don't log theme change errors - they're not critical
-          // The form will still work, just without Turnstile theme update
-        });
+        this.turnstileService
+          .reRenderTurnstile(
+            'turnstile-forgot-password',
+            (token: string) => {
+              this.turnstileToken = token;
+              this.error = '';
+            },
+            this.turnstileWidgetId
+          )
+          .then(widgetId => {
+            this.turnstileWidgetId = widgetId;
+            // New Turnstile widget created with preserved width
+          })
+          .catch(() => {
+            // Don't log theme change errors - they're not critical
+            // The form will still work, just without Turnstile theme update
+          });
       }
     });
   }
@@ -148,7 +153,6 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   }
-
 
   onSubmit(): void {
     this.formSubmitted = true;
@@ -173,27 +177,29 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
 
     this.isLoading = true;
 
-    this.authService.requestPasswordReset(this.email, this.turnstileToken, this.securityFields).subscribe({
-      next: () => {
-        this.isLoading = false;
-        this.emailSent = true;
-        this.startResendCooldown();
-      },
-      error: err => {
-        this.isLoading = false;
-        this.resetTurnstile(); // Reset Turnstile on failed attempt
+    this.authService
+      .requestPasswordReset(this.email, this.turnstileToken, this.securityFields)
+      .subscribe({
+        next: () => {
+          this.isLoading = false;
+          this.emailSent = true;
+          this.startResendCooldown();
+        },
+        error: err => {
+          this.isLoading = false;
+          this.resetTurnstile(); // Reset Turnstile on failed attempt
 
-        if (err.status === 404) {
-          this.error = 'No account found with this email address';
-        } else if (err.status === 429) {
-          this.error = 'Too many requests. Please try again later.';
-        } else if (err.status === 400 && err.error?.message?.includes('turnstile')) {
-          this.error = 'Security verification failed. Please try again.';
-        } else {
-          this.error = 'An error occurred. Please try again.';
-        }
-      },
-    });
+          if (err.status === 404) {
+            this.error = 'No account found with this email address';
+          } else if (err.status === 429) {
+            this.error = 'Too many requests. Please try again later.';
+          } else if (err.status === 400 && err.error?.message?.includes('turnstile')) {
+            this.error = 'Security verification failed. Please try again.';
+          } else {
+            this.error = 'An error occurred. Please try again.';
+          }
+        },
+      });
   }
 
   resendEmail(): void {

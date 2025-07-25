@@ -60,6 +60,9 @@ export class TurnstileService {
       },
     });
 
+    // Force width constraints immediately after initial rendering
+    this.enforceWidthConstraints(elementId);
+
     return widgetId;
   }
 
@@ -156,6 +159,7 @@ export class TurnstileService {
 
   /**
    * Re-render Turnstile widget after DOM recreation (for theme changes)
+   * Preserves width by immediately applying CSS constraints
    */
   async reRenderTurnstile(
     elementId: string,
@@ -173,15 +177,46 @@ export class TurnstileService {
       const parent = turnstileElement.parentNode;
       const newElement = document.createElement('div');
       newElement.id = elementId;
+      newElement.className = 'turnstile-wrapper'; // Ensure wrapper class is maintained
       parent.replaceChild(newElement, turnstileElement);
     }
 
-    // Initialize with the new element
-    return this.initializeTurnstile(elementId, callback);
+    // Initialize with the new element and apply width constraints
+    const widgetId = await this.initializeTurnstile(elementId, callback);
+    
+    // Force width constraints immediately after rendering
+    this.enforceWidthConstraints(elementId);
+    
+    return widgetId;
+  }
+
+  /**
+   * Force 356px width constraints on Turnstile widget
+   */
+  private enforceWidthConstraints(elementId: string): void {
+    // Use a short delay to ensure Turnstile iframe is fully loaded
+    setTimeout(() => {
+      const element = document.getElementById(elementId);
+      if (!element) return;
+
+      // Apply width constraints to all Turnstile elements
+      const turnstileWidget = element.querySelector('.cf-turnstile');
+      const turnstileDiv = element.querySelector('.cf-turnstile > div');
+      const turnstileIframe = element.querySelector('.cf-turnstile iframe');
+
+      [turnstileWidget, turnstileDiv, turnstileIframe].forEach(el => {
+        if (el instanceof HTMLElement) {
+          el.style.width = '100%';
+          el.style.maxWidth = '356px';
+          el.style.display = 'block';
+        }
+      });
+    }, 100);
   }
 
   /**
    * Re-render Turnstile with current theme when theme changes
+   * Preserves width by immediately applying CSS constraints
    */
   reRenderWithTheme(
     elementId: string,
@@ -197,6 +232,10 @@ export class TurnstileService {
       // Wait a bit for the removal to complete before rendering new widget
       timer(150).subscribe(() => {
         const newWidgetId = this.renderTurnstile(elementId, callback);
+        
+        // Force width constraints immediately after rendering
+        this.enforceWidthConstraints(elementId);
+        
         resolve(newWidgetId);
       });
     });
