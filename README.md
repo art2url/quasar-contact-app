@@ -246,7 +246,8 @@ The chat system uses a modern facade pattern with specialized services:
 **Authentication & Security Services**
 
 - **`AuthService`** (`auth.service.ts`): Complete user authentication lifecycle with HttpOnly JWT
-  cookies, smart key management, CSRF integration, reCAPTCHA bot protection, and honeypot validation
+  cookies, smart key management, CSRF integration, Cloudflare Turnstile bot protection, and honeypot
+  validation
 - **`CryptoService`** (`crypto.service.ts`): RSA-OAEP + AES-GCM hybrid encryption with 2048-bit
   keys, SHA-256 fingerprinting, chunk-based Base64 conversion, and error throttling
 - **`VaultService`** (`vault.service.ts`): AES-GCM encrypted IndexedDB storage with per-user
@@ -255,8 +256,8 @@ The chat system uses a modern facade pattern with specialized services:
   memory fallback for secure API requests
 - **`HoneypotService`** (`honeypot.service.ts`): Bot detection with invisible form fields, timing
   validation, CSS hiding, and behavioral pattern analysis
-- **`RecaptchaService`** (`recaptcha.service.ts`): Google reCAPTCHA integration with theme support,
-  retry logic, and automatic widget re-rendering
+- **`TurnstileService`** (`turnstile.service.ts`): Cloudflare Turnstile integration with theme
+  support, flexible sizing, width preservation, and automatic widget re-rendering
 
 **Communication & Real-time Services**
 
@@ -304,7 +305,7 @@ The chat system uses a modern facade pattern with specialized services:
 
 - Complete user authentication lifecycle with HttpOnly JWT cookies
 - Smart key management with automatic generation for new users
-- CSRF token integration and reCAPTCHA bot protection
+- CSRF token integration and Cloudflare Turnstile bot protection
 - Honeypot form validation with timing analysis
 
 **CryptoService**
@@ -435,7 +436,7 @@ The chat system uses a modern facade pattern with specialized services:
 - **End-to-End Encryption**: Service-level RSA-OAEP + AES-GCM implementation
 - **HttpOnly Cookies**: JWT tokens handled securely at service layer
 - **CSRF Protection**: Token-based validation across all authenticated services
-- **Bot Protection**: Integrated reCAPTCHA and honeypot validation services
+- **Bot Protection**: Integrated Cloudflare Turnstile and honeypot validation services
 
 **Performance Optimization Strategies**
 
@@ -513,6 +514,9 @@ The chat system uses a modern facade pattern with specialized services:
    # Client URLs
    CLIENT_ORIGIN=http://localhost:4200
 
+   # Cloudflare Turnstile (bot protection)
+   NG_APP_TURNSTILE_SITE_KEY=your-turnstile-site-key
+
    # Email Service (optional)
    EMAIL_HOST=smtp.gmail.com
    EMAIL_PORT=587
@@ -521,7 +525,13 @@ The chat system uses a modern facade pattern with specialized services:
    EMAIL_FROM=noreply@quasar.contact
    ```
 
-5. **Run database migrations**
+5. **Set up Cloudflare Turnstile**
+   - Go to [Cloudflare Dashboard](https://dash.cloudflare.com/)
+   - Navigate to "Turnstile"
+   - Create a new site and add your domains (e.g., `localhost`, `your-domain.com`)
+   - Copy the site key to your environment configuration
+
+6. **Run database migrations**
 
    ```bash
    cd backend
@@ -529,7 +539,7 @@ The chat system uses a modern facade pattern with specialized services:
    npx prisma generate
    ```
 
-6. **Configure frontend environment**
+7. **Configure frontend environment**
 
    Create `environment.ts` in frontend/src/environments/:
 
@@ -538,6 +548,7 @@ The chat system uses a modern facade pattern with specialized services:
      production: false,
      apiUrl: 'http://localhost:3000/api',
      wsUrl: 'http://localhost:3000',
+     turnstileSiteKey: 'your-turnstile-site-key',
    };
    ```
 
@@ -595,6 +606,7 @@ The chat system uses a modern facade pattern with specialized services:
      -e JWT_SECRET=your-secret \
      -e NG_APP_API_URL=https://your-domain.com/api \
      -e NG_APP_WS_URL=https://your-domain.com \
+     -e NG_APP_TURNSTILE_SITE_KEY=your-turnstile-site-key \
      quasar-contact-app
    ```
 
@@ -630,7 +642,7 @@ please contact the development team or access the secure developer portal._
 - **Password Security**: Bcrypt hashing with configurable complexity
 - **Session Management**: JWT tokens with HttpOnly cookies
 - **Account Recovery**: Secure password reset with email verification
-- **Anti-Automation**: reCAPTCHA and honeypot protection against bots
+- **Anti-Automation**: Cloudflare Turnstile and honeypot protection against bots
 
 ### Key Exchange
 
@@ -920,6 +932,8 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \
 
 - [ ] Bot blocker effectiveness
 - [ ] Honeypot trap detection
+- [ ] Cloudflare Turnstile widget functionality
+- [ ] Turnstile theme switching and width preservation
 - [ ] Rate limiting functionality
 - [ ] CSRF protection validation
 - [ ] Security headers verification
@@ -964,6 +978,7 @@ DATABASE_PUBLIC_URL=postgresql://user:password@host:XXXX/database?connection_lim
 JWT_SECRET=<generate-strong-secret>
 NG_APP_API_URL=https://your-domain.com/api
 NG_APP_WS_URL=https://your-domain.com
+NG_APP_TURNSTILE_SITE_KEY=<your-turnstile-site-key>
 
 # Optional
 EMAIL_HOST=smtp.provider.com
