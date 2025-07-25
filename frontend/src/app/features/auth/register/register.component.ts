@@ -78,7 +78,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
   ) {}
 
   ngOnInit(): void {
-    // Initialize form validation and reCAPTCHA when component loads
+    // Initialize form validation and Turnstile when component loads
     // Component initialized
     
     // Initialize honeypot fields

@@ -42,18 +42,18 @@ export class AuthService {
   login(
     username: string,
     password: string,
-    recaptchaToken?: string
+    turnstileToken?: string
   ): Observable<LoginResponse> {
-    // Build login data with optional reCAPTCHA token
+    // Build login data with optional Turnstile token
     interface LoginData {
       username: string;
       password: string;
-      recaptchaToken?: string;
+      turnstileToken?: string;
     }
 
     const loginData: LoginData = { username, password };
-    if (recaptchaToken) {
-      loginData.recaptchaToken = recaptchaToken;
+    if (turnstileToken) {
+      loginData.turnstileToken = turnstileToken;
     }
 
     return this.http
@@ -101,7 +101,7 @@ export class AuthService {
 
           if (err.status === 401) {
             return throwError(() => new Error('Invalid username or password'));
-          } else if (err.status === 400 && err.error?.message?.includes('recaptcha')) {
+          } else if (err.status === 400 && err.error?.message?.includes('turnstile')) {
             return throwError(
               () => new Error('Security verification failed. Please try again.')
             );
@@ -200,20 +200,20 @@ export class AuthService {
     email: string,
     password: string,
     avatarUrl: string,
-    recaptchaToken?: string
+    turnstileToken?: string
   ): Observable<RegisterResponse> {
-    // Build register data with optional reCAPTCHA token
+    // Build register data with optional Turnstile token
     interface RegisterData {
       username: string;
       email: string;
       password: string;
       avatarUrl: string;
-      recaptchaToken?: string;
+      turnstileToken?: string;
     }
 
     const registerData: RegisterData = { username, email, password, avatarUrl };
-    if (recaptchaToken) {
-      registerData.recaptchaToken = recaptchaToken;
+    if (turnstileToken) {
+      registerData.turnstileToken = turnstileToken;
     }
 
     return this.http.post<RegisterResponse>(getApiPath('auth/register'), registerData);
@@ -269,7 +269,7 @@ export class AuthService {
 
         if (err.status === 401) {
           return throwError(() => new Error('Invalid username or password'));
-        } else if (err.status === 400 && err.error?.message?.includes('recaptcha')) {
+        } else if (err.status === 400 && err.error?.message?.includes('turnstile')) {
           return throwError(
             () => new Error('Security verification failed. Please try again.')
           );
@@ -325,20 +325,20 @@ export class AuthService {
   // Password reset methods
   requestPasswordReset(
     email: string,
-    recaptchaToken?: string,
+    turnstileToken?: string,
     honeypotFields?: Record<string, string>
   ): Observable<{ message: string }> {
-    // Build reset data with optional reCAPTCHA token and honeypot fields
+    // Build reset data with optional Turnstile token and honeypot fields
     interface ResetData {
       email: string;
-      recaptchaToken?: string;
+      turnstileToken?: string;
       formStartTime?: number;
       [key: string]: string | number | undefined;
     }
 
     const resetData: ResetData = { email };
-    if (recaptchaToken) {
-      resetData.recaptchaToken = recaptchaToken;
+    if (turnstileToken) {
+      resetData.turnstileToken = turnstileToken;
     }
     
     // Add honeypot fields to the request
