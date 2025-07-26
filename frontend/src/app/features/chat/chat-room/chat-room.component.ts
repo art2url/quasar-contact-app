@@ -34,6 +34,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CacheInfoBannerComponent } from '@shared/components/cache-info-banner/cache-info-banner.component';
 import { EmojiPickerComponent } from '@shared/components/emoji-picker/emoji-picker.component';
 import { ImageAttachmentComponent } from '@shared/components/image-attachment/image-attachment.component';
+import { ImageModalComponent } from '@shared/components/image-modal/image-modal.component';
 
 // Import the facade service that handles all logic
 import { ChatRoomFacadeService } from './services/chat-room-facade.service';
@@ -62,6 +63,7 @@ export class MyHammerConfig extends HammerGestureConfig {
     CacheInfoBannerComponent,
     EmojiPickerComponent,
     ImageAttachmentComponent,
+    ImageModalComponent,
   ],
   providers: [
     {
@@ -104,6 +106,11 @@ export class ChatRoomComponent implements OnInit, AfterViewInit, AfterViewChecke
   get editDraft() { return this.facade.editDraft; }
   set editDraft(value: string) { this.facade.editDraft = value; }
   get attachedImage() { return this.facade.attachedImage; }
+
+  // Image modal properties
+  imageModalVisible = false;
+  imageModalUrl = '';
+  imageModalAltText = '';
 
   // Host listeners delegate to facade
   @HostListener('swiperight')
@@ -204,7 +211,46 @@ export class ChatRoomComponent implements OnInit, AfterViewInit, AfterViewChecke
   onEmojiSelected = (emoji: string) => this.facade.onEmojiSelected(emoji);
   onImageSelected = (image: CompressedImage) => this.facade.onImageSelected(image);
   removeAttachedImage = () => this.facade.removeAttachedImage();
-  openImageModal = (url: string) => this.facade.openImageModal(url);
+  
+  // Image modal methods
+  openImageModal = (url: string) => {
+    this.imageModalUrl = url;
+    this.imageModalAltText = 'Image attachment';
+    this.imageModalVisible = true;
+  };
+
+  closeImageModal = () => {
+    this.imageModalVisible = false;
+    this.imageModalUrl = '';
+    this.imageModalAltText = '';
+  };
+
+  // Image error handling
+  onImageError = (_event: Event, message: ChatMsg) => {
+    console.error('[ChatRoom] Image failed to load:', {
+      messageId: message.id,
+      imageUrl: message.imageUrl?.substring(0, 50) + '...',
+      hasImage: message.hasImage
+    });
+    
+    // Mark message as having image error
+    const messages = this.facade.chat.messages$.value;
+    const messageIndex = messages.findIndex(m => m.id === message.id || m.ts === message.ts);
+    
+    if (messageIndex !== -1) {
+      const updatedMessage = { ...messages[messageIndex], imageError: true };
+      const updatedMessages = [
+        ...messages.slice(0, messageIndex),
+        updatedMessage,
+        ...messages.slice(messageIndex + 1)
+      ];
+      this.facade.chat.messages$.next(updatedMessages);
+    }
+  };
+
+  onImageLoad = (_event: Event, message: ChatMsg) => {
+    console.log('[ChatRoom] Image loaded successfully for message:', message.id);
+  };
   
   // Template helpers
   trackByTs = (i: number, m: { ts: number }) => this.facade.trackByTs(i, m);
