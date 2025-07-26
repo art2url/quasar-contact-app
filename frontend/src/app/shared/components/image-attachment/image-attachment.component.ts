@@ -77,6 +77,7 @@ export class ImageAttachmentComponent implements OnDestroy {
       return;
     }
 
+
     this.isProcessing = true;
     this.updateProgress({
       uploading: true,
@@ -162,8 +163,14 @@ export class ImageAttachmentComponent implements OnDestroy {
     }
 
     return new Promise((resolve, reject) => {
+        // Add timeout to prevent hanging
+        const timeout = setTimeout(() => {
+          URL.revokeObjectURL(imageSrc);
+          reject(new Error('Image processing timeout'));
+        }, 30000); // 30 second timeout
 
         img.onload = () => {
+          clearTimeout(timeout);
           try {
             this.updateProgress({
               uploading: true,
@@ -171,8 +178,8 @@ export class ImageAttachmentComponent implements OnDestroy {
               status: 'compressing'
             });
 
-            // Calculate new dimensions (max 1920px width/height)
-            const maxDimension = 1920;
+            // Calculate new dimensions - use smaller max for mobile photo library images
+            const maxDimension = file.size > 3 * 1024 * 1024 ? 1280 : 1920; // 1280px for large files
             let { width, height } = img;
 
             // For SVGs with no intrinsic dimensions, use default size
@@ -198,11 +205,18 @@ export class ImageAttachmentComponent implements OnDestroy {
             // Draw and compress
             ctx?.drawImage(img, 0, 0, width, height);
 
-            // Determine quality based on original file size
+            // Determine quality based on original file size - more aggressive for photo library
             let quality = 0.8; // Default high quality
             if (file.size > 1024 * 1024) { // > 1MB
+              quality = 0.7;
+            }
+            if (file.size > 2 * 1024 * 1024) { // > 2MB
               quality = 0.6;
-            } else if (file.size > 2 * 1024 * 1024) { // > 2MB
+            }
+            if (file.size > 3 * 1024 * 1024) { // > 3MB
+              quality = 0.5;
+            }
+            if (file.size > 4 * 1024 * 1024) { // > 4MB
               quality = 0.4;
             }
 
@@ -233,12 +247,15 @@ export class ImageAttachmentComponent implements OnDestroy {
                 // Create preview URL
                 const preview = URL.createObjectURL(blob);
 
-                resolve({
+                const result = {
                   file: compressedFile,
                   preview,
                   originalSize: file.size,
                   compressedSize: blob.size,
-                });
+                };
+
+
+                resolve(result);
               },
               'image/jpeg',
               quality
@@ -250,6 +267,7 @@ export class ImageAttachmentComponent implements OnDestroy {
         };
 
         img.onerror = () => {
+          clearTimeout(timeout);
           URL.revokeObjectURL(imageSrc);
           reject(new Error('Failed to load image'));
         };

@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
+import { io } from '../server';
+import { emitToUser } from '../sockets';
 
 const router = Router();
 
@@ -83,10 +85,37 @@ router.post('/message-with-image', authenticateToken, async (req: AuthRequest, r
       },
     });
 
+    const timestamp = message.timestamp || message.createdAt;
+
+    // Get sender info for socket notification
+    const sender = await prisma.user.findUnique({
+      where: { id: req.user?.userId! },
+      select: { username: true, avatarUrl: true },
+    });
+
+    // Emit message to recipient via socket (includes offline queueing)
+    // This uses the same pattern as the socket 'send-message' handler
+    const messageData = {
+      fromUserId: req.user?.userId!,
+      fromUsername: sender?.username || 'Unknown',
+      avatarUrl: sender?.avatarUrl,
+      ciphertext: encryptedPayload,
+      messageId: message.id,
+      timestamp,
+    };
+
+    // Use the same emission pattern as socket 'send-message' handler
+    // This includes automatic offline queueing
+    const delivered = emitToUser(io, receiverId, 'receive-message', messageData);
+    
+    if (!delivered) {
+      // Message queued for offline recipient - will be delivered when they reconnect
+    }
+
     res.json({
       success: true,
       messageId: message.id,
-      timestamp: message.timestamp,
+      timestamp,
       retryAttempt,
     });
 
