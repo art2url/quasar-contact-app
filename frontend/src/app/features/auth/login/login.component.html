@@ -61,10 +61,10 @@
           readonly />
       </div>
 
-      <!-- reCAPTCHA Widget -->
-      <div class="form-group recaptcha-container">
-        <div id="recaptcha-login" #recaptchaElement></div>
-        <div *ngIf="!recaptchaToken && formSubmitted" class="recaptcha-error">
+      <!-- Turnstile Widget -->
+      <div class="form-group turnstile-container">
+        <div id="turnstile-login" #turnstileElement class="turnstile-wrapper"></div>
+        <div *ngIf="!turnstileToken && formSubmitted" class="turnstile-error">
           Please complete the security verification
         </div>
       </div>

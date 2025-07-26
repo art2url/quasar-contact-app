@@ -8,7 +8,7 @@
     "dev": "npm run copy:landing && cd backend && npm run dev",
     "dev:landing": "cd landing && npm run dev",
     "build": "npm run build:landing && npm run build:frontend && npm run copy && npm run build:backend",
-    "build:frontend": "cd frontend && set -a && source .env && set +a && echo 'DEBUG: NG_APP_API_URL=' $NG_APP_API_URL && echo 'DEBUG: NG_APP_WS_URL=' $NG_APP_WS_URL && echo 'DEBUG: NG_APP_RECAPTCHA_SITE_KEY=' $NG_APP_RECAPTCHA_SITE_KEY && echo 'DEBUG: NODE_ENV=' $NODE_ENV && npx ng build --configuration production",
+    "build:frontend": "cd frontend && set -a && source .env && set +a && echo 'DEBUG: NG_APP_API_URL=' $NG_APP_API_URL && echo 'DEBUG: NG_APP_WS_URL=' $NG_APP_WS_URL && echo 'DEBUG: NG_APP_TURNSTILE_SITE_KEY=' $NG_APP_TURNSTILE_SITE_KEY && echo 'DEBUG: NODE_ENV=' $NODE_ENV && npx ng build --configuration production",
     "build:backend": "cd backend && npm run build",
     "copy": "mkdir -p dist && if [ -d 'frontend/dist/browser' ]; then cp -r frontend/dist/browser/* dist/; elif [ -d 'frontend/dist' ]; then cp -r frontend/dist/* dist/; else echo 'No frontend dist found'; fi",
     "copy:landing": "rm -rf dist && mkdir -p dist && if [ -d 'landing/dist' ]; then cp -r landing/dist/* dist/; else echo 'No landing dist found - building...'; cd landing && npm run build && cd .. && cp -r landing/dist/* dist/; fi",
