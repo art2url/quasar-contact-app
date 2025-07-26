@@ -1189,71 +1189,47 @@ export class ChatSessionService implements OnDestroy {
   }
 
   /**
-   * Enhanced send method with better error handling
+   * Enhanced send method with better error handling and HTTP fallback for images
    */
   async send(_: string, plain: string, imageAttachment?: {file: File, preview: string, compressedSize: number}): Promise<void> {
     if ((!plain?.trim() && !imageAttachment) || !this.roomId || !this.theirPubKey) {
       return;
     }
 
-    if (!this.ws.isConnected()) {
-      console.error(
-        '[ChatSession] Cannot send - socket disconnected, message will not be sent'
-      );
-      // Don't add message to UI if we can't send it
-      // This prevents showing messages that will never be delivered
-      return;
+    const ts = Date.now();
+    const myAvatar = localStorage.getItem('myAvatar') || 'assets/images/avatars/01.svg';
+
+    this.markPreviousMessagesAsRead();
+
+    // Convert image to base64 if present
+    let imageData: string | null = null;
+    if (imageAttachment) {
+      imageData = await this.fileToBase64(imageAttachment.file);
     }
 
+    // Add pending message
+    const pendingMessage: ChatMsg = {
+      sender: 'You',
+      text: plain,
+      ts,
+      status: 'pending',
+      avatarUrl: myAvatar,
+      hasImage: !!imageAttachment,
+      imageUrl: imageData ? `data:image/jpeg;base64,${imageData}` : undefined,
+      imageFile: imageAttachment?.file,
+    };
+
+    const pendingKey = `pending::${ts}`;
+    this.push(pendingMessage);
+
+    // Prepare message payload for encryption
+    const messagePayload = {
+      text: plain,
+      imageData: imageData,
+      hasImage: !!imageAttachment
+    };
+
     try {
-      const ts = Date.now();
-      const myAvatar = localStorage.getItem('myAvatar') || 'assets/images/avatars/01.svg';
-
-      this.markPreviousMessagesAsRead();
-
-      // Convert image to base64 if present
-      let imageData: string | null = null;
-      if (imageAttachment) {
-        imageData = await this.fileToBase64(imageAttachment.file);
-      }
-
-      // Add pending message
-      const pendingMessage: ChatMsg = {
-        sender: 'You',
-        text: plain,
-        ts,
-        status: 'pending',
-        avatarUrl: myAvatar,
-        hasImage: !!imageAttachment,
-        imageUrl: imageData ? `data:image/jpeg;base64,${imageData}` : undefined,
-        imageFile: imageAttachment?.file,
-      };
-
-      const pendingKey = `pending::${ts}`;
-
-      // Add pending message with timeout tracking
-      const timeoutSubscription = timer(30000).subscribe(() => {
-        if (this.pendingMessages.has(pendingKey)) {
-          console.error(
-            '[ChatSession] Message ack timeout after 30s, but keeping message visible'
-          );
-          // Don't remove the message from UI, just mark it as potentially failed
-          // The fallback sync will handle recovery
-          this.pendingMessages.delete(pendingKey);
-        }
-      });
-
-      this.pendingMessages.set(pendingKey, { timestamp: ts, timeoutSubscription });
-      this.push(pendingMessage);
-
-      // Prepare message payload for encryption
-      const messagePayload = {
-        text: plain,
-        imageData: imageData,
-        hasImage: !!imageAttachment
-      };
-
-      // Encrypt and send - encryption is required
       const ct = await this.crypto.encryptWithPublicKey(JSON.stringify(messagePayload), this.theirPubKey);
 
       const pendingCacheEntry = {
@@ -1266,9 +1242,164 @@ export class ChatSessionService implements OnDestroy {
 
       await this.vault.set(this.key(pendingKey), pendingCacheEntry);
 
-      this.ws.sendMessage(this.roomId, ct, myAvatar);
+      // Determine if we should use HTTP fallback for large images
+      const shouldUseHttpFallback = imageAttachment && (
+        !this.ws.isConnected() ||
+        imageAttachment.file.size > 1024 * 1024 || // > 1MB
+        imageAttachment.compressedSize > 500 * 1024 // > 500KB compressed
+      );
+
+      if (shouldUseHttpFallback) {
+        console.log('[ChatSession] Using HTTP fallback for image upload');
+        await this.sendViaHttpFallback(ct, pendingKey, ts);
+      } else {
+        // Try WebSocket first with timeout and retry logic
+        await this.sendViaWebSocket(ct, myAvatar, pendingKey, ts);
+      }
     } catch (error) {
       console.error('[ChatSession] Error sending message:', error);
+      this.updateMessageStatus(pendingKey, 'failed');
+    }
+  }
+
+  /**
+   * Send message via WebSocket with retry logic
+   */
+  private async sendViaWebSocket(ciphertext: string, avatar: string, pendingKey: string, timestamp: number, retryCount = 0): Promise<void> {
+    const maxRetries = 2;
+    
+    if (!this.ws.isConnected()) {
+      if (retryCount < maxRetries) {
+        console.log(`[ChatSession] Socket disconnected, retrying in 2s (attempt ${retryCount + 1}/${maxRetries})`);
+        await this.delay(2000);
+        return this.sendViaWebSocket(ciphertext, avatar, pendingKey, timestamp, retryCount + 1);
+      } else {
+        console.log('[ChatSession] Max retries reached, falling back to HTTP');
+        return this.sendViaHttpFallback(ciphertext, pendingKey, timestamp);
+      }
+    }
+
+    try {
+      // Set up timeout for acknowledgment
+      const timeoutSubscription = timer(15000).subscribe(() => {
+        if (this.pendingMessages.has(pendingKey)) {
+          console.warn('[ChatSession] WebSocket send timeout, retrying...');
+          this.pendingMessages.delete(pendingKey);
+          
+          if (retryCount < maxRetries) {
+            this.sendViaWebSocket(ciphertext, avatar, pendingKey, timestamp, retryCount + 1);
+          } else {
+            console.log('[ChatSession] WebSocket max retries reached, using HTTP fallback');
+            this.sendViaHttpFallback(ciphertext, pendingKey, timestamp);
+          }
+        }
+      });
+
+      this.pendingMessages.set(pendingKey, { timestamp, timeoutSubscription });
+      this.ws.sendMessage(this.roomId, ciphertext, avatar);
+    } catch (error) {
+      console.error('[ChatSession] WebSocket send error:', error);
+      if (retryCount < maxRetries) {
+        await this.delay(1000);
+        return this.sendViaWebSocket(ciphertext, avatar, pendingKey, timestamp, retryCount + 1);
+      } else {
+        return this.sendViaHttpFallback(ciphertext, pendingKey, timestamp);
+      }
+    }
+  }
+
+  /**
+   * Send message via HTTP fallback
+   */
+  private async sendViaHttpFallback(ciphertext: string, pendingKey: string, timestamp: number, retryCount = 0): Promise<void> {
+    const maxRetries = 3;
+    
+    try {
+      const response = await fetch('/api/upload/message-with-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify({
+          receiverId: this.roomId,
+          encryptedPayload: ciphertext,
+          retryAttempt: retryCount
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // Update pending message with server response
+        await this.updatePendingMessage(result.messageId, result.timestamp);
+        console.log('[ChatSession] Message sent successfully via HTTP fallback');
+      } else {
+        throw new Error(result.message || 'HTTP fallback failed');
+      }
+    } catch (error) {
+      console.error('[ChatSession] HTTP fallback error:', error);
+      
+      if (retryCount < maxRetries) {
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 5000); // Exponential backoff, max 5s
+        console.log(`[ChatSession] Retrying HTTP fallback in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`);
+        await this.delay(delay);
+        return this.sendViaHttpFallback(ciphertext, pendingKey, timestamp, retryCount + 1);
+      } else {
+        console.error('[ChatSession] All retry attempts failed');
+        this.updateMessageStatus(pendingKey, 'failed');
+      }
+    }
+  }
+
+  /**
+   * Update message status in UI
+   */
+  private updateMessageStatus(pendingKey: string, status: 'failed' | 'sent' | 'delivered'): void {
+    const messages = this.messages$.value;
+    const messageIndex = messages.findIndex(m => m.status === 'pending' && m.ts === parseInt(pendingKey.split('::')[1]));
+    
+    if (messageIndex !== -1) {
+      const updatedMessage = { ...messages[messageIndex], status };
+      const updatedMessages = [
+        ...messages.slice(0, messageIndex),
+        updatedMessage,
+        ...messages.slice(messageIndex + 1)
+      ];
+      this.messages$.next(updatedMessages);
+    }
+  }
+
+  /**
+   * Utility delay function
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Validate base64 string
+   */
+  private isValidBase64(str: string): boolean {
+    if (!str || typeof str !== 'string') return false;
+    
+    try {
+      // Check if string contains only valid base64 characters
+      const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+      if (!base64Regex.test(str)) return false;
+      
+      // Check if string length is valid (multiple of 4)
+      if (str.length % 4 !== 0) return false;
+      
+      // Try to decode to verify it's valid
+      atob(str);
+      return true;
+    } catch {
+      return false;
     }
   }
 
@@ -1467,12 +1598,25 @@ export class ChatSessionService implements OnDestroy {
       try {
         const messagePayload = JSON.parse(decryptedText);
         if (Object.prototype.hasOwnProperty.call(messagePayload, 'text') && Object.prototype.hasOwnProperty.call(messagePayload, 'hasImage')) {
-          // This is a new format message, store image data if present
-          this.lastDecryptedImageData = messagePayload.imageData;
-          this.lastDecryptedHasImage = messagePayload.hasImage;
+          // This is a new format message, validate and store image data if present
+          if (messagePayload.hasImage && messagePayload.imageData) {
+            // Validate base64 data
+            if (this.isValidBase64(messagePayload.imageData)) {
+              this.lastDecryptedImageData = messagePayload.imageData;
+              this.lastDecryptedHasImage = true;
+            } else {
+              console.error('[ChatSession] Invalid base64 image data detected');
+              this.lastDecryptedImageData = undefined;
+              this.lastDecryptedHasImage = false;
+            }
+          } else {
+            this.lastDecryptedImageData = undefined;
+            this.lastDecryptedHasImage = messagePayload.hasImage || false;
+          }
           return messagePayload.text;
         }
-      } catch {
+      } catch (parseError) {
+        console.warn('[ChatSession] Failed to parse message as JSON:', parseError);
         // Not JSON, treat as plain text (old format)
         this.lastDecryptedImageData = undefined;
         this.lastDecryptedHasImage = false;

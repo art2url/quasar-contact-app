@@ -1623,3 +1623,112 @@
 .dark-theme .message.other.deleted .message-content {
   color: var(--text-secondary) !important;
 }
+
+/* ─── Image Message Styles ─────────────────────────────────── */
+.message-image {
+  margin: var(--spacing-xs) 0;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  max-width: 300px;
+  width: fit-content;
+}
+
+.attached-image {
+  max-width: 100%;
+  max-height: 300px;
+  height: auto;
+  width: auto;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: block;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  user-select: none;
+  object-fit: cover;
+}
+
+.attached-image:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.attached-image:active {
+  transform: scale(0.98);
+}
+
+.attached-image:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* Dark theme adjustments */
+.dark-theme .attached-image {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dark-theme .attached-image:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Image error state */
+.image-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: var(--spacing-md);
+  background: rgba(220, 53, 69, 0.1);
+  border: 1px dashed rgba(220, 53, 69, 0.3);
+  border-radius: 8px;
+  color: rgba(220, 53, 69, 0.8);
+  font-size: 0.9rem;
+  gap: var(--spacing-xs);
+  min-height: 80px;
+  max-width: 250px;
+}
+
+.image-error mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+  opacity: 0.7;
+}
+
+.dark-theme .image-error {
+  background: rgba(244, 67, 54, 0.15);
+  border-color: rgba(244, 67, 54, 0.4);
+  color: rgba(244, 67, 54, 0.9);
+}
+
+/* Hide broken image when error div is shown */
+.message-image:has(.image-error) .attached-image {
+  display: none;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 599px) {
+  .message-image {
+    max-width: 250px;
+  }
+
+  .attached-image {
+    max-height: 250px;
+  }
+
+  .attached-image:hover {
+    transform: none; /* Disable hover effects on mobile */
+  }
+
+  .image-error {
+    max-width: 200px;
+    min-height: 60px;
+    font-size: 0.8rem;
+  }
+
+  .image-error mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}

@@ -15,7 +15,7 @@ export interface ChatMsg {
   sender: 'You' | string; // "You" | partner alias
   text: string; // already-decrypted payload (or fallback)
   ts: number; // epoch-millis
-  status?: 'pending' | 'sent' | 'delivered' | 'read';
+  status?: 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
   avatarUrl?: string; // future-use
   ct?: string; // raw cipher – kept only for my own bubbles
   editedAt?: number; // epoch ms (undefined = never edited)
@@ -24,6 +24,7 @@ export interface ChatMsg {
   imageUrl?: string; // URL or base64 data for attached image
   imageFile?: File; // Temporary file for pending uploads
   hasImage?: boolean; // Flag to indicate message contains image
+  imageError?: boolean; // Flag to indicate image failed to load
 }
 
 // How sent bubbles are memo-ised in the vault
