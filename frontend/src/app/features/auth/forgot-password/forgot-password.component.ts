@@ -1,28 +1,28 @@
 import {
-  Component,
-  OnInit,
-  OnDestroy,
   AfterViewInit,
-  ElementRef,
-  ViewChild,
   ChangeDetectorRef,
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
 } from '@angular/core';
 import { Subscription, timer } from 'rxjs';
 
-import { FormsModule } from '@angular/forms';
 import { CommonModule, KeyValuePipe } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { RouterModule } from '@angular/router';
 
 import { AuthService } from '@services/auth.service';
-import { ThemeService } from '@services/theme.service';
-import { RecaptchaService } from '@services/recaptcha.service';
 import { HoneypotService } from '@services/honeypot.service';
+import { ThemeService } from '@services/theme.service';
+import { TurnstileService } from '@services/turnstile.service';
 
 @Component({
   selector: 'app-forgot-password',
@@ -43,8 +43,8 @@ import { HoneypotService } from '@services/honeypot.service';
   styleUrls: ['./forgot-password.component.css'],
 })
 export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit {
-  @ViewChild('recaptchaElement', { static: false })
-  recaptchaElement!: ElementRef;
+  @ViewChild('turnstileElement', { static: false })
+  turnstileElement!: ElementRef;
 
   email = '';
   error = '';
@@ -52,19 +52,19 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
   formSubmitted = false;
   emailSent = false;
   resendCooldown = 0;
-  recaptchaToken = '';
-  recaptchaWidgetId: number | undefined;
+  turnstileToken = '';
+  turnstileWidgetId: string | undefined;
   private themeSubscription?: Subscription;
 
   private resendTimer: Subscription | undefined;
-  
+
   // Security fields
   securityFields: Record<string, string> = {};
   formStartTime = 0;
 
   constructor(
     private authService: AuthService,
-    private recaptchaService: RecaptchaService,
+    private turnstileService: TurnstileService,
     private themeService: ThemeService,
     private cdr: ChangeDetectorRef,
     public honeypotService: HoneypotService
@@ -75,31 +75,33 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
     this.error = '';
     this.emailSent = false;
     this.resendCooldown = 0;
-    
+
     // Initialize security fields
     this.securityFields = this.honeypotService.createHoneypotData();
     this.formStartTime = this.honeypotService.addFormStartTime();
   }
 
   ngAfterViewInit(): void {
-    this.initializeRecaptcha();
+    this.initializeTurnstile();
     this.setupThemeSubscription();
   }
 
-  private async initializeRecaptcha(): Promise<void> {
+  private async initializeTurnstile(): Promise<void> {
     this.cdr.detectChanges();
-    
+
     try {
       // Use different element ID based on email sent state
-      const elementId = this.emailSent ? 'recaptcha-forgot-password-resend' : 'recaptcha-forgot-password';
-      this.recaptchaWidgetId = await this.recaptchaService.initializeRecaptcha(
+      const elementId = this.emailSent
+        ? 'turnstile-forgot-password-resend'
+        : 'turnstile-forgot-password';
+      this.turnstileWidgetId = await this.turnstileService.initializeTurnstile(
         elementId,
         (token: string) => {
-          this.recaptchaToken = token;
-          this.error = ''; // Clear any reCAPTCHA-related errors
+          this.turnstileToken = token;
+          this.error = ''; // Clear any Turnstile-related errors
         }
       );
-      // reCAPTCHA initialized successfully
+      // Turnstile initialized successfully
     } catch (error) {
       this.error = (error as Error).message;
     }
@@ -118,40 +120,31 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
         return;
       }
 
-      // reCAPTCHA widget ID available
+      // Turnstile widget ID available
 
-      if (this.recaptchaWidgetId !== undefined) {
-        // Re-rendering reCAPTCHA for theme change
-
-        // Reset the widget first
-        this.recaptchaService.resetRecaptcha(this.recaptchaWidgetId);
-        this.recaptchaToken = '';
-
-        // Completely remove and recreate the DOM element
-        const recaptchaElement = document.getElementById('recaptcha-forgot-password');
-        if (recaptchaElement && recaptchaElement.parentNode) {
-          const parent = recaptchaElement.parentNode;
-          const newElement = document.createElement('div');
-          newElement.id = 'recaptcha-forgot-password';
-          parent.replaceChild(newElement, recaptchaElement);
-          // Recreated reCAPTCHA DOM element
-        }
+      if (this.turnstileWidgetId !== undefined) {
+        // Re-rendering Turnstile for theme change with width preservation
+        this.turnstileToken = '';
 
         // Re-render with change detection
         this.cdr.detectChanges();
-        try {
-          this.recaptchaWidgetId = this.recaptchaService.renderRecaptcha(
-            'recaptcha-forgot-password',
+        this.turnstileService
+          .reRenderTurnstile(
+            'turnstile-forgot-password',
             (token: string) => {
-              this.recaptchaToken = token;
+              this.turnstileToken = token;
               this.error = '';
-            }
-          );
-          // New reCAPTCHA widget created
-        } catch {
-          // Don't log theme change errors - they're not critical
-          // The form will still work, just without reCAPTCHA theme update
-        }
+            },
+            this.turnstileWidgetId
+          )
+          .then(widgetId => {
+            this.turnstileWidgetId = widgetId;
+            // New Turnstile widget created with preserved width
+          })
+          .catch(() => {
+            // Don't log theme change errors - they're not critical
+            // The form will still work, just without Turnstile theme update
+          });
       }
     });
   }
@@ -160,7 +153,6 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   }
-
 
   onSubmit(): void {
     this.formSubmitted = true;
@@ -171,7 +163,7 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
       return;
     }
 
-    if (!this.recaptchaToken) {
+    if (!this.turnstileToken) {
       this.error = 'Please complete the security verification';
       return;
     }
@@ -185,27 +177,29 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
 
     this.isLoading = true;
 
-    this.authService.requestPasswordReset(this.email, this.recaptchaToken, this.securityFields).subscribe({
-      next: () => {
-        this.isLoading = false;
-        this.emailSent = true;
-        this.startResendCooldown();
-      },
-      error: err => {
-        this.isLoading = false;
-        this.resetRecaptcha(); // Reset reCAPTCHA on failed attempt
+    this.authService
+      .requestPasswordReset(this.email, this.turnstileToken, this.securityFields)
+      .subscribe({
+        next: () => {
+          this.isLoading = false;
+          this.emailSent = true;
+          this.startResendCooldown();
+        },
+        error: err => {
+          this.isLoading = false;
+          this.resetTurnstile(); // Reset Turnstile on failed attempt
 
-        if (err.status === 404) {
-          this.error = 'No account found with this email address';
-        } else if (err.status === 429) {
-          this.error = 'Too many requests. Please try again later.';
-        } else if (err.status === 400 && err.error?.message?.includes('recaptcha')) {
-          this.error = 'Security verification failed. Please try again.';
-        } else {
-          this.error = 'An error occurred. Please try again.';
-        }
-      },
-    });
+          if (err.status === 404) {
+            this.error = 'No account found with this email address';
+          } else if (err.status === 429) {
+            this.error = 'Too many requests. Please try again later.';
+          } else if (err.status === 400 && err.error?.message?.includes('turnstile')) {
+            this.error = 'Security verification failed. Please try again.';
+          } else {
+            this.error = 'An error occurred. Please try again.';
+          }
+        },
+      });
   }
 
   resendEmail(): void {
@@ -214,9 +208,9 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
     this.onSubmit();
   }
 
-  private resetRecaptcha(): void {
-    this.recaptchaToken = '';
-    this.recaptchaService.resetRecaptchaWidget(this.recaptchaWidgetId);
+  private resetTurnstile(): void {
+    this.turnstileToken = '';
+    this.turnstileService.resetTurnstileWidget(this.turnstileWidgetId);
   }
 
   private startResendCooldown(): void {
@@ -227,8 +221,8 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
       if (this.resendCooldown <= 0) {
         this.resendTimer?.unsubscribe();
         this.resendTimer = undefined;
-        // Re-initialize reCAPTCHA for resend functionality
-        this.initializeRecaptcha();
+        // Re-initialize Turnstile for resend functionality
+        this.initializeTurnstile();
       }
     });
   }
@@ -240,9 +234,9 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
       this.resendTimer = undefined;
     }
 
-    // Reset reCAPTCHA widget
-    this.recaptchaService.resetRecaptchaWidget(this.recaptchaWidgetId);
-    this.recaptchaWidgetId = undefined;
+    // Reset Turnstile widget
+    this.turnstileService.resetTurnstileWidget(this.turnstileWidgetId);
+    this.turnstileWidgetId = undefined;
 
     // Clean up theme subscription
     if (this.themeSubscription) {

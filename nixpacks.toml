@@ -15,7 +15,7 @@ cmds = [
   'echo "Build phase - checking env vars:"',
   'echo "NG_APP_API_URL=$NG_APP_API_URL"',
   'echo "NG_APP_WS_URL=$NG_APP_WS_URL"',
-  'echo "NG_APP_RECAPTCHA_SITE_KEY=$NG_APP_RECAPTCHA_SITE_KEY"',
+  'echo "NG_APP_TURNSTILE_SITE_KEY=$NG_APP_TURNSTILE_SITE_KEY"',
   'echo "NODE_ENV=$NODE_ENV"',
   'npm run build'
 ]
