@@ -168,6 +168,16 @@ export class ChatSessionService implements OnDestroy {
    */
   private readonly messageSentCb = async ({ messageId, timestamp }: AckPayload) => {
     try {
+      // Clear any pending timeouts for this message to prevent HTTP fallback
+      const timestampNum = +new Date(timestamp);
+      for (const [pendingKey, pendingData] of this.pendingMessages.entries()) {
+        if (pendingData.timestamp === timestampNum || Math.abs(pendingData.timestamp - timestampNum) < 1000) {
+          pendingData.timeoutSubscription?.unsubscribe();
+          this.pendingMessages.delete(pendingKey);
+          break;
+        }
+      }
+
       // Always try to update pending messages, even during loading
       const success = await this.updatePendingMessage(messageId, timestamp);
       if (!success) {
@@ -1230,7 +1240,15 @@ export class ChatSessionService implements OnDestroy {
     };
 
     try {
-      const ct = await this.crypto.encryptWithPublicKey(JSON.stringify(messagePayload), this.theirPubKey);
+      // Check payload size before encryption to prevent memory issues
+      const payloadString = JSON.stringify(messagePayload);
+      const payloadSizeKB = new Blob([payloadString]).size / 1024;
+      
+      if (payloadSizeKB > 500) { // 500KB payload limit
+        throw new Error(`Message payload too large: ${payloadSizeKB.toFixed(1)}KB. Try a smaller image.`);
+      }
+
+      const ct = await this.crypto.encryptWithPublicKey(payloadString, this.theirPubKey);
 
       const pendingCacheEntry = {
         id: pendingKey,
@@ -1243,10 +1261,10 @@ export class ChatSessionService implements OnDestroy {
       await this.vault.set(this.key(pendingKey), pendingCacheEntry);
 
       // Determine if we should use HTTP fallback for large images
+      // Only use HTTP when WebSocket is unavailable or image is very large
       const shouldUseHttpFallback = imageAttachment && (
         !this.ws.isConnected() ||
-        imageAttachment.file.size > 1024 * 1024 || // > 1MB
-        imageAttachment.compressedSize > 500 * 1024 // > 500KB compressed
+        imageAttachment.compressedSize > 1024 * 1024 // > 1MB compressed (increased threshold)
       );
 
       if (shouldUseHttpFallback) {
@@ -1258,7 +1276,17 @@ export class ChatSessionService implements OnDestroy {
       }
     } catch (error) {
       console.error('[ChatSession] Error sending message:', error);
-      this.updateMessageStatus(pendingKey, 'failed');
+      
+      // Show user-friendly error for large images
+      if (error instanceof Error && error.message.includes('payload too large')) {
+        this.updateMessageStatus(pendingKey, 'failed');
+        alert(error.message);
+      } else if (error instanceof Error && error.message.includes('encrypt')) {
+        this.updateMessageStatus(pendingKey, 'failed');
+        alert('Failed to encrypt message. The image might be too large.');
+      } else {
+        this.updateMessageStatus(pendingKey, 'failed');
+      }
     }
   }
 
@@ -1284,13 +1312,17 @@ export class ChatSessionService implements OnDestroy {
       const timeoutSubscription = timer(15000).subscribe(() => {
         if (this.pendingMessages.has(pendingKey)) {
           console.warn('[ChatSession] WebSocket send timeout, retrying...');
+          const pendingEntry = this.pendingMessages.get(pendingKey);
           this.pendingMessages.delete(pendingKey);
           
           if (retryCount < maxRetries) {
             this.sendViaWebSocket(ciphertext, avatar, pendingKey, timestamp, retryCount + 1);
           } else {
             console.log('[ChatSession] WebSocket max retries reached, using HTTP fallback');
-            this.sendViaHttpFallback(ciphertext, pendingKey, timestamp);
+            // Only use HTTP fallback if message hasn't been acknowledged yet
+            if (pendingEntry) {
+              this.sendViaHttpFallback(ciphertext, pendingKey, timestamp);
+            }
           }
         }
       });

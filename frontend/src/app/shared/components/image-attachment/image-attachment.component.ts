@@ -70,10 +70,10 @@ export class ImageAttachmentComponent implements OnDestroy {
       return;
     }
 
-    // Validate file size (5MB limit)
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    // Validate file size (more restrictive for mobile)
+    const maxSize = 4 * 1024 * 1024; // 4MB to prevent mobile memory issues
     if (file.size > maxSize) {
-      alert('Image size must be less than  5MB.');
+      alert('Image size must be less than 4MB. Please choose a smaller image.');
       return;
     }
 
@@ -178,8 +178,11 @@ export class ImageAttachmentComponent implements OnDestroy {
               status: 'compressing'
             });
 
-            // Calculate new dimensions - use smaller max for mobile photo library images
-            const maxDimension = file.size > 3 * 1024 * 1024 ? 1280 : 1920; // 1280px for large files
+            // Calculate new dimensions - more aggressive for large files
+            let maxDimension = 1920;
+            if (file.size > 2 * 1024 * 1024) maxDimension = 1280; // 2MB+ -> 1280px
+            if (file.size > 3 * 1024 * 1024) maxDimension = 1024; // 3MB+ -> 1024px
+            
             let { width, height } = img;
 
             // For SVGs with no intrinsic dimensions, use default size
@@ -232,7 +235,13 @@ export class ImageAttachmentComponent implements OnDestroy {
                 URL.revokeObjectURL(imageSrc);
 
                 if (!blob) {
-                  reject(new Error('Failed to compress image'));
+                  reject(new Error('Failed to compress image - canvas toBlob returned null'));
+                  return;
+                }
+
+                // Additional validation for photo library images
+                if (blob.size === 0) {
+                  reject(new Error('Compressed image is empty'));
                   return;
                 }
 
