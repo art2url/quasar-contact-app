@@ -51,6 +51,16 @@ export class ImageModalComponent {
   }
 
   /**
+   * Handle image click - close on mobile, nothing on desktop when zoomed
+   */
+  onImageClick(_event: Event): void {
+    // Only close if not zoomed (mobile behavior)
+    if (this.zoomLevel <= 1) {
+      this.onCloseModal();
+    }
+  }
+
+  /**
    * Handle escape key to close modal
    */
   @HostListener('document:keydown.escape')

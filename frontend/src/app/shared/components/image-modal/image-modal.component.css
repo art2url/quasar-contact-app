@@ -15,16 +15,16 @@
 
 .image-modal-container {
   position: relative;
-  max-width: 95vw;
-  max-height: 95vh;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .modal-image {
-  max-width: 90vw;
-  max-height: 85vh;
+  max-width: 95vw;
+  max-height: 90vh;
   object-fit: contain;
   transition: transform 0.1s ease-out;
   border-radius: 8px;
@@ -50,13 +50,13 @@
 }
 
 .image-controls {
-  position: absolute;
+  position: fixed;
   top: 20px;
   right: 20px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  z-index: 10000;
+  justify-content: flex-end;
+  z-index: 10001;
 }
 
 .zoom-controls {
@@ -155,7 +155,7 @@
 }
 
 .instructions {
-  position: absolute;
+  position: fixed;
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
@@ -167,6 +167,7 @@
   backdrop-filter: blur(10px);
   white-space: nowrap;
   opacity: 0.8;
+  z-index: 10001;
 }
 
 .instructions p {
@@ -192,71 +193,51 @@
   }
 }
 
-/* Mobile responsiveness */
+/* Mobile responsiveness - hide zoom controls and instructions */
 @media (max-width: 768px) {
+  /* Hide zoom controls (keep only close button would require restructuring) */
+  .zoom-btn,
+  .reset-btn,
+  .zoom-level,
+  .control-separator {
+    display: none !important;
+  }
+
+  /* Hide instructions about mouse interactions */
+  .instructions {
+    display: none !important;
+  }
+
+  /* Simplify controls for mobile */
   .image-controls {
-    top: 10px;
-    right: 10px;
-    left: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    top: 20px;
+    right: 20px;
   }
 
   .zoom-controls {
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    padding: 6px 8px;
-    gap: 4px;
-    width: fit-content;
-  }
-
-  .control-separator {
-    height: 16px;
-    margin: 0 2px;
-  }
-
-  .control-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    margin: 0;
+    padding: 8px;
+    gap: 0;
   }
 
   .close-btn {
-    width: 36px;
-    height: 36px;
-    font-size: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    margin: 0;
-    line-height: 1;
+    width: 44px;
+    height: 44px;
+    font-size: 24px;
   }
 
   .close-btn .control-icon {
-    font-size: 20px;
-    line-height: 0.8;
-    margin-top: -1px;
+    font-size: 24px;
   }
 
-  .instructions {
-    bottom: 10px;
-    font-size: 11px;
-    padding: 6px 12px;
-    max-width: 90vw;
-    white-space: normal;
-    text-align: center;
-  }
-
+  /* Make image easier to tap */
   .modal-image {
     max-width: 95vw;
-    max-height: 80vh;
+    max-height: 85vh;
+    cursor: pointer;
+  }
+
+  /* Remove transforms on mobile to allow native zoom */
+  .modal-image {
+    transform: none !important;
   }
 }
