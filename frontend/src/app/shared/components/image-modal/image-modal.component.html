@@ -48,7 +48,7 @@
           title="Zoom out (-)"
           aria-label="Zoom out"
         >
-          <span class="control-icon">−</span>
+          <mat-icon class="control-icon">remove</mat-icon>
         </button>
         
         <span class="zoom-level">{{ (zoomLevel * 100) | number:'1.0-0' }}%</span>
@@ -61,7 +61,7 @@
           title="Zoom in (+)"
           aria-label="Zoom in"
         >
-          <span class="control-icon">+</span>
+          <mat-icon class="control-icon">add</mat-icon>
         </button>
         
         <button 
@@ -71,7 +71,7 @@
           title="Reset zoom (0)"
           aria-label="Reset zoom"
         >
-          <span class="control-icon">⌂</span>
+          <mat-icon class="control-icon">center_focus_strong</mat-icon>
         </button>
 
         <!-- Separator -->
@@ -85,7 +85,7 @@
           title="Close (Esc)"
           aria-label="Close image viewer"
         >
-          <span class="control-icon">×</span>
+          <mat-icon class="control-icon">close</mat-icon>
         </button>
       </div>
     </div>
