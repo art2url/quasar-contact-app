@@ -186,10 +186,16 @@
                   (click)="openImageModal(m.imageUrl)"
                   (keydown.enter)="openImageModal(m.imageUrl)"
                   (keydown.space)="openImageModal(m.imageUrl)"
+                  (error)="onImageError($event, m)"
+                  (load)="onImageLoad($event, m)"
                   tabindex="0"
                   role="button"
-                  [attr.aria-label]="'Open image in new tab'"
+                  [attr.aria-label]="'Open image in full screen'"
                   loading="lazy" />
+                <div *ngIf="m.imageError" class="image-error">
+                  <mat-icon>broken_image</mat-icon>
+                  <span>Image failed to load</span>
+                </div>
               </div>
 
               <!-- Text content -->
@@ -347,3 +353,11 @@
     </form>
   </div>
 </div>
+
+<!-- Image Modal -->
+<app-image-modal
+  [imageUrl]="imageModalUrl"
+  [isVisible]="imageModalVisible"
+  [altText]="imageModalAltText"
+  (closeModal)="closeImageModal()">
+</app-image-modal>

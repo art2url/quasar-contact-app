@@ -6,13 +6,22 @@ import {
   Input,
   Output,
   ViewChild,
+  OnDestroy,
 } from '@angular/core';
+import { timer, Subscription } from 'rxjs';
 
 export interface CompressedImage {
   file: File;
   preview: string;
   originalSize: number;
   compressedSize: number;
+}
+
+export interface UploadProgress {
+  uploading: boolean;
+  progress: number; // 0-100
+  status: 'compressing' | 'uploading' | 'completed' | 'failed';
+  error?: string;
 }
 
 @Component({
@@ -22,12 +31,20 @@ export interface CompressedImage {
   templateUrl: './image-attachment.component.html',
   styleUrls: ['./image-attachment.component.css'],
 })
-export class ImageAttachmentComponent {
+export class ImageAttachmentComponent implements OnDestroy {
   @Input() disabled = false;
   @Output() imageSelected = new EventEmitter<CompressedImage>();
+  @Output() uploadProgress = new EventEmitter<UploadProgress>();
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
   isProcessing = false;
+  currentProgress: UploadProgress = {
+    uploading: false,
+    progress: 0,
+    status: 'completed'
+  };
+
+  private progressResetSubscription?: Subscription;
 
   /**
    * Trigger file input click
@@ -53,26 +70,68 @@ export class ImageAttachmentComponent {
       return;
     }
 
-    // Validate file size (5MB limit)
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    // Validate file size (more restrictive for mobile)
+    const maxSize = 4 * 1024 * 1024; // 4MB to prevent mobile memory issues
     if (file.size > maxSize) {
-      alert('Image size must be less than  5MB.');
+      alert('Image size must be less than 4MB. Please choose a smaller image.');
       return;
     }
 
+
     this.isProcessing = true;
+    this.updateProgress({
+      uploading: true,
+      progress: 0,
+      status: 'compressing'
+    });
 
     try {
       const compressedImage = await this.compressImage(file);
+      
+      this.updateProgress({
+        uploading: false,
+        progress: 100,
+        status: 'completed'
+      });
+      
       this.imageSelected.emit(compressedImage);
     } catch (error) {
       console.error('Error processing image:', error);
+      
+      this.updateProgress({
+        uploading: false,
+        progress: 0,
+        status: 'failed',
+        error: 'Failed to process image. Please try again.'
+      });
+      
       alert('Failed to process image. Please try again.');
     } finally {
       this.isProcessing = false;
       // Reset input
       input.value = '';
+      
+      // Clear progress after a delay using RxJS timer
+      this.progressResetSubscription = timer(2000).subscribe(() => {
+        this.updateProgress({
+          uploading: false,
+          progress: 0,
+          status: 'completed'
+        });
+      });
     }
+  }
+
+  /**
+   * Update progress and emit to parent
+   */
+  private updateProgress(progress: Partial<UploadProgress>): void {
+    this.currentProgress = { ...this.currentProgress, ...progress };
+    this.uploadProgress.emit(this.currentProgress);
+  }
+
+  ngOnDestroy(): void {
+    this.progressResetSubscription?.unsubscribe();
   }
 
   /**
@@ -81,6 +140,12 @@ export class ImageAttachmentComponent {
   private async compressImage(file: File): Promise<CompressedImage> {
     // Force JPEG conversion for all images, regardless of size
     // This ensures consistent encryption and rendering
+
+    this.updateProgress({
+      uploading: true,
+      progress: 20,
+      status: 'compressing'
+    });
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -98,11 +163,26 @@ export class ImageAttachmentComponent {
     }
 
     return new Promise((resolve, reject) => {
+        // Add timeout to prevent hanging
+        const timeout = setTimeout(() => {
+          URL.revokeObjectURL(imageSrc);
+          reject(new Error('Image processing timeout'));
+        }, 30000); // 30 second timeout
 
         img.onload = () => {
+          clearTimeout(timeout);
           try {
-            // Calculate new dimensions (max 1920px width/height)
-            const maxDimension = 1920;
+            this.updateProgress({
+              uploading: true,
+              progress: 50,
+              status: 'compressing'
+            });
+
+            // Calculate new dimensions - more aggressive for large files
+            let maxDimension = 1920;
+            if (file.size > 2 * 1024 * 1024) maxDimension = 1280; // 2MB+ -> 1280px
+            if (file.size > 3 * 1024 * 1024) maxDimension = 1024; // 3MB+ -> 1024px
+            
             let { width, height } = img;
 
             // For SVGs with no intrinsic dimensions, use default size
@@ -128,13 +208,26 @@ export class ImageAttachmentComponent {
             // Draw and compress
             ctx?.drawImage(img, 0, 0, width, height);
 
-            // Determine quality based on original file size
+            // Determine quality based on original file size - more aggressive for photo library
             let quality = 0.8; // Default high quality
             if (file.size > 1024 * 1024) { // > 1MB
+              quality = 0.7;
+            }
+            if (file.size > 2 * 1024 * 1024) { // > 2MB
               quality = 0.6;
-            } else if (file.size > 2 * 1024 * 1024) { // > 2MB
+            }
+            if (file.size > 3 * 1024 * 1024) { // > 3MB
+              quality = 0.5;
+            }
+            if (file.size > 4 * 1024 * 1024) { // > 4MB
               quality = 0.4;
             }
+
+            this.updateProgress({
+              uploading: true,
+              progress: 80,
+              status: 'compressing'
+            });
 
             canvas.toBlob(
               blob => {
@@ -142,7 +235,13 @@ export class ImageAttachmentComponent {
                 URL.revokeObjectURL(imageSrc);
 
                 if (!blob) {
-                  reject(new Error('Failed to compress image'));
+                  reject(new Error('Failed to compress image - canvas toBlob returned null'));
+                  return;
+                }
+
+                // Additional validation for photo library images
+                if (blob.size === 0) {
+                  reject(new Error('Compressed image is empty'));
                   return;
                 }
 
@@ -157,12 +256,15 @@ export class ImageAttachmentComponent {
                 // Create preview URL
                 const preview = URL.createObjectURL(blob);
 
-                resolve({
+                const result = {
                   file: compressedFile,
                   preview,
                   originalSize: file.size,
                   compressedSize: blob.size,
-                });
+                };
+
+
+                resolve(result);
               },
               'image/jpeg',
               quality
@@ -174,6 +276,7 @@ export class ImageAttachmentComponent {
         };
 
         img.onerror = () => {
+          clearTimeout(timeout);
           URL.revokeObjectURL(imageSrc);
           reject(new Error('Failed to load image'));
         };

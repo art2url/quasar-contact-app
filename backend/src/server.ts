@@ -61,6 +61,9 @@ io.on('connection', socket => {
 // Register the enhanced socket event handlers
 setupSocket(io);
 
+// Export socket.io instance for use in routes
+export { io };
+
 // Start server immediately, connect to database asynchronously
 server.listen(env.PORT, () => {
   console.log(`🚀 Server running on http://localhost:${env.PORT}`);

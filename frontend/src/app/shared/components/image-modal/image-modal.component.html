@@ -1,0 +1,98 @@
+<div 
+  *ngIf="isVisible" 
+  class="image-modal-backdrop" 
+  (click)="onBackdropClick($event)"
+  (keydown)="onBackdropKeydown($event)"
+  role="dialog"
+  aria-modal="true"
+  tabindex="0"
+  [attr.aria-label]="'Image viewer: ' + altText"
+>
+  <div class="image-modal-container">
+    <!-- Loading spinner -->
+    <div *ngIf="isLoading" class="loading-spinner">
+      <div class="spinner"></div>
+      <p>Loading image...</p>
+    </div>
+
+    <!-- Image -->
+    <img 
+      #imageElement
+      [src]="imageUrl" 
+      [alt]="altText"
+      class="modal-image"
+      [style.transform]="getImageTransform()"
+      [style.cursor]="getCursorStyle()"
+      (load)="onImageLoad()"
+      (error)="onImageError()"
+      (wheel)="onWheel($event)"
+      (mousedown)="onMouseDown($event)"
+      (click)="onImageClick($event)"
+      (keydown.enter)="onImageClick($event)"
+      (keydown.space)="onImageClick($event)"
+      tabindex="0"
+      role="button"
+      [attr.aria-label]="'Close image: ' + altText"
+      draggable="false"
+    />
+
+    <!-- Controls -->
+    <div class="image-controls">
+      <!-- Zoom controls with close button -->
+      <div class="zoom-controls">
+        <button 
+          type="button"
+          class="control-btn zoom-btn"
+          (click)="zoomOut()"
+          [disabled]="zoomLevel <= minZoom"
+          title="Zoom out (-)"
+          aria-label="Zoom out"
+        >
+          <mat-icon class="control-icon">remove</mat-icon>
+        </button>
+        
+        <span class="zoom-level">{{ (zoomLevel * 100) | number:'1.0-0' }}%</span>
+        
+        <button 
+          type="button"
+          class="control-btn zoom-btn"
+          (click)="zoomIn()"
+          [disabled]="zoomLevel >= maxZoom"
+          title="Zoom in (+)"
+          aria-label="Zoom in"
+        >
+          <mat-icon class="control-icon">add</mat-icon>
+        </button>
+        
+        <button 
+          type="button"
+          class="control-btn reset-btn"
+          (click)="resetZoom()"
+          title="Reset zoom (0)"
+          aria-label="Reset zoom"
+        >
+          <mat-icon class="control-icon">center_focus_strong</mat-icon>
+        </button>
+
+        <!-- Separator -->
+        <div class="control-separator"></div>
+
+        <!-- Close button -->
+        <button 
+          type="button"
+          class="control-btn close-btn"
+          (click)="onCloseModal()"
+          title="Close (Esc)"
+          aria-label="Close image viewer"
+        >
+          <mat-icon class="control-icon">close</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions">
+      <p>Use mouse wheel or +/- keys to zoom • Drag to pan when zoomed • Press Esc to close</p>
+    </div>
+  </div>
+</div>

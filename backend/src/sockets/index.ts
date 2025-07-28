@@ -79,7 +79,7 @@ const replayQueuedEvents = (socket: Socket, userId: string) => {
 };
 
 // Enhanced socket emission with queueing fallback
-const emitToUser = (
+export const emitToUser = (
   io: Server,
   userId: string,
   eventType: string,
