@@ -1,4 +1,4 @@
-import { Injectable, OnDestroy, NgZone } from '@angular/core';
+import { Injectable, NgZone, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable, Subscription, firstValueFrom, timer } from 'rxjs';
 
 import { CryptoService } from '@services/crypto.service';
@@ -501,7 +501,8 @@ export class ChatSessionService implements OnDestroy {
         imageData: imageData,
         sender: message.sender,
         avatarUrl: message.avatarUrl,
-        readAt: message.readAt
+        readAt: message.readAt,
+        isSystemMessage: message.isSystemMessage || false
       };
 
       // Store with message ID key for retrieval
@@ -579,7 +580,7 @@ export class ChatSessionService implements OnDestroy {
         ts: serverTimestamp,
         hasImage: messageHasImage,
         imageData: imageData,
-        // imageType removed - all images are stored as JPEG
+        isSystemMessage: false, 
       };
 
       // Store with multiple keys for better retrieval
@@ -718,14 +719,17 @@ export class ChatSessionService implements OnDestroy {
             let text: string;
             let hasImage = false;
             let imageData: string | undefined = undefined;
+            let isSystemMessage = false;
             
             if (serverMsg.deleted) {
-              text = '⋯ message deleted ⋯';
+              text = 'Message deleted';
+              isSystemMessage = true;
             } else if (fromMe) {
               const cachedData = await this.findCachedMessageData(serverMsg);
               text = cachedData.text;
               hasImage = cachedData.hasImage;
               imageData = cachedData.imageData;
+              isSystemMessage = cachedData.isSystemMessage;
             } else {
               // Try to get received message from vault first
               const receivedData = await this.findReceivedMessageData(serverMsg._id);
@@ -733,11 +737,15 @@ export class ChatSessionService implements OnDestroy {
                 text = receivedData.text;
                 hasImage = receivedData.hasImage;
                 imageData = receivedData.imageData;
+                // Received messages from vault should be user content (not system messages)
+                isSystemMessage = false;
               } else {
                 // Fall back to decryption
                 text = await this.tryDecrypt(serverMsg.ciphertext, serverMsg.senderId);
                 hasImage = this.lastDecryptedHasImage;
                 imageData = this.lastDecryptedImageData;
+                // Check if decryption failed and returned a system message
+                isSystemMessage = this.isSystemMessageText(text);
               }
               // Mark as read since we're catching up
               if (!serverMsg.read) {
@@ -755,8 +763,10 @@ export class ChatSessionService implements OnDestroy {
               editedAt: serverMsg.editedAt ? toEpoch(serverMsg.editedAt) : undefined,
               deletedAt: serverMsg.deleted ? toEpoch(serverMsg.deletedAt!) : undefined,
               readAt: serverMsg.read ? toEpoch(serverMsg.createdAt) : undefined,
-              hasImage: hasImage,
-              imageUrl: imageData ? `data:image/jpeg;base64,${imageData}` : undefined,
+              // Clear image properties if message is deleted
+              hasImage: serverMsg.deleted ? false : hasImage,
+              imageUrl: serverMsg.deleted ? undefined : (imageData ? `data:image/jpeg;base64,${imageData}` : undefined),
+              isSystemMessage: isSystemMessage,
             };
 
             currentMessages.push(newMessage);
@@ -818,6 +828,7 @@ export class ChatSessionService implements OnDestroy {
         ...list[idx],
         text: newText,
         editedAt: Date.now(),
+        isSystemMessage: false, // Edited messages are user content, never system messages
       };
       this.messages$.next([...list.slice(0, idx), patched, ...list.slice(idx + 1)]);
 
@@ -825,6 +836,7 @@ export class ChatSessionService implements OnDestroy {
         id,
         text: newText,
         ts: patched.ts,
+        isSystemMessage: false, // Edited messages are user content
       });
     }
 
@@ -1146,14 +1158,17 @@ export class ChatSessionService implements OnDestroy {
           let text: string;
           let hasImage = false;
           let imageData: string | undefined = undefined;
+          let isSystemMessage = false;
           
           if (m.deleted) {
-            text = '⋯ message deleted ⋯';
+            text = 'Message deleted';
+            isSystemMessage = true;
           } else if (fromMe) {
             const cachedData = await this.findCachedMessageData(m);
             text = cachedData.text;
             hasImage = cachedData.hasImage;
             imageData = cachedData.imageData;
+            isSystemMessage = cachedData.isSystemMessage;
           } else {
             // Try to get received message from vault first
             const receivedData = await this.findReceivedMessageData(m._id);
@@ -1161,11 +1176,15 @@ export class ChatSessionService implements OnDestroy {
               text = receivedData.text;
               hasImage = receivedData.hasImage;
               imageData = receivedData.imageData;
+              // Received messages from vault should be user content (not system messages)
+              isSystemMessage = false;
             } else {
               // Fall back to decryption
               text = await this.tryDecrypt(m.ciphertext, m.senderId);
               hasImage = this.lastDecryptedHasImage;
               imageData = this.lastDecryptedImageData;
+              // Check if decryption failed and returned a system message
+              isSystemMessage = this.isSystemMessageText(text);
             }
             if (!m.read) {
               this.ws.markMessageRead(m._id);
@@ -1182,8 +1201,10 @@ export class ChatSessionService implements OnDestroy {
             editedAt: m.editedAt ? toEpoch(m.editedAt) : undefined,
             deletedAt: m.deleted ? toEpoch(m.deletedAt!) : undefined,
             readAt: m.read ? toEpoch(m.createdAt) : undefined,
-            hasImage: hasImage,
-            imageUrl: imageData ? `data:image/jpeg;base64,${imageData}` : undefined,
+            // Clear image properties if message is deleted
+            hasImage: m.deleted ? false : hasImage,
+            imageUrl: m.deleted ? undefined : (imageData ? `data:image/jpeg;base64,${imageData}` : undefined),
+            isSystemMessage: isSystemMessage,
           });
         }
 
@@ -1227,6 +1248,7 @@ export class ChatSessionService implements OnDestroy {
       hasImage: !!imageAttachment,
       imageUrl: imageData ? `data:image/jpeg;base64,${imageData}` : undefined,
       imageFile: imageAttachment?.file,
+      isSystemMessage: false, // User-sent messages are never system messages
     };
 
     const pendingKey = `pending::${ts}`;
@@ -1503,12 +1525,14 @@ export class ChatSessionService implements OnDestroy {
         text: plain,
         editedAt: m.editedAt ? +new Date(m.editedAt) : Date.now(),
         avatarUrl: m.avatarUrl ?? list[idx].avatarUrl,
+        isSystemMessage: this.isSystemMessageText(plain),
       };
 
       await this.vault.set(this.key(m.messageId), {
         id: m.messageId,
         text: plain,
         ts: patched.ts,
+        isSystemMessage: this.isSystemMessageText(plain), // Preserve system message status
       });
 
       this.messages$.next([...list.slice(0, idx), patched, ...list.slice(idx + 1)]);
@@ -1526,11 +1550,17 @@ export class ChatSessionService implements OnDestroy {
 
       const patched: ChatMsg = {
         ...list[idx],
-        text: '⋯ message deleted ⋯',
+        text: 'Message deleted',
         ct: undefined,
         status: undefined,
         editedAt: undefined,
         deletedAt: +new Date(d.deletedAt),
+        isSystemMessage: true,
+        // Clear image-related properties for deleted messages
+        imageUrl: undefined,
+        imageFile: undefined,
+        hasImage: false,
+        imageError: false,
       };
 
       this.messages$.next([...list.slice(0, idx), patched, ...list.slice(idx + 1)]);
@@ -1559,6 +1589,7 @@ export class ChatSessionService implements OnDestroy {
         readAt: Date.now(),
         hasImage: this.lastDecryptedHasImage,
         imageUrl: this.lastDecryptedImageData ? `data:image/jpeg;base64,${this.lastDecryptedImageData}` : undefined,
+        isSystemMessage: false, // Real-time messages from users are never system messages
       };
 
       this.ws.markMessageRead(m.messageId);
@@ -1588,11 +1619,17 @@ export class ChatSessionService implements OnDestroy {
     if (idx !== -1) {
       const tomb: ChatMsg = {
         ...list[idx],
-        text: '⋯ message deleted ⋯',
+        text: 'Message deleted',
         editedAt: undefined,
         deletedAt: Date.now(),
         status: undefined,
         ct: undefined,
+        isSystemMessage: true,
+        // Clear image-related properties for deleted messages
+        imageUrl: undefined,
+        imageFile: undefined,
+        hasImage: false,
+        imageError: false,
       };
       this.messages$.next([...list.slice(0, idx), tomb, ...list.slice(idx + 1)]);
     }
@@ -1611,15 +1648,27 @@ export class ChatSessionService implements OnDestroy {
   private lastDecryptedImageData: string | undefined = undefined;
   private lastDecryptedHasImage = false;
 
+  /**
+   * Check if text content indicates this is a system-generated message
+   */
+  private isSystemMessageText(text: string): boolean {
+    return (
+      text === 'Encrypted message (from partner)' ||
+      text === 'Encrypted message (sent by you)' ||
+      text === 'Message deleted' ||
+      text === 'Message encrypted with previous keys (unreadable after key regeneration)'
+    );
+  }
+
   private async tryDecrypt(ct: string, senderId?: string): Promise<string> {
     // Check if we've already failed to decrypt this ciphertext
     if (this.failedDecryptions.has(ct)) {
       // Check if this is a message from the current user (indicating old key)
       const currentUserId = localStorage.getItem('userId');
       if (senderId === currentUserId) {
-        return '🔐 Message encrypted with previous keys (unreadable after key regeneration)';
+        return 'Message encrypted with previous keys (unreadable after key regeneration)';
       } else {
-        return '🔒 Encrypted message (from partner)';
+        return 'Encrypted message (from partner)';
       }
     }
 
@@ -1671,9 +1720,9 @@ export class ChatSessionService implements OnDestroy {
       // Check if this is a message from the current user (indicating old key)
       const currentUserId = localStorage.getItem('userId');
       if (senderId === currentUserId) {
-        return '🔐 Message encrypted with previous keys (unreadable after key regeneration)';
+        return 'Message encrypted with previous keys (unreadable after key regeneration)';
       } else {
-        return '🔒 Encrypted message (from partner)';
+        return 'Encrypted message (from partner)';
       }
     }
   }
@@ -1755,7 +1804,7 @@ export class ChatSessionService implements OnDestroy {
     return messageData.text;
   }
 
-  private async findCachedMessageData(m: ServerMessage): Promise<{text: string, hasImage: boolean, imageData: string | undefined}> {
+  private async findCachedMessageData(m: ServerMessage): Promise<{text: string, hasImage: boolean, imageData: string | undefined, isSystemMessage: boolean}> {
     const messageId = m._id;
     const serverTimestamp = toEpoch(m.createdAt);
 
@@ -1774,7 +1823,8 @@ export class ChatSessionService implements OnDestroy {
           return {
             text: cached.text,
             hasImage: cached.hasImage || false,
-            imageData: cached.imageData || undefined
+            imageData: cached.imageData || undefined,
+            isSystemMessage: cached.isSystemMessage || false
           };
         }
       } catch {
@@ -1805,7 +1855,8 @@ export class ChatSessionService implements OnDestroy {
             return {
               text: cached.text,
               hasImage: cached.hasImage || false,
-              imageData: cached.imageData || undefined
+              imageData: cached.imageData || undefined,
+              isSystemMessage: cached.isSystemMessage || false
             };
           }
         }
@@ -1820,7 +1871,8 @@ export class ChatSessionService implements OnDestroy {
     return {
       text: this.getTimeAgoMessage(serverTimestamp),
       hasImage: false,
-      imageData: undefined
+      imageData: undefined,
+      isSystemMessage: true  // Time ago messages are system messages
     };
   }
 
@@ -1831,13 +1883,13 @@ export class ChatSessionService implements OnDestroy {
     const days = Math.floor(messageAge / (1000 * 60 * 60 * 24));
 
     if (days > 0) {
-      return `💬 Message sent ${days} day${days !== 1 ? 's' : ''} ago`;
+      return `Message sent ${days} day${days !== 1 ? 's' : ''} ago`;
     } else if (hours > 0) {
-      return `💬 Message sent ${hours} hour${hours !== 1 ? 's' : ''} ago`;
+      return `Message sent ${hours} hour${hours !== 1 ? 's' : ''} ago`;
     } else if (minutes > 30) {
-      return `💬 Message sent recently`;
+      return `Message sent recently`;
     } else {
-      return `💬 Message sent moments ago`;
+      return `Message sent moments ago`;
     }
   }
 

@@ -82,8 +82,6 @@ export class MobileChatLayoutService implements OnDestroy {
     // Monitor DOM changes for dynamic elements
     this.setupMutationObserver();
 
-    // Monitor focus events to predict keyboard appearance
-    this.setupFocusMonitoring();
 
     // Initial calculation
     this.updateMetrics();
@@ -155,14 +153,6 @@ export class MobileChatLayoutService implements OnDestroy {
     });
   }
 
-  // TODO: fix this
-  private setupFocusMonitoring(): void {
-    // Completely disable focus monitoring to prevent keyboard freezing
-    // CSS dvh units will handle layout automatically without JavaScript intervention
-    //
-    // The original focus/blur event listeners were causing expensive updateMetrics()
-    // calls during typing which severely impacted virtual keyboard performance
-  }
 
   private updateMetrics(): void {
     if (!this.isMobileView()) {
