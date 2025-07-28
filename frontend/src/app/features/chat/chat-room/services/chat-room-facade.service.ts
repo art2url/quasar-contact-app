@@ -567,8 +567,7 @@ export class ChatRoomFacadeService {
   isMessageEncrypted = (message: ChatMsg) =>
     this.chatMessageService.isMessageEncrypted(message);
   canEditMessage = (message: ChatMsg) => this.chatMessageService.canEditMessage(message);
-  formatMessageText = (text: string) => this.chatMessageService.formatMessageText(text);
-  isSystemMessage = (text: string) => this.chatMessageService.isSystemMessage(text);
+  isSystemMessage = (message: ChatMsg | string) => this.chatMessageService.isSystemMessage(message);
   getSystemMessageIcon = (text: string) =>
     this.chatMessageService.getSystemMessageIcon(text);
   getTruncatedFilename = (filename: string) =>
@@ -881,7 +880,9 @@ export class ChatRoomFacadeService {
     const hasUnreadableSentMessages = messages.some(
       m =>
         m.sender === 'You' &&
-        (m.text.includes('💬 Message sent') || m.text.includes('🔒 Encrypted message'))
+        (m.isSystemMessage === true || 
+         m.text === 'Encrypted message (sent by you)' ||
+         m.text === 'Message encrypted with previous keys (unreadable after key regeneration)')
     );
 
     if (hasUnreadableSentMessages && !this.showCacheInfoBanner) {
