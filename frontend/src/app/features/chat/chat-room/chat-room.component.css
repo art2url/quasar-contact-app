@@ -250,11 +250,10 @@
 
 .message.you .message-actions {
   position: absolute;
-  top: -20px;
-  right: 0;
+  bottom: -32px;
+  right: -16px;
   display: none;
-  background-color: var(--card-background);
-  border-radius: 12px;
+  border-radius: 8px;
   box-shadow: var(--shadow-sm);
   z-index: 2;
 }
@@ -266,12 +265,12 @@
 .action-btn {
   background: none;
   border: none;
-  font-size: 0.8rem;
-  padding: 4px 8px;
+  font-size: 0.7rem;
+  padding: 2px 4px;
   cursor: pointer;
   color: var(--text-secondary);
-  min-height: 40px;
-  min-width: 40px;
+  min-height: 24px;
+  min-width: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -432,7 +431,7 @@
   resize: none;
   max-height: calc(1.4em * 3 + 16px);
   font-size: 16px;
-  font-family: "Jost", sans-serif !important;
+  font-family: "Jost", sans-serif !important; /* cspell:disable-line */
   font-optical-sizing: auto;
   transition: all 0.3s ease;
   overflow-wrap: break-word;
@@ -1170,10 +1169,10 @@
   color: var(--text-secondary) !important;
 }
 
-.unreadable-actions {
+.message.unreadable .unreadable-actions {
   position: absolute;
-  top: -20px;
-  right: 0;
+  bottom: -26px;
+  right: -16px;
   display: flex;
   align-items: center;
   font-size: 0.7rem;
@@ -1182,11 +1181,22 @@
   padding: 2px 6px;
   border-radius: 8px;
   box-shadow: var(--shadow-sm);
+  display: none;
+}
+
+.dark-theme .message-actions {
+  background-color: rgba(0, 0, 0, 0.6) !important;
 }
 
 .dark-theme .unreadable-actions {
   color: var(--text-secondary) !important;
   background-color: rgba(0, 0, 0, 0.6) !important;
+}
+
+.unreadable-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .unreadable-actions .info-icon {
@@ -1200,6 +1210,12 @@
   opacity: 0.4;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+.action-btn mat-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
 }
 
 .action-btn:disabled mat-icon {
