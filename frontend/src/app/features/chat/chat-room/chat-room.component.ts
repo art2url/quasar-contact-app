@@ -266,8 +266,7 @@ export class ChatRoomComponent implements OnInit, AfterViewInit, AfterViewChecke
   isMessageUnreadable = (m: ChatMsg) => this.facade.isMessageUnreadable(m);
   isMessageEncrypted = (m: ChatMsg) => this.facade.isMessageEncrypted(m);
   canEditMessage = (m: ChatMsg) => this.facade.canEditMessage(m);
-  formatMessageText = (text: string) => this.facade.formatMessageText(text);
-  isSystemMessage = (text: string) => this.facade.isSystemMessage(text);
+  isSystemMessage = (message: ChatMsg | string) => this.facade.isSystemMessage(message);
   getSystemMessageIcon = (text: string) => this.facade.getSystemMessageIcon(text);
   getTruncatedFilename = (name: string) => this.facade.getTruncatedFilename(name);
   getDisplayText = (text: string, hasImage?: boolean) => this.facade.getDisplayText(text, hasImage);
