@@ -25,6 +25,7 @@ export interface ChatMsg {
   imageFile?: File; // Temporary file for pending uploads
   hasImage?: boolean; // Flag to indicate message contains image
   imageError?: boolean; // Flag to indicate image failed to load
+  isSystemMessage?: boolean; // Flag to indicate this is a system-generated message (not user content)
 }
 
 // How sent bubbles are memo-ised in the vault
@@ -34,4 +35,5 @@ export interface SentCacheEntry {
   ts: number; // epoch-millis
   imageData?: string; // base64 image data
   hasImage?: boolean; // flag for image presence
+  isSystemMessage?: boolean; // flag to indicate if this is a system message
 }

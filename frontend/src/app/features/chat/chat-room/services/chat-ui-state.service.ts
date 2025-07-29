@@ -198,12 +198,14 @@ export class ChatUiStateService {
       return;
     }
     
-    // TODO: Fix this
+  
     // Check if there are any messages sent by me that show cache-related text
     const hasUnreadableSentMessages = messages.some(
       m =>
         m.sender === 'You' &&
-        (m.text.includes('💬 Message sent') || m.text.includes('🔒 Encrypted message'))
+        (m.isSystemMessage === true || 
+         m.text === 'Encrypted message (sent by you)' ||
+         m.text === 'Message encrypted with previous keys (unreadable after key regeneration)')
     );
 
     if (hasUnreadableSentMessages && !this.getCurrentCacheBannerState()) {

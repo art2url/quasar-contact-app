@@ -90,7 +90,11 @@
             </span>
           </div>
           <p class="last-message">
-            {{ getDisplayMessage(chat.lastMessage) }}
+            <ng-container *ngIf="isSystemMessage(chat.lastMessage); else regularMessage">
+              <mat-icon class="system-message-icon">{{ getSystemMessageIcon(chat.lastMessage) }}</mat-icon>
+              <span class="system-message-text">{{ getDisplayMessage(chat.lastMessage) }}</span>
+            </ng-container>
+            <ng-template #regularMessage>{{ getDisplayMessage(chat.lastMessage) }}</ng-template>
             <span *ngIf="chat.unread" class="badge">{{ chat.unread }}</span>
           </p>
         </div>

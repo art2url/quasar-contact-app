@@ -200,9 +200,9 @@
 
               <!-- Text content -->
               <p *ngIf="m.text" class="message-content">
-                <ng-container *ngIf="isSystemMessage(m.text); else regularText">
+                <ng-container *ngIf="isSystemMessage(m); else regularText">
                   <mat-icon class="system-message-icon">{{ getSystemMessageIcon(m.text) }}</mat-icon>
-                  <span class="system-message-text">{{ formatMessageText(m.text) }}</span>
+                  <span class="system-message-text">{{ m.text }}</span>
                 </ng-container>
                 <ng-template #regularText>{{ getDisplayText(m.text, m.hasImage) }}</ng-template>
               </p>
