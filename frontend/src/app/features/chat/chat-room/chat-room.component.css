@@ -204,11 +204,10 @@
   align-self: flex-end;
   margin-left: auto;
   border-bottom-right-radius: 4px;
-  position: relative;
-  z-index: 10;
 }
 
 .message.you:hover {
+  position: relative;
   z-index: 51;
 }
 
@@ -1052,11 +1051,10 @@
 .message.unreadable {
   opacity: 0.85;
   background-color: #f8f9fa !important;
-  position: relative;
-  z-index: 10;
 }
 
 .message.unreadable:hover {
+  position: relative;
   z-index: 51;
 }
 
