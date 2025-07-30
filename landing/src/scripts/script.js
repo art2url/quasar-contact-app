@@ -1,6 +1,6 @@
-// Alpha banner close functionality
-function closeAlphaBanner() {
-  const banner = document.getElementById('alphaBanner');
+// Beta banner close functionality
+function closeBetaBanner() {
+  const banner = document.getElementById('betaBanner');
   const header = document.querySelector('.header');
   const body = document.body;
   const mobileNav = document.querySelector('.mobile-nav');
@@ -10,16 +10,16 @@ function closeAlphaBanner() {
 
     setTimeout(() => {
       banner.style.display = 'none';
-      body.classList.add('alpha-closed');
+      body.classList.add('beta-closed');
       if (header) {
-        header.classList.add('alpha-closed');
+        header.classList.add('beta-closed');
       }
       if (mobileNav) {
-        mobileNav.classList.add('alpha-closed');
+        mobileNav.classList.add('beta-closed');
       }
     }, 300);
 
-    localStorage.setItem('alphaBannerClosed', 'true');
+    localStorage.setItem('betaBannerClosed', 'true');
   }
 }
 
@@ -56,11 +56,11 @@ document.addEventListener('DOMContentLoaded', function () {
   // Prevent any scroll restoration
   window.scrollTo(0, 0);
 
-  // Check if alpha banner should be hidden on page load
-  const alphaBannerClosed = localStorage.getItem('alphaBannerClosed');
+  // Check if beta banner should be hidden on page load
+  const betaBannerClosed = localStorage.getItem('betaBannerClosed');
 
-  if (alphaBannerClosed === 'true') {
-    const banner = document.getElementById('alphaBanner');
+  if (betaBannerClosed === 'true') {
+    const banner = document.getElementById('betaBanner');
     const header = document.querySelector('.header');
     const body = document.body;
     const mobileNav = document.querySelector('.mobile-nav');
@@ -69,12 +69,12 @@ document.addEventListener('DOMContentLoaded', function () {
       // Hide banner immediately without animation on page load
       banner.style.display = 'none';
       banner.style.transform = 'translateY(-100%)';
-      body.classList.add('alpha-closed');
+      body.classList.add('beta-closed');
       if (header) {
-        header.classList.add('alpha-closed');
+        header.classList.add('beta-closed');
       }
       if (mobileNav) {
-        mobileNav.classList.add('alpha-closed');
+        mobileNav.classList.add('beta-closed');
       }
     }
   }
@@ -492,6 +492,6 @@ style.textContent = `
 document.head.appendChild(style);
 
 // Make functions globally available
-window.closeAlphaBanner = closeAlphaBanner;
+window.closeBetaBanner = closeBetaBanner;
 window.toggleMobileMenu = toggleMobileMenu;
 window.closeMobileMenu = closeMobileMenu;
