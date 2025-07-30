@@ -417,7 +417,7 @@ The chat system uses a modern facade pattern with specialized services:
 
 **Landing Page Services**
 
-- **`LandingPageScript`** (`script.js`): Interactive UI management with alpha banner, mobile menu,
+- **`LandingPageScript`** (`script.js`): Interactive UI management with beta banner, mobile menu,
   scroll effects, carousel functionality, touch/swipe support, and intersection observer animations
 - **`CookieConsentManager`** (`cookieConsent.js`): GDPR-compliant cookie consent management with
   analytics tracking, batched event sending, and local storage persistence

@@ -25,7 +25,7 @@
 - **Interactive Components** with smooth animations and touch/swipe support
 - **Mobile Menu System** with responsive navigation and accessibility
 - **Carousel Functionality** with touch gestures and keyboard navigation
-- **Alpha Banner Management** with user preferences and dismissal tracking
+- **Beta Banner Management** with user preferences and dismissal tracking
 - **Intersection Observer Animations** for smooth scroll-triggered effects
 
 ## 🚀 Quick Start
@@ -74,7 +74,7 @@ npm run deploy:pages       # Deploy to GitHub Pages
 
 ### Component Architecture
 
-- **AlphaBanner** - Development status notification with user dismissal
+- **BetaBanner** - Development status notification with user dismissal
 - **CookieConsent** - GDPR-compliant cookie consent with analytics integration
 - **Navigation** - Responsive navigation with mobile menu and accessibility
 - **Layout Components** - Reusable layouts with SEO optimization
