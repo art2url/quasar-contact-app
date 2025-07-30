@@ -2,17 +2,17 @@
 // No props needed for this component
 ---
 
-<!-- Alpha Stage Notification -->
-<div class="alpha-banner" id="alphaBanner">
-  <div class="alpha-banner-content">
-    <div class="alpha-info">
-      <span class="alpha-badge">ALPHA</span>
-      <span class="alpha-text alpha-text-full">
-        Quasar is currently in alpha stage. Features may be limited and subject to change.
+<!-- Beta Stage Notification -->
+<div class="beta-banner" id="betaBanner">
+  <div class="beta-banner-content">
+    <div class="beta-info">
+      <span class="beta-badge">BETA</span>
+      <span class="beta-text beta-text-full">
+        Quasar is currently in beta stage. Most features are stable with ongoing improvements.
       </span>
-      <span class="alpha-text alpha-text-short"> Quasar is currently in alpha stage. </span>
+      <span class="beta-text beta-text-short"> Quasar is currently in beta stage. </span>
     </div>
-    <button class="alpha-close" onclick="closeAlphaBanner()" aria-label="Close alpha notification">
+    <button class="beta-close" onclick="closeBetaBanner()" aria-label="Close beta notification">
       <svg
         width="14"
         height="14"
@@ -32,13 +32,13 @@
 <script is:inline>
   (function () {
     // Check localStorage immediately before any rendering
-    const alphaBannerClosed = localStorage.getItem('alphaBannerClosed');
+    const betaBannerClosed = localStorage.getItem('betaBannerClosed');
 
-    if (alphaBannerClosed === 'true') {
+    if (betaBannerClosed === 'true') {
       // CSS to hide banner immediately
       const style = document.createElement('style');
       style.textContent = `
-        .alpha-banner {
+        .beta-banner {
           display: none !important;
           transform: translateY(-100%) !important;
         }
@@ -55,13 +55,13 @@
           min-height: calc(100vh - var(--header-height) - var(--footer-height)) !important;
         }
         body {
-          --alpha-banner-height: 0px;
+          --beta-banner-height: 0px;
         }
       `;
       document.head.appendChild(style);
 
       // Class to body for immediate styling
-      document.documentElement.classList.add('alpha-closed');
+      document.documentElement.classList.add('beta-closed');
     }
   })();
 </script>
