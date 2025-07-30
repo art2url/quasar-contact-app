@@ -507,8 +507,25 @@ export class ChatListComponent implements OnInit, OnDestroy {
 
   // Simplified incoming message handler - let NotificationService handle badge logic
   private handleIncomingMessage = async (message: IncomingSocketMessage) => {
-    const chat = this.chats.find(c => c.id === message.fromUserId);
-    if (!chat) return;
+    let chat = this.chats.find(c => c.id === message.fromUserId);
+    
+    // If chat doesn't exist, create a new one for the incoming message
+    if (!chat) {
+      // Create a new chat entry for this user
+      chat = {
+        id: message.fromUserId,
+        name: message.fromUsername || 'Unknown User',
+        avatar: message.avatarUrl || 'assets/images/avatars/01.svg',
+        unread: 0,
+        online: this.ws.isUserOnline(message.fromUserId),
+      };
+      
+      // Add the new chat to the beginning of the list
+      this.chats.unshift(chat);
+      
+      // Trigger change detection for the new chat entry
+      this.cdr.detectChanges();
+    }
 
     try {
       if (this.crypto.hasPrivateKey()) {

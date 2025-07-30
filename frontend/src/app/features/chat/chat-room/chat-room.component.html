@@ -32,17 +32,6 @@
     <app-cache-info-banner [showBanner]="showCacheInfoBanner"></app-cache-info-banner>
 
     <!-- Public key status -->
-    <!-- Loading state -->
-    <div *ngIf="(chat.keyLoading$ | async) === true" class="key-loading">
-      <mat-icon>security</mat-icon>
-      <div *ngIf="chat.isGeneratingKeysAutomatically; else normalKeyLoading">
-        Setting up encryption for first conversation...
-      </div>
-      <ng-template #normalKeyLoading>
-        Loading {{ (chat.theirUsername$ | async) || 'contact' }}'s encryption key...
-      </ng-template>
-    </div>
-
     <!-- User's own private key is missing -->
     <div
       *ngIf="
@@ -144,8 +133,22 @@
 
     <!-- Chat window -->
     <div #messageContainer class="chat-window" (scroll)="handleScroll()">
+      <!-- Key loading state -->
+      <div *ngIf="(chat.keyLoading$ | async) === true" class="key-loading">
+        <mat-icon>security</mat-icon>
+        <div class="loading-text" *ngIf="chat.isGeneratingKeysAutomatically; else normalKeyLoading">
+          Setting up encryption for first conversation...
+        </div>
+        <ng-template #normalKeyLoading>
+          <div class="loading-text">
+            Loading {{ (chat.theirUsername$ | async) || 'contact' }}'s encryption key...
+          </div>
+        </ng-template>
+        <mat-spinner diameter="32" color="primary"></mat-spinner>
+      </div>
+
       <!-- Loading state for messages -->
-      <div *ngIf="isLoadingMessages" class="messages-loading">
+      <div *ngIf="(chat.keyLoading$ | async) !== true && isLoadingMessages" class="messages-loading">
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px">
           <mat-spinner diameter="40" color="primary"></mat-spinner>
           <p style="margin-top: 16px; color: #666">Loading messages...</p>
@@ -153,7 +156,7 @@
       </div>
 
       <!-- Only show messages when loading is complete -->
-      <ng-container *ngIf="!isLoadingMessages">
+      <ng-container *ngIf="(chat.keyLoading$ | async) !== true && !isLoadingMessages">
         <!-- Empty state -->
         <div *ngIf="!messageGroups.length" class="empty-chat">
           <mat-icon>chat</mat-icon>

@@ -33,7 +33,7 @@
 /* Emoji picker styles */
 .emoji-picker {
   position: fixed;
-  bottom: calc(var(--chat-form-height, 70px) + var(--spacing-md));
+  bottom: calc(var(--chat-form-height, 70px) + var(--spacing-lg) + 10px);
   right: calc(var(--spacing-xl) + var(--spacing-md));
   background: var(--card-background);
   border: none;
@@ -52,7 +52,7 @@
 /* Adjust emoji picker position when message input is dirty (expanded) - desktop/tablet */
 @media (min-width: 600px) {
   .chat-form:has(.message-input.ng-dirty) app-emoji-picker .emoji-picker {
-    bottom: calc(var(--chat-form-height, 70px) + var(--spacing-lg)) !important;
+    bottom: calc(var(--chat-form-height, 70px) + var(--spacing-md)) !important;
   }
 }
 
