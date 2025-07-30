@@ -71,7 +71,7 @@ data and **localStorage** for user preferences and non-sensitive data.
   - Required in headers for state-changing requests
   - Cleared on logout
 
-- `alphaBannerClosed` - Landing page alpha banner state
+- `betaBannerClosed` - Landing page beta banner state
   - Duration: 1 year
   - Managed by landing page scripts
 

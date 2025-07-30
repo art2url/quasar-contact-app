@@ -78,7 +78,7 @@ app.get('/health', (_req, res) =>
     uptime: process.uptime(),
     date: new Date().toISOString(),
     secure: process.env.NODE_ENV === 'production',
-    stage: process.env.NODE_ENV === 'production' ? 'production' : 'alpha',
+    stage: process.env.NODE_ENV === 'production' ? 'production' : 'beta',
     security: 'enhanced',
   }),
 );
@@ -180,7 +180,7 @@ app.get('/api/health', (_req, res) =>
     uptime: process.uptime(),
     date: new Date().toISOString(),
     secure: process.env.NODE_ENV === 'production',
-    stage: process.env.NODE_ENV === 'production' ? 'production' : 'alpha',
+    stage: process.env.NODE_ENV === 'production' ? 'production' : 'beta',
     security: 'enhanced',
   }),
 );
