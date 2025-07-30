@@ -1198,7 +1198,7 @@
 }
 
 .dark-theme .message-actions {
-  background-color: rgba(0, 0, 0, 0.7) !important;
+  background-color: rgba(2, 12, 11, 0.7) !important;
 }
 
 .dark-theme .unreadable-actions {
@@ -1321,7 +1321,7 @@
     max-height: calc(100dvh - 56px - 60px - var(--chat-form-height, 70px) + 14px);
     padding: 0 var(--spacing-md);
     padding-top: 0;
-    padding-bottom: var(--spacing-md);
+    padding-bottom: 50px;
     overflow-y: auto;
     box-sizing: border-box;
     -webkit-transform: translateZ(0);
