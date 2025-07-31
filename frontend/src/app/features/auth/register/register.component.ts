@@ -1,29 +1,29 @@
-import {
-  Component,
-  OnInit,
-  OnDestroy,
-  AfterViewInit,
-  ElementRef,
-  ViewChild,
-  ChangeDetectorRef,
-} from '@angular/core';
-import { Subscription } from 'rxjs';
-import { Router, RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import {
+  AfterViewInit,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 import { MatButtonModule } from '@angular/material/button';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { AuthService } from '@services/auth.service';
-import { LoadingService } from '@services/loading.service';
-import { TurnstileService } from '@services/turnstile.service';
-import { ThemeService } from '@services/theme.service';
 import { HoneypotService } from '@services/honeypot.service';
+import { LoadingService } from '@services/loading.service';
+import { ThemeService } from '@services/theme.service';
+import { TurnstileService } from '@services/turnstile.service';
 import { defaultAvatarFor } from '@utils/avatar.util';
 
 interface ValidationError {
@@ -162,6 +162,24 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
     return emailRegex.test(email);
   }
 
+  isValidUsername(username: string): boolean {
+    // Only allow alphanumeric characters, underscores, and hyphens
+    const validCharacters = /^[a-zA-Z0-9_-]+$/;
+    if (!validCharacters.test(username)) {
+      return false;
+    }
+
+    // Prevent usernames that might trigger honeypot validation or impersonate roles
+    const restrictedPatterns = [
+      /test[_-]?user/i,
+      /bot[_-]?test/i,
+      /admin[_-]?test/i,
+      /admin/i, // Block any username containing "admin"
+    ];
+    
+    return !restrictedPatterns.some(pattern => pattern.test(username));
+  }
+
   isFormValid(): boolean {
     return (
       this.username.length >= 3 &&
@@ -215,6 +233,12 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
       } else {
         this.error = 'Please fix the errors above';
       }
+      return;
+    }
+
+    // Additional username validation check before submission
+    if (!this.isValidUsername(this.username)) {
+      this.error = 'Please choose a different username';
       return;
     }
 

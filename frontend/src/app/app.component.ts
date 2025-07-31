@@ -151,7 +151,59 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  private async handleResetTokenRedirect(): Promise<void> {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasReset = urlParams.has('reset');
+    
+    if (hasReset) {
+      try {
+        // Claim the reset token from secure session
+        const response = await fetch('/api/auth/claim-reset-token', {
+          method: 'POST',
+          credentials: 'include', // Include session cookies
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.token) {
+            // Navigate to reset password page with the token
+            setTimeout(() => {
+              this.router.navigate(['/auth/reset-password'], { 
+                queryParams: { token: data.token },
+                replaceUrl: true 
+              });
+            }, 0);
+          } else {
+            // Invalid or expired session
+            this.router.navigate(['/auth/login'], { 
+              queryParams: { error: 'expired_link' },
+              replaceUrl: true 
+            });
+          }
+        } else {
+          // Session claim failed
+          this.router.navigate(['/auth/login'], { 
+            queryParams: { error: 'invalid_link' },
+            replaceUrl: true 
+          });
+        }
+      } catch (error) {
+        console.error('[App] Error claiming reset token:', error);
+        this.router.navigate(['/auth/login'], { 
+          queryParams: { error: 'network_error' },
+          replaceUrl: true 
+        });
+      }
+    }
+  }
+
   ngOnInit(): void {
+    // Handle reset token from server redirect
+    this.handleResetTokenRedirect();
+    
     // Expose debug methods to window for testing
     window.debugApp = {
       testWebSocket: () => this.debugTestWebSocket(),
@@ -225,7 +277,13 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
           // Disconnecting WebSocket for unauthenticated user
           this.ws.disconnect();
 
-          if (!this.router.url.includes('/auth/')) {
+          // Check if we have a reset session indicator in URL - if so, don't redirect yet
+          const urlParams = new URLSearchParams(window.location.search);
+          const hasResetToken = urlParams.has('reset');
+          
+          const isAuthPage = this.router.url.includes('/auth/');
+
+          if (!isAuthPage && !hasResetToken) {
             // Redirecting unauthenticated user to login
             this.router.navigate(['/auth/login']);
           }
