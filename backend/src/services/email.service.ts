@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import env from '../config/env';
+import { encryptResetToken } from '../utils/encryption.utils';
 
 interface EmailOptions {
   to: string;
@@ -101,9 +102,12 @@ class EmailService {
     email: string,
     resetToken: string,
   ): Promise<void> {
+    // Encrypt the token before including in email URL
+    const encryptedToken = encryptResetToken(resetToken);
+    
     // Ensure we use the correct app path
     const baseUrl = env.CLIENT_ORIGIN || 'http://localhost:3000';
-    const resetUrl = `${baseUrl}/app/auth/reset-password?token=${resetToken}`;
+    const resetUrl = `${baseUrl}/app/auth/reset-password?token=${encryptedToken}`;
     const subject = `Password Reset Request - ${env.APP_NAME}`;
 
     const html = `

@@ -1,6 +1,7 @@
 // ─── Imports ───────────────────────────────────────────────
 import cookieParser from 'cookie-parser';
 import express from 'express';
+import session from 'express-session';
 import helmet from 'helmet';
 import path from 'path';
 import { httpCors } from './config/cors';
@@ -108,6 +109,19 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ─── Cookie Parser ─────────────────────────────────────────
 app.use(cookieParser(process.env.COOKIE_SECRET || 'fallback-secret-key'));
+
+// ─── Session Configuration ─────────────────────────────────
+app.use(session({
+  secret: process.env.SESSION_SECRET || process.env.COOKIE_SECRET || 'fallback-session-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 600000, // 10 minutes for password reset sessions
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+  },
+}));
 
 // ─── Serve Static Files BEFORE API routes ─────────────────
 const staticOptions = {
@@ -229,8 +243,14 @@ app.get('/app/auth/forgot-password', (_req, res) => {
   res.sendFile(path.join(__dirname, '../../dist', 'index.html'));
 });
 
-app.get('/app/auth/reset-password', (_req, res) => {
-  res.sendFile(path.join(__dirname, '../../dist', 'index.html'));
+app.get('/app/auth/reset-password', (req, res) => {
+  const encryptedToken = req.query.token as string;
+  
+  // Import password reset utility
+  const { processPasswordResetToken } = require('./utils/password-reset.utils');
+  
+  // Process the encrypted token and handle session storage
+  processPasswordResetToken(req, res, encryptedToken);
 });
 
 // Handle invalid /app routes - serve 404 page
