@@ -72,6 +72,18 @@ export const validateHoneypot = (options: HoneypotValidationOptions = {}) => {
         }
       }
 
+      // ─── Username Character Validation ─────────────────────────
+      if (body.username) {
+        const validCharacters = /^[a-zA-Z0-9_-]+$/;
+        if (!validCharacters.test(body.username)) {
+          res.status(400).json({
+            success: false,
+            message: 'Invalid data format. Please try again.',
+          });
+          return;
+        }
+      }
+
       // ─── Time-based Validation ────────────────────────────────
       if (checkTimeValidation && body.formStartTime) {
         const formStartTime = parseInt(body.formStartTime, 10);
@@ -116,9 +128,10 @@ export const validateHoneypot = (options: HoneypotValidationOptions = {}) => {
       // Check for suspicious patterns in form data
       const allValues = Object.values(body).join(' ').toLowerCase();
       const suspiciousPatterns = [
-        /test[_\-]?user/i,
+        /^test[_\-]?user\d*$/i, // Only exact matches like "testuser", "test_user123"
         /bot[_\-]?test/i,
         /admin[_\-]?test/i,
+        /admin/i, // Block any username containing "admin"
         /http[s]?:\/\//i, // URLs in unexpected fields
         /<script.*>/i, // Script tags
         /\{.*\}/, // JSON-like structures
