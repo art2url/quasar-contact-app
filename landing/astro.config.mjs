@@ -34,8 +34,8 @@ export default defineConfig({
       'import.meta.env.GA_MEASUREMENT_ID': JSON.stringify(
         process.env.GA_MEASUREMENT_ID || ''
       ),
-      'import.meta.env.ALPHA_BANNER_CLOSED': JSON.stringify(
-        process.env.ALPHA_BANNER_CLOSED || 'false'
+      'import.meta.env.BETA_BANNER_CLOSED': JSON.stringify(
+        process.env.BETA_BANNER_CLOSED || 'false'
       ),
     },
   },

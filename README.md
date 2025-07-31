@@ -12,7 +12,7 @@ Quasar Contact is a privacy-focused, real-time messaging application that implem
 end-to-end encryption. Built with Angular 18, Node.js, and Socket.IO, it ensures that your
 conversations remain completely private with zero data logging and client-side encryption.
 
-**🚧 Current Status: Alpha Stage**
+**🚧 Current Status: Beta Stage**
 
 ## 🚀 **Production-Ready Features**
 
@@ -417,7 +417,7 @@ The chat system uses a modern facade pattern with specialized services:
 
 **Landing Page Services**
 
-- **`LandingPageScript`** (`script.js`): Interactive UI management with alpha banner, mobile menu,
+- **`LandingPageScript`** (`script.js`): Interactive UI management with beta banner, mobile menu,
   scroll effects, carousel functionality, touch/swipe support, and intersection observer animations
 - **`CookieConsentManager`** (`cookieConsent.js`): GDPR-compliant cookie consent management with
   analytics tracking, batched event sending, and local storage persistence
@@ -1053,6 +1053,6 @@ For issues and feature requests, please use the GitHub Issues page.
 
 ---
 
-**Note**: This is an alpha release. Use in production at your own risk. The encryption
-implementation should be audited by security professionals before deploying in sensitive
+**Note**: This is a beta release. The core features are stable and ready for production use. The
+encryption implementation should be audited by security professionals before deploying in sensitive
 environments.
