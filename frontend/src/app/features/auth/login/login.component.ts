@@ -81,6 +81,25 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
       // Registration success message available
     }
     
+    // Check for error messages from password reset failures
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorType = urlParams.get('error');
+    if (errorType) {
+      switch (errorType) {
+        case 'expired_link':
+          this.error = 'Password reset link has expired. Please request a new one.';
+          break;
+        case 'invalid_link':
+          this.error = 'Invalid password reset link. Please request a new one.';
+          break;
+        case 'network_error':
+          this.error = 'Network error occurred. Please try again.';
+          break;
+      }
+      // Clear error parameter from URL
+      this.router.navigate([], { replaceUrl: true });
+    }
+    
     // Initialize honeypot fields
     this.honeypotFields = this.honeypotService.createHoneypotData();
     this.formStartTime = this.honeypotService.addFormStartTime();

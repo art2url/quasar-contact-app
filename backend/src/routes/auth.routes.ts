@@ -349,6 +349,39 @@ router.get('/reset-password/validate', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/auth/claim-reset-token - Secure session-based token retrieval
+router.post('/claim-reset-token', async (req: Request, res: Response) => {
+  try {
+    // Import password reset utility
+    const { getPendingResetFromSession, markResetTokenAsUsed } = require('../utils/password-reset.utils');
+    
+    const pendingReset = getPendingResetFromSession(req);
+    
+    if (!pendingReset) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No valid reset session found. Session may have expired or already been used.', 
+      });
+    }
+    
+    // Mark as used (one-time use)
+    markResetTokenAsUsed(req);
+    
+    // Return the token securely
+    res.status(200).json({ 
+      success: true, 
+      token: pendingReset.token, 
+    });
+    
+  } catch (error) {
+    console.error('[Claim Reset Token Error]', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error while claiming reset token.', 
+    });
+  }
+});
+
 // POST /api/auth/reset-password
 router.post(
   '/reset-password',
