@@ -4,7 +4,7 @@
 // Global window extensions for our functions
 declare global {
   interface Window {
-    closeAlphaBanner?: () => void;
+    closeBetaBanner?: () => void;
     manageCookies?: () => void;
     closeCookieModal?: () => void;
     acceptAllCookies?: () => void;

@@ -22,46 +22,43 @@ import {
 
 const router = Router();
 
-// reCAPTCHA verification function
-async function verifyRecaptcha(recaptchaToken: string): Promise<boolean> {
-  if (!recaptchaToken) {
+// Turnstile verification function
+async function verifyTurnstile(turnstileToken: string): Promise<boolean> {
+  if (!turnstileToken) {
     return false;
   }
 
   try {
-    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+    const secretKey = process.env.TURNSTILE_SECRET_KEY;
     if (!secretKey) {
-      console.error('[reCAPTCHA] Secret key not configured');
+      console.error('[Turnstile] Secret key not configured');
       return false;
     }
 
     const response = await axios.post(
-      'https://www.google.com/recaptcha/api/siteverify',
-      null,
+      'https://challenges.cloudflare.com/turnstile/v0/siteverify',
       {
-        params: {
-          secret: secretKey,
-          response: recaptchaToken,
-        },
+        secret: secretKey,
+        response: turnstileToken,
+      },
+      {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
         },
       },
     );
 
     const { success } = response.data;
 
-    // For reCAPTCHA v2, check if success is true
-    // For reCAPTCHA v3, you might also want to check the score (score >= 0.5)
     if (success) {
-      // reCAPTCHA verification successful
+      // Turnstile verification successful
       return true;
     } else {
-      console.error('[reCAPTCHA] Verification failed:', response.data);
+      console.error('[Turnstile] Verification failed:', response.data);
       return false;
     }
   } catch (error) {
-    console.error('[reCAPTCHA] Verification error:', error);
+    console.error('[Turnstile] Verification error:', error);
     return false;
   }
 }
@@ -78,10 +75,10 @@ router.post(
     body('password')
       .isLength({ min: 6 })
       .withMessage('Password must be at least 6 characters long.'),
-    body('recaptchaToken')
+    body('turnstileToken')
       .optional()
       .isString()
-      .withMessage('Invalid reCAPTCHA token.'),
+      .withMessage('Invalid Turnstile token.'),
   ],
   authLimiter,
   validateHoneypot(),
@@ -92,15 +89,15 @@ router.post(
     }
 
     // Destructure email along with username and password.
-    const { username, email, password, avatarUrl, recaptchaToken } = req.body;
+    const { username, email, password, avatarUrl, turnstileToken } = req.body;
 
     try {
-      // Verify reCAPTCHA if token is provided
-      if (recaptchaToken) {
-        const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
-        if (!isRecaptchaValid) {
+      // Verify Turnstile if token is provided
+      if (turnstileToken) {
+        const isTurnstileValid = await verifyTurnstile(turnstileToken);
+        if (!isTurnstileValid) {
           return res.status(400).json({
-            message: 'reCAPTCHA verification failed. Please try again.',
+            message: 'Turnstile verification failed. Please try again.',
           });
         }
       }
@@ -145,10 +142,10 @@ router.post(
   [
     body('username').notEmpty().withMessage('Username or email is required.'),
     body('password').notEmpty().withMessage('Password is required.'),
-    body('recaptchaToken')
+    body('turnstileToken')
       .optional()
       .isString()
-      .withMessage('Invalid reCAPTCHA token.'),
+      .withMessage('Invalid Turnstile token.'),
   ],
   authLimiter,
   validateHoneypot(),
@@ -158,15 +155,15 @@ router.post(
       return res.status(422).json({ errors: errors.array() });
     }
 
-    const { username, password, recaptchaToken } = req.body;
+    const { username, password, turnstileToken } = req.body;
 
     try {
-      // Verify reCAPTCHA if token is provided
-      if (recaptchaToken) {
-        const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
-        if (!isRecaptchaValid) {
+      // Verify Turnstile if token is provided
+      if (turnstileToken) {
+        const isTurnstileValid = await verifyTurnstile(turnstileToken);
+        if (!isTurnstileValid) {
           return res.status(400).json({
-            message: 'reCAPTCHA verification failed. Please try again.',
+            message: 'Turnstile verification failed. Please try again.',
           });
         }
       }
@@ -228,10 +225,10 @@ router.post(
   '/forgot-password',
   [
     body('email').isEmail().withMessage('Valid email is required.'),
-    body('recaptchaToken')
+    body('turnstileToken')
       .optional()
       .isString()
-      .withMessage('Invalid reCAPTCHA token.'),
+      .withMessage('Invalid Turnstile token.'),
   ],
   authLimiter,
   validateHoneypot(),
@@ -241,15 +238,15 @@ router.post(
       return res.status(422).json({ errors: errors.array() });
     }
 
-    const { email, recaptchaToken } = req.body;
+    const { email, turnstileToken } = req.body;
 
     try {
-      // Verify reCAPTCHA if token is provided
-      if (recaptchaToken) {
-        const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
-        if (!isRecaptchaValid) {
+      // Verify Turnstile if token is provided
+      if (turnstileToken) {
+        const isTurnstileValid = await verifyTurnstile(turnstileToken);
+        if (!isTurnstileValid) {
           return res.status(400).json({
-            message: 'reCAPTCHA verification failed. Please try again.',
+            message: 'Turnstile verification failed. Please try again.',
           });
         }
       }
@@ -349,6 +346,39 @@ router.get('/reset-password/validate', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('[Validate Reset Token Error]', error);
     res.status(500).json({ valid: false, message: 'Server error.' });
+  }
+});
+
+// POST /api/auth/claim-reset-token - Secure session-based token retrieval
+router.post('/claim-reset-token', async (req: Request, res: Response) => {
+  try {
+    // Import password reset utility
+    const { getPendingResetFromSession, markResetTokenAsUsed } = require('../utils/password-reset.utils');
+    
+    const pendingReset = getPendingResetFromSession(req);
+    
+    if (!pendingReset) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No valid reset session found. Session may have expired or already been used.', 
+      });
+    }
+    
+    // Mark as used (one-time use)
+    markResetTokenAsUsed(req);
+    
+    // Return the token securely
+    res.status(200).json({ 
+      success: true, 
+      token: pendingReset.token, 
+    });
+    
+  } catch (error) {
+    console.error('[Claim Reset Token Error]', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error while claiming reset token.', 
+    });
   }
 });
 

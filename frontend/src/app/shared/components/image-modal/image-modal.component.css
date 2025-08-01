@@ -1,0 +1,242 @@
+.image-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.image-modal-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-image {
+  max-width: 95vw;
+  max-height: 90vh;
+  object-fit: contain;
+  transition: transform 0.1s ease-out;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  user-select: none;
+}
+
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  color: #ffffff;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top: 3px solid #ffffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.image-controls {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  z-index: 10001;
+}
+
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 8px 12px;
+  border-radius: 25px;
+  backdrop-filter: blur(10px);
+}
+
+.control-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 0;
+  margin: 0;
+}
+
+.control-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+}
+
+.control-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.control-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.close-btn {
+  background: rgba(220, 53, 69, 0.8);
+  border-color: rgba(220, 53, 69, 0.9);
+  width: 40px;
+  height: 40px;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+}
+
+.close-btn .control-icon {
+  font-size: 24px;
+  line-height: 0.8;
+}
+
+.close-btn:hover {
+  background: rgba(220, 53, 69, 0.9);
+  border-color: #dc3545;
+}
+
+.zoom-level {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  min-width: 45px;
+  text-align: center;
+}
+
+.control-icon {
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.control-separator {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.3);
+  margin: 0 4px;
+}
+
+.instructions {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+  opacity: 0.8;
+  z-index: 10001;
+}
+
+.instructions p {
+  margin: 0;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Mobile responsiveness - hide zoom controls and instructions */
+@media (max-width: 768px) {
+  /* Hide zoom controls (keep only close button would require restructuring) */
+  .zoom-btn,
+  .reset-btn,
+  .zoom-level,
+  .control-separator {
+    display: none !important;
+  }
+
+  /* Hide instructions about mouse interactions */
+  .instructions {
+    display: none !important;
+  }
+
+  /* Simplify controls for mobile */
+  .image-controls {
+    top: 20px;
+    right: 20px;
+  }
+
+  .zoom-controls {
+    padding: 8px;
+    gap: 0;
+  }
+
+  .close-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 24px;
+  }
+
+  .close-btn .control-icon {
+    font-size: 24px;
+  }
+
+  /* Make image easier to tap */
+  .modal-image {
+    max-width: 95vw;
+    max-height: 85vh;
+    cursor: pointer;
+  }
+
+  /* Remove transforms on mobile to allow native zoom */
+  .modal-image {
+    transform: none !important;
+  }
+}

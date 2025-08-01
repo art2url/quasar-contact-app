@@ -103,8 +103,11 @@ function proceedWithRequest(
         );
         // Clear CSRF token since auth is invalid
         csrfService.clearToken();
-        // Navigate to login with /app prefix since we're inside the Angular app
-        router.navigate(['/auth/login']);
+        // Only redirect if not already on an auth page
+        if (!router.url.includes('/auth/')) {
+          // Navigate to login with /app prefix since we're inside the Angular app
+          router.navigate(['/auth/login']);
+        }
       }
 
       return throwError(() => error);

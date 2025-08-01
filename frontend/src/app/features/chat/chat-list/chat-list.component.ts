@@ -1,34 +1,35 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { RouterModule, Router } from '@angular/router';
+import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { firstValueFrom, Subscription, Subject, timer } from 'rxjs';
+import { Router, RouterModule } from '@angular/router';
+import { firstValueFrom, Subject, Subscription, timer } from 'rxjs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { environment } from '@environments/environment';
 
-import { toEpoch, getRelativeTime } from '@utils/date.util';
+import { getRelativeTime, toEpoch } from '@utils/date.util';
 
-import { UserService } from '@services/user.service';
-import { WebSocketService } from '@services/websocket.service';
-import { MessagesService } from '@services/messages.service';
-import { CryptoService } from '@services/crypto.service';
-import { VaultService } from '@services/vault.service';
-import { LoadingService } from '@services/loading.service';
 import { AuthService } from '@services/auth.service';
-import { NotificationService, ChatNotification } from '@services/notification.service';
+import { CryptoService } from '@services/crypto.service';
+import { LoadingService } from '@services/loading.service';
+import { MessagesService } from '@services/messages.service';
+import { ChatNotification, NotificationService } from '@services/notification.service';
 import { ScrollService } from '@services/scroll.service';
+import { UserService } from '@services/user.service';
+import { VaultService } from '@services/vault.service';
+import { WebSocketService } from '@services/websocket.service';
+import { ChatMessageService } from '../chat-room/services/chat-message.service';
 
-import { UserSummary } from '@models/user.model';
 import { ChatEntry } from '@models/chat.model';
 import { AckPayload, IncomingSocketMessage } from '@models/socket.model';
+import { UserSummary } from '@models/user.model';
 
 @Component({
   selector: 'app-chat-list',
@@ -83,6 +84,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     private location: Location,
     private ngZone: NgZone,
+    private chatMessageService: ChatMessageService,
     private scrollService: ScrollService
   ) {}
 
@@ -451,7 +453,7 @@ export class ChatListComponent implements OnInit, OnDestroy {
       }
 
       if (lastMessage.deleted) {
-        chat.lastMessage = '⋯ message deleted ⋯';
+        chat.lastMessage = 'Message deleted';
       } else if (lastMessage.senderId === this.me) {
         const messageKey = `sent_${this.me}_${chat.id}/${lastMessage._id || ''}`;
         const tsKey = `sent_${this.me}_${chat.id}/pending::${+new Date(
@@ -467,10 +469,10 @@ export class ChatListComponent implements OnInit, OnDestroy {
           if (this.crypto.hasPrivateKey()) {
             chat.lastMessage = await this.crypto.decryptMessage(lastMessage.ciphertext);
           } else {
-            chat.lastMessage = '🔒 Encrypted message';
+            chat.lastMessage = 'Encrypted message';
           }
         } catch {
-          chat.lastMessage = '🔒 Encrypted message';
+          chat.lastMessage = 'Encrypted message';
         }
       }
 
@@ -505,8 +507,25 @@ export class ChatListComponent implements OnInit, OnDestroy {
 
   // Simplified incoming message handler - let NotificationService handle badge logic
   private handleIncomingMessage = async (message: IncomingSocketMessage) => {
-    const chat = this.chats.find(c => c.id === message.fromUserId);
-    if (!chat) return;
+    let chat = this.chats.find(c => c.id === message.fromUserId);
+    
+    // If chat doesn't exist, create a new one for the incoming message
+    if (!chat) {
+      // Create a new chat entry for this user
+      chat = {
+        id: message.fromUserId,
+        name: message.fromUsername || 'Unknown User',
+        avatar: message.avatarUrl || 'assets/images/avatars/01.svg',
+        unread: 0,
+        online: this.ws.isUserOnline(message.fromUserId),
+      };
+      
+      // Add the new chat to the beginning of the list
+      this.chats.unshift(chat);
+      
+      // Trigger change detection for the new chat entry
+      this.cdr.detectChanges();
+    }
 
     try {
       if (this.crypto.hasPrivateKey()) {
@@ -578,6 +597,22 @@ export class ChatListComponent implements OnInit, OnDestroy {
     }
     
     return lastMessage;
+  }
+
+  /**
+   * Check if last message is a system message
+   */
+  isSystemMessage(lastMessage: string | undefined): boolean {
+    if (!lastMessage) return false;
+    return this.chatMessageService.isSystemMessage(lastMessage);
+  }
+
+  /**
+   * Get icon for system messages in chat list
+   */
+  getSystemMessageIcon(lastMessage: string | undefined): string {
+    if (!lastMessage) return 'lock';
+    return this.chatMessageService.getSystemMessageIcon(lastMessage);
   }
 
   // Public methods

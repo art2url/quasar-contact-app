@@ -1,35 +1,39 @@
 // ─── Imports ───────────────────────────────────────────────
-import express from 'express';
-import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import express from 'express';
+import session from 'express-session';
+import helmet from 'helmet';
 import path from 'path';
 import { httpCors } from './config/cors';
 
 // ─── Security Middleware ────────────────────────────────────
 import { blockBots, honeypot } from './middleware/bot-blocker';
-import { setupBotTraps, checkTrappedIP } from './middleware/bot-trap';
-import { securityHeaders } from './middleware/security-headers';
+import { checkTrappedIP, setupBotTraps } from './middleware/bot-trap';
 import {
-  logSuspiciousRequest,
   accessLogger,
   analyzeAttackPatterns,
+  logSuspiciousRequest,
 } from './middleware/request-logger';
+import { securityHeaders } from './middleware/security-headers';
 
 // ─── Route Imports ─────────────────────────────────────────
+import analyticsRoutes from './routes/analytics.routes';
 import authRoutes from './routes/auth.routes';
 import keyRoutes from './routes/keys.routes';
 import messageRoutes from './routes/messages.routes';
-import userRoutes from './routes/users.routes';
 import roomsRoutes from './routes/rooms.routes';
-import analyticsRoutes from './routes/analytics.routes';
+import userRoutes from './routes/users.routes';
 
 // ─── App Initialization ────────────────────────────────────
 const app = express();
 
-
 // ─── SECURITY LAYER 1: HTTPS Redirect ──────────────────────
 app.use((req, res, next) => {
   if (process.env.NODE_ENV === 'production') {
+    // Skip HTTPS redirect for health check endpoints
+    if (req.path === '/health' || req.path === '/') {
+      return next();
+    }
     if (req.header('x-forwarded-proto') !== 'https') {
       return res.redirect(`https://${req.header('host')}${req.url}`);
     }
@@ -75,7 +79,7 @@ app.get('/health', (_req, res) =>
     uptime: process.uptime(),
     date: new Date().toISOString(),
     secure: process.env.NODE_ENV === 'production',
-    stage: process.env.NODE_ENV === 'production' ? 'production' : 'alpha',
+    stage: process.env.NODE_ENV === 'production' ? 'production' : 'beta',
     security: 'enhanced',
   }),
 );
@@ -105,6 +109,19 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ─── Cookie Parser ─────────────────────────────────────────
 app.use(cookieParser(process.env.COOKIE_SECRET || 'fallback-secret-key'));
+
+// ─── Session Configuration ─────────────────────────────────
+app.use(session({
+  secret: process.env.SESSION_SECRET || process.env.COOKIE_SECRET || 'fallback-session-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 600000, // 10 minutes for password reset sessions
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+  },
+}));
 
 // ─── Serve Static Files BEFORE API routes ─────────────────
 const staticOptions = {
@@ -177,7 +194,7 @@ app.get('/api/health', (_req, res) =>
     uptime: process.uptime(),
     date: new Date().toISOString(),
     secure: process.env.NODE_ENV === 'production',
-    stage: process.env.NODE_ENV === 'production' ? 'production' : 'alpha',
+    stage: process.env.NODE_ENV === 'production' ? 'production' : 'beta',
     security: 'enhanced',
   }),
 );
@@ -226,13 +243,19 @@ app.get('/app/auth/forgot-password', (_req, res) => {
   res.sendFile(path.join(__dirname, '../../dist', 'index.html'));
 });
 
-app.get('/app/auth/reset-password', (_req, res) => {
-  res.sendFile(path.join(__dirname, '../../dist', 'index.html'));
+app.get('/app/auth/reset-password', (req, res) => {
+  const encryptedToken = req.query.token as string;
+  
+  // Import password reset utility
+  const { processPasswordResetToken } = require('./utils/password-reset.utils');
+  
+  // Process the encrypted token and handle session storage
+  processPasswordResetToken(req, res, encryptedToken);
 });
 
 // Handle invalid /app routes - serve 404 page
 app.get('/app/*', (_req, res) => {
-  res.status(404).sendFile(path.join(__dirname, '../../public/404.html'), (err) => {
+  res.status(404).sendFile(path.join(__dirname, '../../public/404.html'), err => {
     if (err) {
       console.error('404.html not found for /app route, falling back to JSON response');
       res.status(404).json({
@@ -247,7 +270,7 @@ app.get('/app/*', (_req, res) => {
 app.use((req, res) => {
   // Log 404s as they might be scanning attempts
   console.log(`404: ${req.method} ${req.path} from ${req.ip}`);
-  
+
   // For API routes, return JSON
   if (req.path.startsWith('/api/')) {
     res.status(404).json({
@@ -256,7 +279,7 @@ app.use((req, res) => {
     });
   } else {
     // For landing site routes, serve the 404.html page
-    res.status(404).sendFile(path.join(__dirname, '../../public/404.html'), (err) => {
+    res.status(404).sendFile(path.join(__dirname, '../../public/404.html'), err => {
       if (err) {
         // Fallback if 404.html doesn't exist
         console.error('404.html not found, falling back to JSON response');

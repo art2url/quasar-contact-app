@@ -409,52 +409,20 @@ body {
   animation: fadeIn 0.3s ease-in-out;
 }
 
-/* reCAPTCHA Styles */
+/* Turnstile Styles */
 
-/* reCAPTCHA Container Styles */
-.recaptcha-container {
+.turnstile-container {
   margin: 16px 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  width: 100%;
+  display: block;
+}
+
+.turnstile-wrapper {
   width: 100%;
 }
 
-.recaptcha-container > div {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-}
-
-/* reCAPTCHA Widget Styling */
-.g-recaptcha {
-  transform: scale(0.9);
-  transform-origin: center;
-  margin: 8px 0;
-}
-
-/* Mobile responsive reCAPTCHA */
-@media (max-width: 480px) {
-  .g-recaptcha {
-    transform: scale(0.75);
-    transform-origin: center;
-  }
-
-  .recaptcha-container {
-    margin: 12px 0;
-  }
-}
-
-/* Very small screens */
-@media (max-width: 360px) {
-  .g-recaptcha {
-    transform: scale(0.65);
-    transform-origin: center;
-  }
-}
-
-/* reCAPTCHA Error Message Styling */
-.recaptcha-error {
+/* Turnstile Error Message Styling */
+.turnstile-error {
   color: #f44336;
   font-size: 0.75rem;
   margin-top: 8px;
@@ -465,20 +433,20 @@ body {
   gap: 4px;
 }
 
-.recaptcha-error::before {
+.turnstile-error::before {
   content: "⚠️";
   font-size: 0.875rem;
 }
 
-/* Dark mode support for reCAPTCHA error */
+/* Dark mode support for Turnstile error */
 @media (prefers-color-scheme: dark) {
-  .recaptcha-error {
+  .turnstile-error {
     color: #ef5350;
   }
 }
 
-/* Loading state for reCAPTCHA */
-.recaptcha-loading {
+/* Loading state for Turnstile */
+.turnstile-loading {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -489,34 +457,25 @@ body {
   font-size: 0.875rem;
 }
 
-.recaptcha-loading::before {
+.turnstile-loading::before {
   content: "🔄";
   margin-right: 8px;
   animation: spin 1s linear infinite;
 }
 
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* reCAPTCHA container spacing in forms */
-.auth-form .recaptcha-container {
+/* Turnstile container spacing in forms */
+.auth-form .turnstile-container {
   margin: 20px 0;
 }
 
-/* Ensure reCAPTCHA doesn't break form layout */
-.recaptcha-container iframe {
+/* Ensure Turnstile doesn't break form layout */
+.turnstile-container iframe {
   max-width: 100%;
 }
 
 /* High contrast mode support */
 @media (prefers-contrast: high) {
-  .recaptcha-error {
+  .turnstile-error {
     background-color: #fff;
     padding: 8px;
     border: 2px solid #f44336;
@@ -526,7 +485,7 @@ body {
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-  .recaptcha-loading::before {
+  .turnstile-loading::before {
     animation: none;
     content: "⏳";
   }
@@ -580,6 +539,20 @@ select:focus {
   --mdc-outlined-text-field-label-text-color: var(--text-secondary);
   --mdc-outlined-text-field-supporting-text-color: var(--text-secondary);
   --mdc-shape-corner-size-medium: var(--border-radius);
+  --mdc-outlined-text-field-error-outline-color: var(--danger-color);
+  --mdc-outlined-text-field-error-focus-outline-color: var(--danger-color);
+  --mdc-outlined-text-field-error-hover-outline-color: var(--danger-color);
+  --mdc-outlined-text-field-error-label-text-color: var(--danger-color);
+  --mdc-outlined-text-field-error-supporting-text-color: var(--danger-color);
+}
+
+/* Dark theme form field error text color */
+.dark-theme .mat-mdc-form-field-error {
+  color: var(--danger-color) !important;
+}
+
+.dark-theme .mat-mdc-form-field-error-wrapper {
+  color: var(--danger-color) !important;
 }
 
 /* Dark theme placeholder text color */

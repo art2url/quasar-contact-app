@@ -19,7 +19,8 @@ Originally developed as a separate repository:
 
 - **HttpOnly JWT Cookies** with secure session management and automatic cleanup
 - **CSRF Protection** with double-submit cookie pattern and cryptographically secure tokens
-- **reCAPTCHA Integration** with theme support, retry logic, and automatic widget re-rendering
+- **Cloudflare Turnstile Integration** with theme support, flexible sizing, and automatic widget
+  re-rendering
 - **Honeypot Protection** with invisible form fields, timing validation, and behavioral analysis
 - **Authentication Guards** with route protection and smart redirect functionality
 
@@ -107,7 +108,7 @@ npm run typecheck      # TypeScript check
 - **VaultService**: AES-GCM encrypted IndexedDB storage with reactive state management
 - **CsrfService**: CSRF token management with LocalStorage persistence
 - **HoneypotService**: Client-side bot detection with behavioral pattern analysis
-- **RecaptchaService**: Google reCAPTCHA V3 integration with theme awareness
+- **TurnstileService**: Cloudflare Turnstile integration with theme awareness and width preservation
 
 ### Authentication & Authorization
 

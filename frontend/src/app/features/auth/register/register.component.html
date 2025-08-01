@@ -24,6 +24,7 @@
             Username must be at least 3 characters
           </mat-hint>
           <mat-error *ngIf="!username && formSubmitted"> Username is required </mat-error>
+          <mat-error *ngIf="username && !isValidUsername(username)"> Please choose a different username </mat-error>
         </mat-form-field>
       </div>
       <div class="form-group">
@@ -105,10 +106,10 @@
           readonly />
       </div>
 
-      <!-- reCAPTCHA Widget -->
-      <div class="form-group recaptcha-container">
-        <div id="recaptcha-register" #recaptchaElement></div>
-        <div *ngIf="!recaptchaToken && formSubmitted" class="recaptcha-error">
+      <!-- Turnstile Widget -->
+      <div class="form-group turnstile-container">
+        <div id="turnstile-register" #turnstileElement class="turnstile-wrapper"></div>
+        <div *ngIf="!turnstileToken && formSubmitted" class="turnstile-error">
           Please complete the security verification
         </div>
       </div>

@@ -21,7 +21,7 @@ import { HttpClient } from '@angular/common/http';
 import { catchError, firstValueFrom, timeout, TimeoutError, Subscription } from 'rxjs';
 
 import { AuthService } from '@services/auth.service';
-import { RecaptchaService } from '@services/recaptcha.service';
+import { TurnstileService } from '@services/turnstile.service';
 import { ThemeService } from '@services/theme.service';
 import { HoneypotService } from '@services/honeypot.service';
 import { ScrollService } from '@services/scroll.service';
@@ -45,8 +45,8 @@ import { environment } from '@environments/environment';
   styleUrls: ['./login.component.css'],
 })
 export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
-  @ViewChild('recaptchaElement', { static: false })
-  recaptchaElement!: ElementRef;
+  @ViewChild('turnstileElement', { static: false })
+  turnstileElement!: ElementRef;
 
   username = '';
   password = '';
@@ -54,8 +54,8 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
   isLoading = false;
   hidePassword = true;
   formSubmitted = false;
-  recaptchaToken = '';
-  recaptchaWidgetId: number | undefined;
+  turnstileToken = '';
+  turnstileWidgetId: string | undefined;
   private themeSubscription?: Subscription;
   
   // Honeypot fields
@@ -66,7 +66,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
     private auth: AuthService,
     private router: Router,
     private http: HttpClient,
-    private recaptchaService: RecaptchaService,
+    private turnstileService: TurnstileService,
     private themeService: ThemeService,
     public honeypotService: HoneypotService,
     private cdr: ChangeDetectorRef,
@@ -81,6 +81,25 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
       // Registration success message available
     }
     
+    // Check for error messages from password reset failures
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorType = urlParams.get('error');
+    if (errorType) {
+      switch (errorType) {
+        case 'expired_link':
+          this.error = 'Password reset link has expired. Please request a new one.';
+          break;
+        case 'invalid_link':
+          this.error = 'Invalid password reset link. Please request a new one.';
+          break;
+        case 'network_error':
+          this.error = 'Network error occurred. Please try again.';
+          break;
+      }
+      // Clear error parameter from URL
+      this.router.navigate([], { replaceUrl: true });
+    }
+    
     // Initialize honeypot fields
     this.honeypotFields = this.honeypotService.createHoneypotData();
     this.formStartTime = this.honeypotService.addFormStartTime();
@@ -89,8 +108,9 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
   ngAfterViewInit(): void {
     // Component view initialized
     this.setupThemeSubscription();
-    this.initializeRecaptcha();
+    this.initializeTurnstile();
   }
+
 
   private setupThemeSubscription(): void {
     // Setting up theme subscription
@@ -105,52 +125,51 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
         return;
       }
 
-      // reCAPTCHA widget ID available
+      // Turnstile widget ID available
 
-      if (this.recaptchaWidgetId !== undefined) {
-        // Re-rendering reCAPTCHA for theme change
-        this.recaptchaToken = '';
+      if (this.turnstileWidgetId !== undefined) {
+        // Re-rendering Turnstile for theme change
+        this.turnstileToken = '';
 
         // Re-render with change detection
         this.cdr.detectChanges();
-        this.recaptchaService.reRenderRecaptcha(
-          'recaptcha-login',
+        this.turnstileService.reRenderTurnstile(
+          'turnstile-login',
           (token: string) => {
-            this.recaptchaToken = token;
+            this.turnstileToken = token;
             this.error = '';
           },
-          this.recaptchaWidgetId
+          this.turnstileWidgetId
         ).then((widgetId) => {
-          this.recaptchaWidgetId = widgetId;
-          // New reCAPTCHA widget created
+          this.turnstileWidgetId = widgetId;
+          // New Turnstile widget created
         }).catch(() => {
           // Don't log theme change errors - they're not critical
-          // The form will still work, just without reCAPTCHA theme update
+          // The form will still work, just without Turnstile theme update
         });
       }
     });
   }
 
-  private async initializeRecaptcha(): Promise<void> {
+  private async initializeTurnstile(): Promise<void> {
     this.cdr.detectChanges();
     
     try {
-      this.recaptchaWidgetId = await this.recaptchaService.initializeRecaptcha(
-        'recaptcha-login',
+      this.turnstileWidgetId = await this.turnstileService.initializeTurnstile(
+        'turnstile-login',
         (token: string) => {
-          this.recaptchaToken = token;
-          this.error = ''; // Clear any reCAPTCHA-related errors
+          this.turnstileToken = token;
+          this.error = ''; // Clear any Turnstile-related errors
         }
       );
-      // reCAPTCHA initialized successfully
     } catch (error) {
       this.error = (error as Error).message;
     }
   }
 
-  private resetRecaptcha(): void {
-    this.recaptchaToken = '';
-    this.recaptchaService.resetRecaptchaWidget(this.recaptchaWidgetId);
+  private resetTurnstile(): void {
+    this.turnstileToken = '';
+    this.turnstileService.resetTurnstileWidget(this.turnstileWidgetId);
   }
 
   async onLogin(): Promise<void> {
@@ -161,7 +180,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
-    if (!this.recaptchaToken) {
+    if (!this.turnstileToken) {
       this.error = 'Please complete the security verification';
       return;
     }
@@ -186,7 +205,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
       const formData = this.honeypotService.prepareFormDataWithHoneypot({
         username: this.username,
         password: this.password,
-        recaptchaToken: this.recaptchaToken
+        turnstileToken: this.turnstileToken
       }, this.formStartTime);
 
       await firstValueFrom(
@@ -199,14 +218,14 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
       await this.router.navigate(['/chat']);
     } catch (error) {
       console.error('[Login] Login failed:', error);
-      this.resetRecaptcha(); // Reset reCAPTCHA on failed attempt
+      this.resetTurnstile(); // Reset Turnstile on failed attempt
 
       if (error instanceof Error) {
         if (error.message.includes('connect')) {
           this.error = 'Cannot connect to server. Please check your connection.';
         } else if (error.message.includes('401') || error.message.includes('Invalid')) {
           this.error = 'Invalid username or password.';
-        } else if (error.message.includes('recaptcha')) {
+        } else if (error.message.includes('turnstile')) {
           this.error = 'Security verification failed. Please try again.';
         } else {
           this.error = 'Login failed. Please try again.';
@@ -242,7 +261,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnDestroy(): void {
-    this.recaptchaService.resetRecaptchaWidget(this.recaptchaWidgetId);
+    this.turnstileService.resetTurnstileWidget(this.turnstileWidgetId);
     this.themeSubscription?.unsubscribe();
   }
 }
