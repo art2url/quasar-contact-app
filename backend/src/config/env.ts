@@ -9,6 +9,7 @@ interface EnvConfig {
   DATABASE_PUBLIC_URL: string;
   APP_NAME: string;
   JWT_SECRET: string;
+  TOKEN_ENCRYPTION_SECRET: string;
   CLIENT_ORIGIN: string;
   LANDING_URL: string;
   RL_GLOBAL_MAX: number;
@@ -31,6 +32,7 @@ export const env: EnvConfig = {
   DATABASE_PUBLIC_URL: process.env.DATABASE_PUBLIC_URL || '',
   APP_NAME: process.env.APP_NAME || 'Quasar Contact',
   JWT_SECRET: process.env.JWT_SECRET || '',
+  TOKEN_ENCRYPTION_SECRET: process.env.TOKEN_ENCRYPTION_SECRET || '',
   CLIENT_ORIGIN: process.env.CLIENT_ORIGIN || 'http://localhost:4200',
   LANDING_URL: process.env.LANDING_URL || 'https://quasar.contact',
   RL_GLOBAL_MAX: parseInt(process.env.RL_GLOBAL_MAX || '300', 10),
@@ -50,22 +52,44 @@ export const env: EnvConfig = {
 
 // Validate required environment variables
 const validateEnv = () => {
-  // Only validate JWT_SECRET as it's critical for auth
+  // Validate JWT_SECRET - critical for auth security
   if (!env.JWT_SECRET) {
     console.error('❌ JWT_SECRET is required');
     throw new Error('JWT_SECRET is required');
+  }
+
+  if (env.JWT_SECRET.length < 32) {
+    console.error('❌ JWT_SECRET must be at least 32 characters (256 bits) for security');
+    console.error('   Current length:', env.JWT_SECRET.length);
+    console.error('   Generate a secure secret with: openssl rand -hex 32');
+    throw new Error('JWT_SECRET is too short - minimum 32 characters required');
+  }
+
+  if (!env.TOKEN_ENCRYPTION_SECRET) {
+    console.error('❌ TOKEN_ENCRYPTION_SECRET is required');
+    console.error('   This secret is used to encrypt password reset tokens');
+    console.error('   Generate with: openssl rand -hex 32');
+    throw new Error('TOKEN_ENCRYPTION_SECRET is required');
+  }
+
+  if (env.TOKEN_ENCRYPTION_SECRET.length < 32) {
+    console.error('❌ TOKEN_ENCRYPTION_SECRET must be at least 32 characters (256 bits) for security');
+    console.error('   Current length:', env.TOKEN_ENCRYPTION_SECRET.length);
+    console.error('   Generate a secure secret with: openssl rand -hex 32');
+    throw new Error('TOKEN_ENCRYPTION_SECRET is too short - minimum 32 characters required');
+  }
+
+  // Ensure JWT_SECRET and TOKEN_ENCRYPTION_SECRET are different
+  if (env.JWT_SECRET === env.TOKEN_ENCRYPTION_SECRET) {
+    console.error('❌ JWT_SECRET and TOKEN_ENCRYPTION_SECRET must be different');
+    console.error('   Using the same secret for both purposes reduces security');
+    throw new Error('JWT_SECRET and TOKEN_ENCRYPTION_SECRET must be different');
   }
 
   // Warn about missing DATABASE_PUBLIC_URL but don't block startup
   if (!env.DATABASE_PUBLIC_URL) {
     console.warn(
       '⚠️  DATABASE_PUBLIC_URL not set - database features may not work',
-    );
-  }
-
-  if (env.JWT_SECRET.length < 32) {
-    console.warn(
-      'WARNING: JWT_SECRET should be at least 32 characters long for security',
     );
   }
 
