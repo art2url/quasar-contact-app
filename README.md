@@ -1045,6 +1045,8 @@ details.
 - Angular team for the amazing framework
 - Socket.IO for real-time capabilities
 - Web Crypto API for client-side encryption
+- [Boring Avatars](https://github.com/boringdesigners/boring-avatars) by Boring Designers for avatar
+  design inspiration (MIT License)
 - The open-source community
 
 ## 📞 Support
