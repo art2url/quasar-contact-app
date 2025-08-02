@@ -293,7 +293,7 @@ router.post(
           userId: user.id,
           email: user.email,
           token: hashedToken,
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
         },
       });
 
