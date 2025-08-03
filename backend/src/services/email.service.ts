@@ -323,7 +323,7 @@ class EmailService {
                     
                     <div class="warning-box">
                       <div class="warning-title">⚠️ Important Security Notice</div>
-                      <p>This link will expire in 1 hour for your security. If you did not request this password reset, please ignore this email and your password will remain unchanged.</p>
+                      <p>This link will expire in 10 minutes for your security. If you did not request this password reset, please ignore this email and your password will remain unchanged.</p>
                     </div>
                     
                     <div class="security-notice">
@@ -361,7 +361,7 @@ class EmailService {
       To reset your password, please visit the following link:
       ${resetUrl}
 
-      This link will expire in 1 hour for your security.
+      This link will expire in 10 minutes for your security.
 
       If you did not request this password reset, please ignore this email and your password will remain unchanged.
 

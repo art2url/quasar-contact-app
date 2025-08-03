@@ -111,6 +111,12 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser(process.env.COOKIE_SECRET || 'fallback-secret-key'));
 
 // ─── Session Configuration ─────────────────────────────────
+// Note: Using MemoryStore for simplicity since sessions are short-lived (10 min)
+// For production scale, consider using a persistent store like Redis
+if (process.env.NODE_ENV === 'production') {
+  console.warn('[Session] Using MemoryStore in production - consider Redis for multi-instance deployments');
+}
+
 app.use(session({
   secret: process.env.SESSION_SECRET || process.env.COOKIE_SECRET || 'fallback-session-secret',
   resave: false,

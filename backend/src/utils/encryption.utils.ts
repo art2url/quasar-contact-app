@@ -1,8 +1,9 @@
 import crypto from 'crypto';
+import env from '../config/env';
 
-// Use a key derived from environment variables for token encryption
+// Use a key derived from dedicated TOKEN_ENCRYPTION_SECRET for token encryption
 const ENCRYPTION_KEY = crypto.scryptSync(
-  process.env.TOKEN_ENCRYPTION_SECRET || process.env.JWT_SECRET || 'fallback-encryption-key',
+  env.TOKEN_ENCRYPTION_SECRET,
   'reset-token-salt',
   32,
 );
