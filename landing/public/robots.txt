@@ -4,8 +4,9 @@ Allow: /
 # Sitemap
 Sitemap: https://quasar.contact/sitemap.xml
 
-# Block sensitive paths
-Disallow: /app/
+# Block sensitive paths only (allow auth pages for SEO)
+Disallow: /app/chat/
+Disallow: /app/settings/
 Disallow: /api/
 Disallow: /*.json
 Disallow: /assets/screenshots/
