@@ -227,6 +227,7 @@ public/build/
 # macOS
 .DS_Store
 .DS_Store?
+**/.DS_Store
 ._*
 .Spotlight-V100
 .Trashes
@@ -431,4 +432,4 @@ dist/
 # Add your custom ignores here
 # e.g., specific folders, files, or patterns unique to your project
 frontend/tmp
-public
+/public

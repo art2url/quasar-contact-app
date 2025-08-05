@@ -105,24 +105,21 @@ const finalStructuredData = structuredData || defaultStructuredData;
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png" />
     <link rel="manifest" href="/assets/images/site.webmanifest" />
 
-    <!-- DNS Prefetch -->
-    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
-    <link rel="dns-prefetch" href="//fonts.gstatic.com" />
-
-    <!-- Preconnect -->
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
     <!-- Fonts -->
-    <link
-      href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Schema.org structured data -->
     <script type="application/ld+json" is:inline set:html={JSON.stringify(finalStructuredData)} />
 
     <!-- Performance hints -->
     <link rel="preload" href="/assets/images/logo.svg" as="image" />
+    <!-- CSS will be automatically injected by Astro build -->
+    <!-- Preload first carousel image for mobile -->
+    <link rel="preload" href="/assets/screenshots/mobile/slides/1_1270x720x1_notext.png" as="image" media="(max-width: 767px)" />
+    <!-- Preload first carousel image for desktop -->
+    <link rel="preload" href="/assets/screenshots/desktop/slides/1_1270x720x2_notext.png" as="image" media="(min-width: 768px)" />
 
     <!-- Cloudflare Web Analytics -->
     <script
@@ -152,4 +149,5 @@ const finalStructuredData = structuredData || defaultStructuredData;
 <script>
   // Import main JavaScript functionality
   import '../scripts/script.js';
+  import '../scripts/imageOptimization.js';
 </script>
