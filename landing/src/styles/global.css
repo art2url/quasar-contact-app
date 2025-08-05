@@ -2514,6 +2514,10 @@ body.cookies-hidden .footer {
     max-width: 320px;
     font-size: 0.6rem;
   }
+
+  .app-showcase {
+    display: none !important;
+  }
 }
 
 @media (max-width: 480px) {
