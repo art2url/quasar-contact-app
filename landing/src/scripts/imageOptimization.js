@@ -13,10 +13,7 @@ if ('loading' in HTMLImageElement.prototype) {
 // Connection-aware loading
 if ('connection' in navigator) {
   const connection = navigator.connection;
-  if (
-    connection.effectiveType === '2g' ||
-    connection.effectiveType === 'slow-2g'
-  ) {
+  if (connection.effectiveType === '2g' || connection.effectiveType === 'slow-2g') {
     document.documentElement.classList.add('slow-connection');
   }
 }

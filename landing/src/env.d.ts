@@ -14,12 +14,7 @@ declare global {
     getCookie?: (name: string) => string | null;
     setCookie?: (name: string, value: string, days?: number) => void;
     toggleFaq?: (element: HTMLElement) => void;
-    trackCustomEvent?: (
-      eventName: string,
-      category: string,
-      label: string,
-      value?: number
-    ) => void;
+    trackCustomEvent?: (eventName: string, category: string, label: string, value?: number) => void;
 
     // Google Analytics related
     GA_MEASUREMENT_ID?: string;

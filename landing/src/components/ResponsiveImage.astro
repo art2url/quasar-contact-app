@@ -2,17 +2,17 @@
 export interface Props {
   src: string; // Base image path without /assets/screenshots/ prefix
   alt: string;
-  loading?: 'lazy' | 'eager';
+  loading?: "lazy" | "eager";
   class?: string;
 }
 
-const { src, alt, loading = 'lazy', class: className } = Astro.props;
+const { src, alt, loading = "lazy", class: className } = Astro.props;
 
 // Convert x1 naming to x2 for desktop (x1 for mobile, x2 for desktop)
-const desktopSrc = src.replace('x1_', 'x2_');
+const desktopSrc = src.replace("x1_", "x2_");
 ---
 
-<picture class={className}>
+<picture class:list={className}>
   <!-- Mobile: Serve smaller images for screens < 768px -->
   <source
     media="(max-width: 767px)"

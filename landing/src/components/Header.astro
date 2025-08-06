@@ -4,17 +4,17 @@ const currentPath = Astro.url.pathname;
 
 // Define navigation items with proper Astro routing for dev/build
 const navItems = [
-  { href: '/', label: 'Home', path: '/' },
-  { href: '/about/', label: 'About', path: '/about' },
-  { href: '/faq/', label: 'FAQ', path: '/faq' },
-  { href: '/legal/', label: 'Legal', path: '/legal' },
-  { href: '/author/', label: 'Author', path: '/author' },
+  { href: "/", label: "Home", path: "/" },
+  { href: "/about/", label: "About", path: "/about" },
+  { href: "/faq/", label: "FAQ", path: "/faq" },
+  { href: "/legal/", label: "Legal", path: "/legal" },
+  { href: "/author/", label: "Author", path: "/author" },
 ];
 
 // Function to check if nav item is active
 function isActive(itemPath: string, currentPath: string): boolean {
-  if (itemPath === '/') {
-    return currentPath === '/';
+  if (itemPath === "/") {
+    return currentPath === "/";
   }
   return currentPath.startsWith(itemPath);
 }
@@ -36,8 +36,8 @@ function isActive(itemPath: string, currentPath: string): boolean {
         navItems.map(item => (
           <a
             href={item.href}
-            class={`nav-link ${isActive(item.path, currentPath) ? 'active' : ''}`}
-            aria-current={isActive(item.path, currentPath) ? 'page' : undefined}
+            class:list={[`nav-link `, { active: isActive(item.path, currentPath) }]}
+            aria-current={isActive(item.path, currentPath) ? "page" : undefined}
           >
             {item.label}
           </a>
@@ -85,8 +85,8 @@ function isActive(itemPath: string, currentPath: string): boolean {
       navItems.map(item => (
         <a
           href={item.href}
-          class={`mobile-nav-link ${isActive(item.path, currentPath) ? 'active' : ''}`}
-          aria-current={isActive(item.path, currentPath) ? 'page' : undefined}
+          class:list={[`mobile-nav-link `, { active: isActive(item.path, currentPath) }]}
+          aria-current={isActive(item.path, currentPath) ? "page" : undefined}
           onclick="closeMobileMenu()"
         >
           {item.label}

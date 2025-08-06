@@ -1,25 +1,25 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
 <BaseLayout
-  title='FAQ - Quasar Contact'
-  description='Frequently asked questions about Quasar Contact secure messaging platform, encryption, privacy, and features.'
+  title="FAQ - Quasar Contact"
+  description="Frequently asked questions about Quasar Contact secure messaging platform, encryption, privacy, and features."
 >
-  <div class='main-content page-content'>
-    <div class='container inner'>
-      <div class='page-header'>
+  <div class="main-content page-content">
+    <div class="container inner">
+      <div class="page-header">
         <h2>Frequently Asked Questions</h2>
-        <p class='page-subtitle'>Everything you need to know about Quasar Contact</p>
+        <p class="page-subtitle">Everything you need to know about Quasar Contact</p>
       </div>
 
-      <div class='faq-container'>
-        <div class='faq-item'>
-          <div class='faq-question' onclick='toggleFaq(this)'>
+      <div class="faq-container">
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
             <span>What is Quasar Contact?</span>
-            <span class='faq-toggle'>+</span>
+            <span class="faq-toggle">+</span>
           </div>
-          <div class='faq-answer'>
+          <div class="faq-answer">
             <p>
               Quasar Contact is a secure, end-to-end encrypted messaging platform that prioritizes
               your privacy. I use military-grade encryption to ensure your conversations remain
@@ -28,12 +28,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
         </div>
 
-        <div class='faq-item'>
-          <div class='faq-question' onclick='toggleFaq(this)'>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
             <span>How does the encryption work?</span>
-            <span class='faq-toggle'>+</span>
+            <span class="faq-toggle">+</span>
           </div>
-          <div class='faq-answer'>
+          <div class="faq-answer">
             <p>
               I use client-side encryption with the Web Crypto API, implementing RSA-OAEP with
               AES-GCM encryption. Your messages and images are encrypted on your device before being
@@ -44,12 +44,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
         </div>
 
-        <div class='faq-item'>
-          <div class='faq-question' onclick='toggleFaq(this)'>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
             <span>What data do you collect?</span>
-            <span class='faq-toggle'>+</span>
+            <span class="faq-toggle">+</span>
           </div>
-          <div class='faq-answer'>
+          <div class="faq-answer">
             <p>
               I collect minimal data - only your email address for user identification and
               authentication. I do not collect, store, or analyze your message content, contacts, or
@@ -60,12 +60,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
         </div>
 
-        <div class='faq-item'>
-          <div class='faq-question' onclick='toggleFaq(this)'>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
             <span>Is Quasar Contact free to use?</span>
-            <span class='faq-toggle'>+</span>
+            <span class="faq-toggle">+</span>
           </div>
-          <div class='faq-answer'>
+          <div class="faq-answer">
             <p>
               Yes, Quasar Contact is currently free to use during the beta stage. I'm focused on
               building the best secure messaging platform and gathering user feedback.
@@ -73,12 +73,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
         </div>
 
-        <div class='faq-item'>
-          <div class='faq-question' onclick='toggleFaq(this)'>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
             <span>Can you read my messages?</span>
-            <span class='faq-toggle'>+</span>
+            <span class="faq-toggle">+</span>
           </div>
-          <div class='faq-answer'>
+          <div class="faq-answer">
             <p>
               No, I cannot read your messages. My zero-knowledge architecture ensures that all
               encryption and decryption happens on your device. Even if I wanted to, I don't have
@@ -87,19 +87,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
         </div>
 
-        <div class='faq-item'>
-          <div class='faq-question' onclick='toggleFaq(this)'>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
             <span>Is the source code available?</span>
-            <span class='faq-toggle'>+</span>
+            <span class="faq-toggle">+</span>
           </div>
-          <div class='faq-answer'>
+          <div class="faq-answer">
             <p>
               Yes! Quasar Contact is completely open source and available on GitHub at
               <a
-                href='https://github.com/art2url/quasar-contact-app'
-                target='_blank'
-                rel='noopener noreferrer'
-                class='security-email'
+                href="https://github.com/art2url/quasar-contact-app"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="security-email"
               >
                 github.com/art2url/quasar-contact-app
               </a>. I believe in transparency and welcome security researchers and the community to
@@ -109,28 +109,30 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
         </div>
 
-        <div class='faq-item'>
-          <div class='faq-question' onclick='toggleFaq(this)'>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
             <span>How do I delete my account?</span>
-            <span class='faq-toggle'>+</span>
+            <span class="faq-toggle">+</span>
           </div>
-          <div class='faq-answer'>
+          <div class="faq-answer">
             <p>
               To delete your account, please email me at <a
-                href='mailto:artem.turlenko@quasar.contact'
-                class='security-email'>artem.turlenko@quasar.contact</a
-              > with your account email. I will permanently remove all your data within 48 hours. Self-service
-              deletion will be added in a future update.
+                href="mailto:artem.turlenko@quasar.contact"
+                class="security-email"
+              >
+                artem.turlenko@quasar.contact
+              </a> with your account email. I will permanently remove all your data within 48 hours.
+              Self-service deletion will be added in a future update.
             </p>
           </div>
         </div>
 
-        <div class='faq-item'>
-          <div class='faq-question' onclick='toggleFaq(this)'>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
             <span>What happens if I lose my device?</span>
-            <span class='faq-toggle'>+</span>
+            <span class="faq-toggle">+</span>
           </div>
-          <div class='faq-answer'>
+          <div class="faq-answer">
             <p>
               Your encryption keys are stored locally on your device. If you lose your device or
               clear your browser cache, you can regenerate new encryption keys through the app's key
@@ -141,27 +143,27 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
         </div>
 
-        <div class='faq-item'>
-          <div class='faq-question' onclick='toggleFaq(this)'>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
             <span>How can I report a security issue?</span>
-            <span class='faq-toggle'>+</span>
+            <span class="faq-toggle">+</span>
           </div>
-          <div class='faq-answer'>
+          <div class="faq-answer">
             <p>
               If you discover a security vulnerability, please contact me immediately at
-              <a href='mailto:artem.turlenko@quasar.contact' class='security-email'
-                >artem.turlenko@quasar.contact</a
-              >. I take security issues very seriously and will respond promptly to any reports.
+              <a href="mailto:artem.turlenko@quasar.contact" class="security-email">
+                artem.turlenko@quasar.contact
+              </a>. I take security issues very seriously and will respond promptly to any reports.
             </p>
           </div>
         </div>
 
-        <div class='faq-item'>
-          <div class='faq-question' onclick='toggleFaq(this)'>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
             <span>Can I send images and files?</span>
-            <span class='faq-toggle'>+</span>
+            <span class="faq-toggle">+</span>
           </div>
-          <div class='faq-answer'>
+          <div class="faq-answer">
             <p>
               Yes! You can send images that are automatically compressed and encrypted before
               transmission. All image attachments are processed client-side to maintain your
@@ -170,12 +172,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
         </div>
 
-        <div class='faq-item'>
-          <div class='faq-question' onclick='toggleFaq(this)'>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
             <span>Does Quasar Contact support emojis?</span>
-            <span class='faq-toggle'>+</span>
+            <span class="faq-toggle">+</span>
           </div>
-          <div class='faq-answer'>
+          <div class="faq-answer">
             <p>
               Absolutely! Quasar Contact includes a built-in emoji picker with a wide selection of
               emojis to make your conversations more expressive and fun. You can access the emoji
@@ -184,12 +186,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
         </div>
 
-        <div class='faq-item'>
-          <div class='faq-question' onclick='toggleFaq(this)'>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
             <span>Can I edit or delete messages?</span>
-            <span class='faq-toggle'>+</span>
+            <span class="faq-toggle">+</span>
           </div>
-          <div class='faq-answer'>
+          <div class="faq-answer">
             <p>
               Yes! You can edit or delete your own messages after sending them. When you edit a
               message, it's re-encrypted with the updated content. Deleted messages are permanently
@@ -199,26 +201,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
         </div>
 
-        <div class='faq-item'>
-          <div class='faq-question' onclick='toggleFaq(this)'>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
             <span>How do you protect against spam and bots?</span>
-            <span class='faq-toggle'>+</span>
+            <span class="faq-toggle">+</span>
           </div>
-          <div class='faq-answer'>
+          <div class="faq-answer">
             <p>
-              I use Cloudflare Turnstile and advanced honeypot techniques to protect against automated attacks
-              and spam. The platform also includes rate limiting and other security measures to
-              ensure a safe environment for legitimate users.
+              I use Cloudflare Turnstile and advanced honeypot techniques to protect against
+              automated attacks and spam. The platform also includes rate limiting and other
+              security measures to ensure a safe environment for legitimate users.
             </p>
           </div>
         </div>
 
-        <div class='faq-item'>
-          <div class='faq-question' onclick='toggleFaq(this)'>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
             <span>Will there be mobile apps?</span>
-            <span class='faq-toggle'>+</span>
+            <span class="faq-toggle">+</span>
           </div>
-          <div class='faq-answer'>
+          <div class="faq-answer">
             <p>
               While Quasar Contact already works great on mobile browsers and can be installed as a
               PWA, I'm considering native mobile apps in the future based on user demand and
@@ -227,19 +229,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
         </div>
 
-        <div class='faq-item'>
-          <div class='faq-question' onclick='toggleFaq(this)'>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
             <span>Do you comply with GDPR?</span>
-            <span class='faq-toggle'>+</span>
+            <span class="faq-toggle">+</span>
           </div>
-          <div class='faq-answer'>
+          <div class="faq-answer">
             <p>
               Yes, I am fully GDPR compliant. I collect minimal data (only email addresses) and
               implement privacy by design. You can manage cookies through your browser settings or
               my cookie preferences. To access, modify, or delete your account data, please contact
-              me at <a href='mailto:artem.turlenko@quasar.contact' class='security-email'
-                >artem.turlenko@quasar.contact</a
-              >.
+              me at <a href="mailto:artem.turlenko@quasar.contact" class="security-email">
+                artem.turlenko@quasar.contact
+              </a>.
             </p>
           </div>
         </div>

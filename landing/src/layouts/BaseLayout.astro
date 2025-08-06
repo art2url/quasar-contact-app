@@ -1,8 +1,8 @@
 ---
-import BetaBanner from '../components/BetaBanner.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import CookieConsent from '../components/CookieConsent.astro';
+import BetaBanner from "../components/BetaBanner.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import CookieConsent from "../components/CookieConsent.astro";
 
 export interface Props {
   title: string;
@@ -17,8 +17,8 @@ export interface Props {
 const {
   title,
   description,
-  keywords = 'encrypted chat, secure messaging, end-to-end encryption, private chat, secure communication, military-grade encryption, privacy-first messaging, real-time chat',
-  ogImage = 'https://quasar.contact/assets/images/og-image.jpg',
+  keywords = "encrypted chat, secure messaging, end-to-end encryption, private chat, secure communication, military-grade encryption, privacy-first messaging, real-time chat",
+  ogImage = "https://quasar.contact/assets/images/og-image.jpg",
   canonical,
   noIndex = false,
   structuredData,
@@ -28,35 +28,35 @@ const currentUrl = new URL(Astro.request.url);
 const canonicalUrl = canonical || currentUrl.href;
 
 const defaultStructuredData = {
-  '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
-  name: 'Quasar',
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Quasar",
   description:
-    'Secure end-to-end encrypted chat application with military-grade encryption and privacy-first design',
-  url: 'https://quasar.contact',
-  applicationCategory: 'CommunicationApplication',
-  operatingSystem: 'Web, iOS, Android',
+    "Secure end-to-end encrypted chat application with military-grade encryption and privacy-first design",
+  url: "https://quasar.contact",
+  applicationCategory: "CommunicationApplication",
+  operatingSystem: "Web, iOS, Android",
   offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'USD',
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
   },
   author: {
-    '@type': 'Person',
-    name: 'Artem Turlenko',
-    url: 'https://github.com/art2url',
+    "@type": "Person",
+    name: "Artem Turlenko",
+    url: "https://github.com/art2url",
   },
   aggregateRating: {
-    '@type': 'AggregateRating',
-    ratingValue: '4.5',
-    reviewCount: '25',
+    "@type": "AggregateRating",
+    ratingValue: "4.5",
+    reviewCount: "25",
   },
   featureList: [
-    'End-to-end encryption',
-    'Real-time messaging',
-    'Zero data logging',
-    'Military-grade security',
-    'Cross-platform support',
+    "End-to-end encryption",
+    "Real-time messaging",
+    "Zero data logging",
+    "Military-grade security",
+    "Cross-platform support",
   ],
 };
 
@@ -75,7 +75,7 @@ const finalStructuredData = structuredData || defaultStructuredData;
     <meta name="description" content={description} />
     <meta name="keywords" content={keywords} />
     <meta name="author" content="Artem Turlenko" />
-    <meta name="robots" content={noIndex ? 'noindex, nofollow' : 'index, follow'} />
+    <meta name="robots" content={noIndex ? "noindex, nofollow" : "index, follow"} />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
@@ -106,25 +106,109 @@ const finalStructuredData = structuredData || defaultStructuredData;
     <link rel="manifest" href="/assets/images/site.webmanifest" />
 
     <!-- Fonts - Non-blocking Loading -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Load fonts with swap to prevent render blocking -->
-    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Load fonts asynchronously to prevent render blocking -->
+    <link
+      rel="preload"
+      href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600;700&display=swap"
+      as="style"
+      id="font-preload"
+    />
+    <script is:inline>
+      (function () {
+        const fontLink = document.getElementById('font-preload');
+        if (fontLink) {
+          fontLink.onload = function () {
+            this.onload = null;
+            this.rel = 'stylesheet';
+          };
+        }
+      })();
+    </script>
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
 
-    <!-- Critical CSS - Font Fallbacks -->
-    <style>
+    <!-- Critical CSS - Inline for immediate rendering -->
+    <style is:inline>
       /* Immediate font fallbacks to prevent layout shift */
-      body, * {
-        font-family: 'Jost', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+      body,
+      * {
+        font-family:
+          "Jost",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          Arial,
+          sans-serif;
         font-optical-sizing: auto;
         font-style: normal;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
       }
-      
-      h1, h2, h3, h4, h5, h6 {
-        font-family: 'Raleway', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        font-family:
+          "Raleway",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          Arial,
+          sans-serif;
         font-optical-sizing: auto;
         font-style: normal;
+        font-weight: 700;
+      }
+
+      /* Critical above-the-fold styles */
+      html {
+        height: 100%;
+        scroll-behavior: auto;
+      }
+
+      body {
+        background: linear-gradient(135deg, #0c2524 0%, #001011 100%);
+        min-height: 100vh;
+        overflow-x: hidden;
+        color: rgba(255, 255, 255, 0.9);
+        line-height: 1.6;
+      }
+
+      /* Critical header styles */
+      .header {
+        position: fixed;
+        top: var(--beta-banner-height, 32px);
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: rgba(12, 37, 36, 0.95);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+      }
+
+      /* Critical variables */
+      :root {
+        --primary-dark: #0c2524;
+        --secondary-dark: #001011;
+        --accent-green: #c3f73a;
+        --text-light: rgba(255, 255, 255, 0.9);
+        --beta-banner-height: 32px;
+        --header-height: 64px;
       }
     </style>
 
@@ -134,17 +218,16 @@ const finalStructuredData = structuredData || defaultStructuredData;
     <!-- Performance hints -->
     <link rel="preload" href="/assets/images/logo.svg" as="image" />
     <!-- CSS will be automatically injected by Astro build -->
-    <!-- Preload first carousel image for mobile -->
-    <link rel="preload" href="/assets/screenshots/mobile/slides/1_1270x720x1_notext.png" as="image" media="(max-width: 767px)" />
-    <!-- Preload first carousel image for desktop -->
-    <link rel="preload" href="/assets/screenshots/desktop/slides/1_1270x720x2_notext.png" as="image" media="(min-width: 768px)" />
+    <!-- Carousel images will load naturally when carousel initializes -->
 
     <!-- Cloudflare Web Analytics -->
     <script
       is:inline
       defer
       src="https://static.cloudflareinsights.com/beacon.min.js"
-      data-cf-beacon='{"token": "abbc680d9bdf4d34af843d4791b0f2a1"}'></script>
+      data-cf-beacon='{"token": "abbc680d9bdf4d34af843d4791b0f2a1"}'
+    >
+    </script>
   </head>
 
   <body>
@@ -161,12 +244,11 @@ const finalStructuredData = structuredData || defaultStructuredData;
 </html>
 
 <style is:global>
-  @import '../styles/global.css';
+  @import "../styles/global.css";
 </style>
 
 <script>
   // Import main JavaScript functionality
-  import '../scripts/script.js';
   import '../scripts/imageOptimization.js';
+  import '../scripts/script.js';
 </script>
-

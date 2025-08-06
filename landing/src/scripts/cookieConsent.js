@@ -30,8 +30,7 @@ class CookieConsentManager {
       document.documentElement.getAttribute('data-cookies-accepted') === 'true';
     const consent = this.getCookieConsent();
 
-    this.consentExists =
-      hasConsentFlag || (consent && this.hasRealConsent(consent));
+    this.consentExists = hasConsentFlag || (consent && this.hasRealConsent(consent));
 
     if (this.consentExists) {
       // User has made a choice - ensure banner stays hidden
@@ -48,9 +47,7 @@ class CookieConsentManager {
 
   // Check if user made a real choice (not all false)
   hasRealConsent(consent) {
-    return (
-      consent && (consent.essential || consent.preferences || consent.analytics)
-    );
+    return consent && (consent.essential || consent.preferences || consent.analytics);
   }
 
   getOrCreateClientId() {
@@ -128,8 +125,7 @@ class CookieConsentManager {
       if (!this.analyticsEnabled) return;
 
       if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
-        const button =
-          e.target.tagName === 'BUTTON' ? e.target : e.target.closest('button');
+        const button = e.target.tagName === 'BUTTON' ? e.target : e.target.closest('button');
         this.sendEvent('click', {
           event_category: 'Button',
           event_label: button.textContent?.trim(),
@@ -250,10 +246,8 @@ class CookieConsentManager {
   }
 
   savePreferences() {
-    const analytics =
-      document.getElementById('analyticsCookies')?.checked || false;
-    const preferences =
-      document.getElementById('preferencesCookies')?.checked || false;
+    const analytics = document.getElementById('analyticsCookies')?.checked || false;
+    const preferences = document.getElementById('preferencesCookies')?.checked || false;
 
     this.setCookieConsent({ essential: true, preferences, analytics });
     this.consentExists = true;
