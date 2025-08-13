@@ -15,7 +15,9 @@
 }
 
 .emoji-button:hover {
+  background-color: var(--nav-hover);
   color: var(--primary-color);
+  transform: scale(1.05);
 }
 
 .emoji-button:disabled {
