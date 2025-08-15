@@ -19,6 +19,7 @@ import { CryptoService } from '@services/crypto.service';
 import { LoadingService } from '@services/loading.service';
 import { VAULT_KEYS, VaultService } from '@services/vault.service';
 import { WebSocketService } from '@services/websocket.service';
+import { environment } from '@environments/environment';
 
 interface DebugApp {
   testWebSocket: () => void;
@@ -204,48 +205,50 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     // Handle reset token from server redirect
     this.handleResetTokenRedirect();
     
-    // Expose debug methods to window for testing
-    window.debugApp = {
-      testWebSocket: () => this.debugTestWebSocket(),
-      testPartnerKeyRecovery: () => this.debugTestPartnerKeyRecovery(),
-      triggerStoredProcessing: () => this.debugTriggerStoredNotificationProcessing(),
-      forceKeyLoss: () => {
-        // Access chat session service through chat room component
-        const chatRoomElements = document.querySelectorAll('app-chat-room');
-        if (chatRoomElements.length > 0) {
-          // Get the Angular component instance
-          const chatRoomComponent = (chatRoomElements[0] as ElementWithContext).__ngContext__?.[8] as ChatRoomComponent;
-          if (chatRoomComponent?.chat?.debugForceKeyLoss) {
-            chatRoomComponent.chat.debugForceKeyLoss();
+    // Expose debug methods to window for testing in development only
+    if (!environment.production) {
+      window.debugApp = {
+        testWebSocket: () => this.debugTestWebSocket(),
+        testPartnerKeyRecovery: () => this.debugTestPartnerKeyRecovery(),
+        triggerStoredProcessing: () => this.debugTriggerStoredNotificationProcessing(),
+        forceKeyLoss: () => {
+          // Access chat session service through chat room component
+          const chatRoomElements = document.querySelectorAll('app-chat-room');
+          if (chatRoomElements.length > 0) {
+            // Get the Angular component instance
+            const chatRoomComponent = (chatRoomElements[0] as ElementWithContext).__ngContext__?.[8] as ChatRoomComponent;
+            if (chatRoomComponent?.chat?.debugForceKeyLoss) {
+              chatRoomComponent.chat.debugForceKeyLoss();
+            } else {
+              console.error('[App] Could not access chat session service');
+            }
           } else {
-            console.error('[App] Could not access chat session service');
+            console.error('[App] No chat room component found - navigate to a chat first');
           }
-        } else {
-          console.error('[App] No chat room component found - navigate to a chat first');
-        }
-      },
-      showRoomInfo: () => {
-        // Try to get the chat room component debug info
-        const chatRoomElements = document.querySelectorAll('app-chat-room');
-        if (chatRoomElements.length > 0) {
-          // Access the component through Angular's debug utilities if available
-          let roomIdMatch = window.location.pathname.match(/\/chat\/([^/]+)$/);
-          if (!roomIdMatch) {
-            roomIdMatch = window.location.pathname.match(/\/app\/chat-room\/([^/]+)$/);
-          }
-          if (!roomIdMatch) {
-            roomIdMatch = window.location.pathname.match(/\/chat-room\/([^/]+)$/);
-          }
-          if (roomIdMatch) {
-            // Room ID found for debugging
+        },
+        showRoomInfo: () => {
+          // Try to get the chat room component debug info
+          const chatRoomElements = document.querySelectorAll('app-chat-room');
+          if (chatRoomElements.length > 0) {
+            // Access the component through Angular's debug utilities if available
+            let roomIdMatch = window.location.pathname.match(/\/chat\/([^/]+)$/);
+            if (!roomIdMatch) {
+              roomIdMatch = window.location.pathname.match(/\/app\/chat-room\/([^/]+)$/);
+            }
+            if (!roomIdMatch) {
+              roomIdMatch = window.location.pathname.match(/\/chat-room\/([^/]+)$/);
+            }
+            if (roomIdMatch) {
+              // Room ID found for debugging
+            } else {
+              // No room ID found in current path
+            }
           } else {
-            // No room ID found in current path
+            // No chat room component found
           }
-        } else {
-          // No chat room component found
-        }
-      },
-    };
+        },
+      };
+    }
 
     // Ensure global handler is set up early
     // Removed: Global partner key recovery handler now handled via database flag

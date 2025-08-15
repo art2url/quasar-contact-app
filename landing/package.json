@@ -21,20 +21,27 @@
     "style:fix": "npm run lint:fix && npm run format && npm run style:css:fix"
   },
   "dependencies": {
-    "astro": "^4.0.0",
     "@astrojs/check": "^0.3.0",
     "@astrojs/sitemap": "^3.0.0",
+    "astro": "^5.13.0",
     "typescript": "^5.0.0"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-darwin-arm64": "^4.46.2",
+    "@rollup/rollup-linux-x64-musl": "^4.46.2",
+    "@esbuild/linux-x64": "^0.25.9",
+    "@esbuild/darwin-arm64": "^0.25.9"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^8.32.0",
     "@typescript-eslint/parser": "^8.32.0",
+    "astro-eslint-parser": "^1.0.0",
     "eslint": "^9.26.0",
     "eslint-plugin-astro": "^1.0.0",
-    "astro-eslint-parser": "^1.0.0",
     "prettier": "^3.5.3",
     "prettier-plugin-astro": "^0.14.1",
+    "rollup": "^4.46.2",
     "stylelint": "^14.16.1",
     "stylelint-config-standard": "^29.0.0"
   }

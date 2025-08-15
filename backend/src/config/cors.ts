@@ -18,11 +18,10 @@ const originChecker: CorsOptions['origin'] = (incoming, callback) => {
 
   // Check if the origin is in our allowed list
   if (allowedOrigins.includes(incoming)) {
-    console.log(`✅ CORS allowed origin: ${incoming}`);
+    // CORS origin allowed
     callback(null, true);
   } else {
-    console.warn(`❌ CORS blocked request from origin: ${incoming}`);
-    console.warn(`📋 Allowed origins: ${allowedOrigins.join(', ')}`);
+    // CORS origin blocked - not in allowed list
     callback(new Error(`CORS error: origin ${incoming} not allowed`));
   }
 };
@@ -59,7 +58,7 @@ export const socketCorsOptions = {
   pingInterval: 25000, // 25 seconds
   upgradeTimeout: 30000, // 30 seconds
   // Enhanced error handling
-  allowRequest: (req: any, callback: any) => {
+  allowRequest: (_req: any, callback: any) => {
     // Additional validation can be added here
     callback(null, true);
   },
