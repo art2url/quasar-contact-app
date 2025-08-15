@@ -11,10 +11,12 @@ COPY backend/package*.json ./backend/
 COPY landing/package*.json ./landing/
 
 # Install dependencies for all parts
-RUN npm install
-RUN cd frontend && npm install
-RUN cd backend && npm install
-RUN cd landing && npm install
+# Upgrade npm to support newer package-lock.json format
+RUN npm install -g npm@latest
+RUN npm ci --omit=dev --ignore-scripts
+RUN cd frontend && (npm ci --ignore-scripts || (rm package-lock.json && npm install))
+RUN cd backend && npm ci --ignore-scripts  
+RUN cd landing && (npm ci --include=optional --ignore-scripts || (rm package-lock.json && npm install))
 
 # Copy source code
 COPY . .

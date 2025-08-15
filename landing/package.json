@@ -23,9 +23,14 @@
   "dependencies": {
     "@astrojs/check": "^0.3.0",
     "@astrojs/sitemap": "^3.0.0",
-    "@rollup/rollup-darwin-arm64": "^4.46.2",
     "astro": "^5.13.0",
     "typescript": "^5.0.0"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-darwin-arm64": "^4.46.2",
+    "@rollup/rollup-linux-x64-musl": "^4.46.2",
+    "@esbuild/linux-x64": "^0.25.9",
+    "@esbuild/darwin-arm64": "^0.25.9"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
