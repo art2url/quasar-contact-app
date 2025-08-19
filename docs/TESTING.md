@@ -120,7 +120,8 @@ npm test -- --include="**/component.spec.ts" --browsers=Chrome
 
 See the following examples in the codebase:
 
-- `cache-info-banner.component.spec.ts` - Basic component testing
+- `cache-info-banner.component.spec.ts` - Basic component testing with localStorage
+- `loading-spinner.component.spec.ts` - Simple component with inputs and CSS classes
 - More examples will be added as I develop the test suite
 
 ## Resources
