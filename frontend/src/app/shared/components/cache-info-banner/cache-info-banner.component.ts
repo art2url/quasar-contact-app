@@ -17,6 +17,10 @@ export class CacheInfoBannerComponent {
 
   dismissBanner() {
     this.showBanner = false;
-    localStorage.setItem('cacheInfoDismissed', 'true');
+    try {
+      localStorage.setItem('cacheInfoDismissed', 'true');
+    } catch (error) {
+      console.warn('Could not save banner dismissal state to localStorage:', error);
+    }
   }
 }

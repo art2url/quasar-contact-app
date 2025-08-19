@@ -1,0 +1,130 @@
+# Testing Guide for Quasar Contact App
+
+## Overview
+
+This guide explains how to write and run tests for the Quasar Contact application. I focus on
+testing the most important functionality while keeping tests maintainable and fast.
+
+## Testing Philosophy
+
+### Test Only What Matters
+
+Focus on testing:
+
+1. **Core functionality** - Does the component do its main job?
+2. **User interactions** - Can users interact with the component correctly?
+3. **Error handling** - Does the component handle failures gracefully?
+4. **Accessibility** - Is the component accessible to all users?
+5. **Integration points** - Does the component work with external dependencies?
+
+### Avoid Over-Testing
+
+Don't test:
+
+- Implementation details (private methods, internal state)
+- Framework functionality (Angular's built-in features)
+- Third-party libraries (Material Design components)
+- Obvious getters/setters
+- CSS styling details
+
+## Running Tests
+
+### Commands
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm test -- --code-coverage
+
+# Run specific test file
+npm test -- --include="**/component-name.component.spec.ts"
+
+# Run tests in headless mode (CI)
+npm test -- --watch=false --browsers=ChromeHeadless
+```
+
+### Coverage Goals
+
+- **Minimum**: 80% line coverage
+- **Target**: 90% line coverage for critical components
+- Focus on covering all major code paths, not just percentage
+
+## Component-Specific Guidelines
+
+### Shared Components
+
+- Test all input properties
+- Test content projection (ng-content)
+- Test event outputs
+- Focus on reusability aspects
+
+### Feature Components
+
+- Test business logic
+- Test navigation/routing
+- Test service integrations
+- Test complex user flows
+
+### Service Testing
+
+- Test public methods only
+- Mock external dependencies (HTTP, localStorage)
+- Test error handling and retries
+- Test state management
+
+## Continuous Integration
+
+### Pre-commit Hooks
+
+Tests automatically run before commits via Husky:
+
+```bash
+# In package.json
+"husky": {
+  "hooks": {
+    "pre-commit": "npm test -- --watch=false --browsers=ChromeHeadless"
+  }
+}
+```
+
+### CI Pipeline
+
+All tests must pass before merging:
+
+- Unit tests with coverage report
+- Linting checks
+- Build verification
+
+## Debugging Tests
+
+### Common Issues
+
+1. **Test timeout**: Increase timeout in karma.conf.js
+2. **DOM not updating**: Use `fixture.detectChanges()`
+3. **Async issues**: Use `async/await` or `fakeAsync`
+4. **Memory leaks**: Clean up subscriptions and timers
+
+### Debug Commands
+
+```bash
+# Run tests with debug info
+npm test -- --browsers=Chrome
+
+# Run single test with console output
+npm test -- --include="**/component.spec.ts" --browsers=Chrome
+```
+
+## Examples
+
+See the following examples in the codebase:
+
+- `cache-info-banner.component.spec.ts` - Basic component testing
+- More examples will be added as I develop the test suite
+
+## Resources
+
+- [Angular Testing Guide](https://angular.io/guide/testing)
+- [Jasmine Documentation](https://jasmine.github.io/)
+- [Angular TestBed](https://angular.io/guide/testing-services#angular-testbed)
