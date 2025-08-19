@@ -122,6 +122,7 @@ See the following examples in the codebase:
 
 - `cache-info-banner.component.spec.ts` - Basic component testing with localStorage
 - `loading-spinner.component.spec.ts` - Simple component with inputs and CSS classes
+- `footer.component.spec.ts` - Presentational component with links and accessibility
 - More examples will be added as I develop the test suite
 
 ## Resources
