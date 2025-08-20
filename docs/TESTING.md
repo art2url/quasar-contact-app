@@ -124,6 +124,8 @@ See the following examples in the codebase:
 - `loading-spinner.component.spec.ts` - Component with inputs and CSS classes
 - `footer.component.spec.ts` - Component with links and accessibility
 - `header.component.spec.ts` - Component with service dependencies and mocks
+- `emoji-picker.component.spec.ts` - Component with events and keyboard handling
+- `image-attachment.component.spec.ts` - Component with file handling and validation
 - More examples will be added as I develop the test suite
 
 ## Resources
