@@ -127,6 +127,8 @@ See the following examples in the codebase:
 - `emoji-picker.component.spec.ts` - Component with events and keyboard handling
 - `image-attachment.component.spec.ts` - Component with file handling and validation
 - `image-modal.component.spec.ts` - Component with zoom, dragging, and keyboard controls
+- `login.component.spec.ts` - Feature component with comprehensive authentication, security, and
+  error handling tests
 - More examples will be added as I develop the test suite
 
 ## Resources
