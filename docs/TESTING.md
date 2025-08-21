@@ -126,6 +126,7 @@ See the following examples in the codebase:
 - `header.component.spec.ts` - Component with service dependencies and mocks
 - `emoji-picker.component.spec.ts` - Component with events and keyboard handling
 - `image-attachment.component.spec.ts` - Component with file handling and validation
+- `image-modal.component.spec.ts` - Component with zoom, dragging, and keyboard controls
 - More examples will be added as I develop the test suite
 
 ## Resources
