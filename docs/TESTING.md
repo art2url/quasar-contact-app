@@ -129,6 +129,8 @@ See the following examples in the codebase:
 - `image-modal.component.spec.ts` - Component with zoom, dragging, and keyboard controls
 - `login.component.spec.ts` - Feature component with comprehensive authentication, security, and
   error handling tests
+- `register.component.spec.ts` - Feature component with form validation, password strength, and
+  registration flow
 - More examples will be added as I develop the test suite
 
 ## Resources
