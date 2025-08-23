@@ -133,6 +133,8 @@ See the following examples in the codebase:
   registration flow
 - `reset-password.component.spec.ts` - Feature component with token validation, password strength
   checking, form validation, and password reset completion
+- `forgot-password.component.spec.ts` - Feature component with email validation, password reset
+  requests, error handling, and resend functionality with timer
 - More examples will be added as I develop the test suite
 
 ## Resources
