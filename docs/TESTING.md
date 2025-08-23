@@ -131,6 +131,8 @@ See the following examples in the codebase:
   error handling tests
 - `register.component.spec.ts` - Feature component with form validation, password strength, and
   registration flow
+- `reset-password.component.spec.ts` - Feature component with token validation, password strength
+  checking, form validation, and password reset completion
 - More examples will be added as I develop the test suite
 
 ## Resources
