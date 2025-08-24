@@ -135,6 +135,8 @@ See the following examples in the codebase:
   checking, form validation, and password reset completion
 - `forgot-password.component.spec.ts` - Feature component with email validation, password reset
   requests, error handling, and resend functionality with timer
+- `settings.component.spec.ts` - Feature component with avatar selection, private key management,
+  file import/export, and navigation handling
 - `chat-list.component.spec.ts` - Feature component with message display formatting, search
   functionality, chat tracking, system message handling, and navigation
 - More examples will be added as I develop the test suite
