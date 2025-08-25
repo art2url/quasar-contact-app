@@ -139,6 +139,8 @@ See the following examples in the codebase:
   file import/export, and navigation handling
 - `chat-list.component.spec.ts` - Feature component with message display formatting, search
   functionality, chat tracking, system message handling, and navigation
+- `chat-room.component.spec.ts` - Feature component with UI delegation testing (12 tests) covering
+  message composition, editing, partner status display, image modal functionality, and navigation
 - More examples will be added as I develop the test suite
 
 ## Resources
