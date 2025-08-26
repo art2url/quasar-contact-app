@@ -10,7 +10,7 @@ export class ChatScrollService {
   private shouldAutoScroll$ = new BehaviorSubject<boolean>(true);
   private showScrollToBottomButton$ = new BehaviorSubject<boolean>(false);
   private hasInitiallyScrolled = false;
-  private scrollTimeout: NodeJS.Timeout | null = null;
+  private scrollTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private mobileChatLayoutService: MobileChatLayoutService,
