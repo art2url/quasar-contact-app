@@ -141,6 +141,9 @@ See the following examples in the codebase:
   functionality, chat tracking, system message handling, and navigation
 - `chat-room.component.spec.ts` - Feature component with UI delegation testing (12 tests) covering
   message composition, editing, partner status display, image modal functionality, and navigation
+- `chat-room-facade.service.spec.ts` - Service integration tests for real chat functionality (13
+  tests) including message handling, partner status tracking, image workflows, emoji insertion,
+  scroll behavior, and real-time updates
 - More examples will be added as I develop the test suite
 
 ## Resources
