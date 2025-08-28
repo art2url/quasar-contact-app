@@ -146,6 +146,9 @@ See the following examples in the codebase:
   behavior, and real-time updates
 - `app.component.spec.ts` - Main application component with authentication flow, navigation
   management, WebSocket connection handling, and reset token processing (foundation tests)
+- `auth.service.spec.ts` - Core authentication service tests covering login/logout flows,
+  registration, password reset functionality, token validation, authentication state management,
+  crypto key handling, WebSocket integration, and comprehensive error handling scenarios
 - More examples will be added as I develop the test suite
 
 ## Resources
