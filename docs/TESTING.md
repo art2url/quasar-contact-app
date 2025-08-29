@@ -149,6 +149,9 @@ See the following examples in the codebase:
 - `auth.service.spec.ts` - Core authentication service tests covering login/logout flows,
   registration, password reset functionality, token validation, authentication state management,
   crypto key handling, WebSocket integration, and comprehensive error handling scenarios
+- `websocket.service.spec.ts` - Real-time communication service tests covering connection
+  management, message sending/receiving, handler management (including edit/delete events), typing
+  indicators, online user tracking, connection state observables, and graceful error handling
 - More examples will be added as I develop the test suite
 
 ## Resources
