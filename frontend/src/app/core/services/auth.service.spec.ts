@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { BehaviorSubject, of, throwError } from 'rxjs';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
 import { AuthService } from './auth.service';
 import { LoadingService } from './loading.service';
@@ -48,8 +48,9 @@ describe('AuthService (Core Authentication)', () => {
     mockCryptoService.importPrivateKey.and.returnValue(Promise.resolve('imported'));
 
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         AuthService,
         { provide: LoadingService, useValue: mockLoadingService },
         { provide: WebSocketService, useValue: mockWebSocketService },

@@ -10,7 +10,7 @@ describe('ResetPasswordComponent', () => {
   let component: ResetPasswordComponent;
   let fixture: ComponentFixture<ResetPasswordComponent>;
   let mockAuthService: jasmine.SpyObj<AuthService>;
-  let mockQueryParamMap: jasmine.SpyObj<any>;
+  let mockQueryParamMap: jasmine.SpyObj<{ get: (key: string) => string | null }>;
 
   function resetComponentState() {
     component.isLoading = false;
