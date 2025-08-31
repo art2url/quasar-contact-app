@@ -155,6 +155,10 @@ See the following examples in the codebase:
 - `crypto.service.spec.ts` - Security-critical encryption service tests with comprehensive coverage
   of hybrid encryption (AES-GCM + RSA-OAEP), key generation/management, format validation, cross-key
   security testing, tamper detection, concurrent operations, and edge case handling
+- `notification.service.spec.ts` - Real-time notification service tests covering message handling,
+  unread count tracking, user state management, authentication validation, rate limiting,
+  performance optimization, WebSocket integration, and resource cleanup for chat notification
+  functionality
 - More examples will be added as I develop the test suite
 
 ## Resources
