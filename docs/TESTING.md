@@ -159,6 +159,9 @@ See the following examples in the codebase:
   unread count tracking, user state management, authentication validation, rate limiting,
   performance optimization, WebSocket integration, and resource cleanup for chat notification
   functionality
+- `vault.service.spec.ts` - Security-critical encrypted storage service tests covering AES-GCM
+  encryption, user isolation, private key security, data integrity, ArrayBuffer handling, key
+  management, and async state management for secure cryptographic storage operations
 - More examples will be added as I develop the test suite
 
 ## Resources
