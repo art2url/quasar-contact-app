@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { of } from 'rxjs';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
 import { MessagesService } from './messages.service';
 import { MessageHistoryResponse, MessageOverview, LastMessageResponse } from '@models/api-response.model';
@@ -58,8 +58,11 @@ describe('MessagesService (Chat Message API Operations)', () => {
     });
 
     await TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [MessagesService]
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        MessagesService
+      ]
     });
 
     service = TestBed.inject(MessagesService);
@@ -309,8 +312,10 @@ describe('MessagesService (Chat Message API Operations)', () => {
         return null;
       });
       
-      service.getOverviews().subscribe();
-      httpMock.expectOne(getApiPath('messages/overview'));
+      service.getOverviews().subscribe(overviews => {
+        expect(overviews).toEqual(mockOverviews);
+      });
+      httpMock.expectOne(getApiPath('messages/overview')).flush(mockOverviews);
     });
 
     it('rejects authentication with missing username', () => {
