@@ -162,6 +162,9 @@ See the following examples in the codebase:
 - `vault.service.spec.ts` - Security-critical encrypted storage service tests covering AES-GCM
   encryption, user isolation, private key security, data integrity, ArrayBuffer handling, key
   management, and async state management for secure cryptographic storage operations
+- `messages.service.spec.ts` - Chat message API service tests covering message history loading,
+  overview retrieval, last message fetching, mark-as-read functionality, authentication validation,
+  error handling, loading state management, and API integration for chat messaging operations
 - More examples will be added as I develop the test suite
 
 ## Resources
