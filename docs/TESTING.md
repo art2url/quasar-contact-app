@@ -165,6 +165,11 @@ See the following examples in the codebase:
 - `messages.service.spec.ts` - Chat message API service tests covering message history loading,
   overview retrieval, last message fetching, mark-as-read functionality, authentication validation,
   error handling, loading state management, and API integration for chat messaging operations
+- `user.service.spec.ts` - User management service tests covering user listing and search
+  functionality, public key management (upload/retrieval/missing key handling), profile management
+  (avatar updates), direct message operations (creation/listing), authentication validation, error
+  handling with detailed logging, edge cases (empty lists, large datasets, special characters),
+  concurrent operations, and network error recovery for user API integration
 - More examples will be added as I develop the test suite
 
 ## Resources
