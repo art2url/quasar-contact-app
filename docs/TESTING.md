@@ -170,6 +170,10 @@ See the following examples in the codebase:
   (avatar updates), direct message operations (creation/listing), authentication validation, error
   handling with detailed logging, edge cases (empty lists, large datasets, special characters),
   concurrent operations, and network error recovery for user API integration
+- `theme.service.spec.ts` - Theme management service tests covering theme initialization with
+  localStorage persistence and fallbacks, theme switching and toggling functionality, DOM
+  manipulation (CSS classes and meta tags), localStorage persistence verification, theme state
+  observable emissions, theme query methods accuracy, and edge cases with rapid theme changes
 - More examples will be added as I develop the test suite
 
 ## Resources
