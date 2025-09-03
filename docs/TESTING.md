@@ -174,6 +174,10 @@ See the following examples in the codebase:
   localStorage persistence and fallbacks, theme switching and toggling functionality, DOM
   manipulation (CSS classes and meta tags), localStorage persistence verification, theme state
   observable emissions, theme query methods accuracy, and edge cases with rapid theme changes
+- `loading.service.spec.ts` - Loading state management service tests covering loading state display
+  and hiding, authentication state management, navigation event handling, timeout management with
+  automatic force-hide, NgZone integration for change detection, specialized methods for auth and
+  navigation, observable behavior consistency, and edge cases with rapid state changes
 - More examples will be added as I develop the test suite
 
 ## Resources
