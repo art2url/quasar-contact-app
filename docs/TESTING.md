@@ -178,6 +178,11 @@ See the following examples in the codebase:
   and hiding, authentication state management, navigation event handling, timeout management with
   automatic force-hide, NgZone integration for change detection, specialized methods for auth and
   navigation, observable behavior consistency, and edge cases with rapid state changes
+- `scroll.service.spec.ts` - Scroll position management service tests covering scroll-to-top
+  operations with cross-browser compatibility, element scrolling with smooth behavior, scroll
+  position detection and calculation, bottom/top detection with tolerance handling, container
+  scrolling for app-specific elements, error handling for missing DOM elements, and edge cases with
+  floating point calculations
 - More examples will be added as I develop the test suite
 
 ## Resources
