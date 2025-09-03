@@ -10,6 +10,20 @@ describe('CacheInfoBannerComponent', () => {
   let compiled: HTMLElement;
 
   beforeEach(async () => {
+    // Mock window.matchMedia for BreakpointObserver
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: jasmine.createSpy('matchMedia').and.returnValue({
+        matches: false,
+        media: '(min-width: 768px)',
+        addListener: jasmine.createSpy('addListener'),
+        removeListener: jasmine.createSpy('removeListener'),
+        addEventListener: jasmine.createSpy('addEventListener'),
+        removeEventListener: jasmine.createSpy('removeEventListener'),
+        dispatchEvent: jasmine.createSpy('dispatchEvent')
+      })
+    });
+
     await TestBed.configureTestingModule({
       imports: [CacheInfoBannerComponent, MatIconModule, MatButtonModule],
     }).compileComponents();

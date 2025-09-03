@@ -26,6 +26,20 @@ describe('LoginComponent', () => {
   let mockChangeDetectorRef: jasmine.SpyObj<ChangeDetectorRef>;
 
   beforeEach(async () => {
+    // Mock window.matchMedia for BreakpointObserver
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: jasmine.createSpy('matchMedia').and.returnValue({
+        matches: false,
+        media: '(min-width: 768px)',
+        addListener: jasmine.createSpy('addListener'),
+        removeListener: jasmine.createSpy('removeListener'),
+        addEventListener: jasmine.createSpy('addEventListener'),
+        removeEventListener: jasmine.createSpy('removeEventListener'),
+        dispatchEvent: jasmine.createSpy('dispatchEvent')
+      })
+    });
+
     // Create spies for all services
     mockAuthService = jasmine.createSpyObj('AuthService', ['loginWithHoneypot']);
     mockRouter = jasmine.createSpyObj('Router', ['navigate', 'getCurrentNavigation']);
