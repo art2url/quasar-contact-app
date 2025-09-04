@@ -183,6 +183,10 @@ See the following examples in the codebase:
   position detection and calculation, bottom/top detection with tolerance handling, container
   scrolling for app-specific elements, error handling for missing DOM elements, and edge cases with
   floating point calculations
+- `chat-session.service.spec.ts` - Chat state management service tests covering chat initialization
+  and partner status tracking, typing functionality and WebSocket integration, key state management
+  with artificial blocking states, partner key regeneration notifications, message duplicate
+  detection and sorting, vault key generation, loading operations management, and service cleanup
 - More examples will be added as I develop the test suite
 
 ## Resources
