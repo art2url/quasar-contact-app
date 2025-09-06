@@ -187,6 +187,9 @@ See the following examples in the codebase:
   and partner status tracking, typing functionality and WebSocket integration, key state management
   with artificial blocking states, partner key regeneration notifications, message duplicate
   detection and sorting, vault key generation, loading operations management, and service cleanup
+- `chat-typing.service.spec.ts` - Typing state management service tests covering business logic for
+  1-second throttling rules, typing state tracking, service initialization and reset behavior,
+  resource cleanup rules, and configuration constants validation
 - More examples will be added as I develop the test suite
 
 ## Resources
