@@ -198,6 +198,10 @@ See the following examples in the codebase:
   new messages counter tracking, message edit permissions, system message detection with flag
   priority, read receipt tracking with duplicate prevention, display text formatting with filename
   truncation, and service state management
+- `chat-scroll.service.spec.ts` - Chat scroll service tests covering scroll state management,
+  scroll-to-bottom logic with error handling, initial scroll handling with layout updates, new
+  messages auto-scroll logic based on user position, scroll button click handling, auto-scroll
+  conditions for view checking, textarea resize auto-scroll, and service state reset
 - More examples will be added as I develop the test suite
 
 ## Resources
