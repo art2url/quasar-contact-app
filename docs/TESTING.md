@@ -190,6 +190,10 @@ See the following examples in the codebase:
 - `chat-typing.service.spec.ts` - Typing state management service tests covering business logic for
   1-second throttling rules, typing state tracking, service initialization and reset behavior,
   resource cleanup rules, and configuration constants validation
+- `chat-ui-state.service.spec.ts` - Chat UI state management service tests covering message editing
+  business rules, new message state management, emoji addition rules, image attachment logic,
+  filename truncation rules, cache issue detection logic, message preparation for sending, state
+  flag management, and complete state consistency rules
 - More examples will be added as I develop the test suite
 
 ## Resources
