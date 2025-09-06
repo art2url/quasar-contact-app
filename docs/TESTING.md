@@ -194,6 +194,10 @@ See the following examples in the codebase:
   business rules, new message state management, emoji addition rules, image attachment logic,
   filename truncation rules, cache issue detection logic, message preparation for sending, state
   flag management, and complete state consistency rules
+- `chat-message.service.spec.ts` - Chat message service tests covering message date grouping logic,
+  new messages counter tracking, message edit permissions, system message detection with flag
+  priority, read receipt tracking with duplicate prevention, display text formatting with filename
+  truncation, and service state management
 - More examples will be added as I develop the test suite
 
 ## Resources
