@@ -210,6 +210,9 @@ See the following examples in the codebase:
   subscription management, message handling coordination, typing indicator updates, online status
   tracking, key status management, read receipt handling, scroll event coordination, and service
   cleanup
+- `mobile-chat-layout.service.spec.ts` - Mobile chat layout service tests covering mobile view
+  detection, keyboard visibility detection, scroll position calculations, auto-scroll logic, scroll
+  operations, metrics management, and safe area calculations using mock data patterns
 - More examples will be added as I develop the test suite
 
 ## Resources
