@@ -206,6 +206,10 @@ See the following examples in the codebase:
   with dependency setup, mobile layout management, navigation handling with fallback, chat blocked
   status logic based on key states, input placeholder logic for different blocking conditions, key
   management operations with user confirmation, and service cleanup with state reset
+- `chat-event-handler.service.spec.ts` - Chat event handler service tests covering event
+  subscription management, message handling coordination, typing indicator updates, online status
+  tracking, key status management, read receipt handling, scroll event coordination, and service
+  cleanup
 - More examples will be added as I develop the test suite
 
 ## Resources
