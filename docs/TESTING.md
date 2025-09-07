@@ -202,6 +202,10 @@ See the following examples in the codebase:
   scroll-to-bottom logic with error handling, initial scroll handling with layout updates, new
   messages auto-scroll logic based on user position, scroll button click handling, auto-scroll
   conditions for view checking, textarea resize auto-scroll, and service state reset
+- `chat-lifecycle.service.spec.ts` - Chat lifecycle service tests covering chat room initialization
+  with dependency setup, mobile layout management, navigation handling with fallback, chat blocked
+  status logic based on key states, input placeholder logic for different blocking conditions, key
+  management operations with user confirmation, and service cleanup with state reset
 - More examples will be added as I develop the test suite
 
 ## Resources
