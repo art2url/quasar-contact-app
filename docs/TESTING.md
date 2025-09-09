@@ -215,6 +215,9 @@ See the following examples in the codebase:
   operations, metrics management, and safe area calculations using mock data patterns
 - `auth.guard.spec.ts` - Authentication guard tests covering route protection logic, authentication
   status checking, navigation redirection to login page, and access control business rules
+- `unauth.guard.spec.ts` - Unauthenticated guard tests covering reverse route protection logic,
+  preventing authenticated users from accessing auth pages, navigation redirection to chat, and
+  access control for login/register pages
 - More examples will be added as I develop the test suite
 
 ## Resources
