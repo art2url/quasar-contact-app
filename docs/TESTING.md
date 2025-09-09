@@ -213,6 +213,8 @@ See the following examples in the codebase:
 - `mobile-chat-layout.service.spec.ts` - Mobile chat layout service tests covering mobile view
   detection, keyboard visibility detection, scroll position calculations, auto-scroll logic, scroll
   operations, metrics management, and safe area calculations using mock data patterns
+- `auth.guard.spec.ts` - Authentication guard tests covering route protection logic, authentication
+  status checking, navigation redirection to login page, and access control business rules
 - More examples will be added as I develop the test suite
 
 ## Resources
