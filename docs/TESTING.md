@@ -218,6 +218,9 @@ See the following examples in the codebase:
 - `unauth.guard.spec.ts` - Unauthenticated guard tests covering reverse route protection logic,
   preventing authenticated users from accessing auth pages, navigation redirection to chat, and
   access control for login/register pages
+- `csrf.service.spec.ts` - CSRF token management service tests covering token storage with memory
+  and localStorage persistence, token retrieval with fallback mechanism, token clearing from both
+  locations, token existence checking, and cross-instance token sharing for security operations
 - More examples will be added as I develop the test suite
 
 ## Resources
