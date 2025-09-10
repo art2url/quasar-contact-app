@@ -29,11 +29,11 @@ Don't test:
 
 ## Running Tests
 
-### Commands
+### Frontend Tests
 
 ```bash
-# Run all tests
-npm test
+# Run all frontend tests
+cd frontend && npm test
 
 # Run tests with coverage
 npm test -- --code-coverage
@@ -43,6 +43,22 @@ npm test -- --include="**/component-name.component.spec.ts"
 
 # Run tests in headless mode (CI)
 npm test -- --watch=false --browsers=ChromeHeadless
+```
+
+### Backend Tests
+
+```bash
+# Run all backend tests
+cd backend && npm test
+
+# Run tests with coverage
+npm test -- --coverage
+
+# Run specific test file
+npm test -- --testPathPattern="specific-test.test.ts"
+
+# Run tests in CI mode
+npm run test:ci
 ```
 
 ### Coverage Goals
@@ -117,6 +133,8 @@ npm test -- --include="**/component.spec.ts" --browsers=Chrome
 ```
 
 ## Examples
+
+### Frontend Test Examples
 
 See the following examples in the codebase:
 
@@ -221,7 +239,16 @@ See the following examples in the codebase:
 - `csrf.service.spec.ts` - CSRF token management service tests covering token storage with memory
   and localStorage persistence, token retrieval with fallback mechanism, token clearing from both
   locations, token existence checking, and cross-instance token sharing for security operations
-- More examples will be added as I develop the test suite
+
+### Backend Test Examples
+
+- `app.session.integration.test.ts` - Application session integration tests covering session
+  configuration with security properties (httpOnly, sameSite, maxAge), session ID generation and
+  uniqueness, session persistence across requests, password reset token processing with session
+  storage, invalid token handling, session lifecycle management, cross-session isolation, concurrent
+  request handling, and comprehensive error handling for malformed data and edge cases
+
+- More examples will be added as I develop the backend test suite
 
 ## Resources
 
