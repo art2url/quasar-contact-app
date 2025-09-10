@@ -113,6 +113,12 @@ describe('ChatLifecycleService (Business Logic)', () => {
   describe('Navigation Handling', () => {
     it('navigates to chat list successfully', (done) => {
       mockRouter.navigate.and.returnValue(Promise.resolve(true));
+      
+      // Mock requestAnimationFrame to execute callback immediately
+      spyOn(window, 'requestAnimationFrame').and.callFake((callback: FrameRequestCallback) => {
+        callback(0);
+        return 0;
+      });
 
       service.navigateToList();
 
@@ -126,6 +132,12 @@ describe('ChatLifecycleService (Business Logic)', () => {
     it('prevents default event when provided', (done) => {
       const mockEvent = jasmine.createSpyObj('Event', ['preventDefault']);
       mockRouter.navigate.and.returnValue(Promise.resolve(true));
+      
+      // Mock requestAnimationFrame to execute callback immediately
+      spyOn(window, 'requestAnimationFrame').and.callFake((callback: FrameRequestCallback) => {
+        callback(0);
+        return 0;
+      });
 
       service.navigateToList(mockEvent);
 

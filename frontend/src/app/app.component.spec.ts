@@ -22,6 +22,21 @@ describe('AppComponent (Main Application)', () => {
   let mockWebSocketService: jasmine.SpyObj<WebSocketService>;
 
   beforeEach(async () => {
+    // Mock window.matchMedia for BreakpointObserver
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: (query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: jasmine.createSpy('addListener'),
+        removeListener: jasmine.createSpy('removeListener'),
+        addEventListener: jasmine.createSpy('addEventListener'),
+        removeEventListener: jasmine.createSpy('removeEventListener'),
+        dispatchEvent: jasmine.createSpy('dispatchEvent'),
+      }),
+    });
+
     // Create minimal service mocks
     mockAuthService = jasmine.createSpyObj('AuthService', ['isAuthenticated'], {
       isAuthenticated$: new BehaviorSubject<boolean>(false)

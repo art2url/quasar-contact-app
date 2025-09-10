@@ -20,6 +20,21 @@ describe('HeaderComponent', () => {
   let mockThemeService: jasmine.SpyObj<ThemeService>;
 
   beforeEach(async () => {
+    // Mock window.matchMedia for BreakpointObserver
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: (query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: jasmine.createSpy('addListener'),
+        removeListener: jasmine.createSpy('removeListener'),
+        addEventListener: jasmine.createSpy('addEventListener'),
+        removeEventListener: jasmine.createSpy('removeEventListener'),
+        dispatchEvent: jasmine.createSpy('dispatchEvent'),
+      }),
+    });
+
     // Create spies for all services
     mockAuthService = jasmine.createSpyObj('AuthService', ['isAuthenticated', 'logout']);
     mockRouter = jasmine.createSpyObj('Router', ['navigate']);

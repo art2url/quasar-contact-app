@@ -189,11 +189,15 @@ describe('ChatEventHandlerService (Business Logic)', () => {
   describe('Typing Indicator Handling', () => {
     it('updates typing indicator position when partner typing changes', (done) => {
       service.initializeEventHandlers('user123', document.createElement('div'));
-      mockChatSessionService.partnerTyping$.next(true);
-
+      
+      // Trigger the observable change after initialization
       setTimeout(() => {
-        expect(mockChatTypingService.updateTypingIndicatorPosition).toHaveBeenCalled();
-        done();
+        mockChatSessionService.partnerTyping$.next(true);
+        
+        setTimeout(() => {
+          expect(mockChatTypingService.updateTypingIndicatorPosition).toHaveBeenCalled();
+          done();
+        }, 50);
       }, 10);
     });
   });

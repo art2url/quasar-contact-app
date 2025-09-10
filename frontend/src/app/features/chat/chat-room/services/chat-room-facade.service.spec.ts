@@ -1,14 +1,18 @@
-import { TestBed } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { NgZone } from '@angular/core';
 
 import { ChatRoomFacadeService } from './chat-room-facade.service';
 import { ChatSessionService } from '@services/chat-session.service';
 import { WebSocketService } from '@services/websocket.service';
 import { LoadingService } from '@services/loading.service';
 import { ThemeService } from '@services/theme.service';
-import { NotificationService } from '@services/notification.service';
+import { MobileChatLayoutService } from './mobile-chat-layout.service';
+import { ChatMessageService } from './chat-message.service';
+import { ChatScrollService } from './chat-scroll.service';
+import { ChatTypingService } from './chat-typing.service';
+import { ChatUiStateService } from './chat-ui-state.service';
+import { ChatEventHandlerService } from './chat-event-handler.service';
+import { ChatLifecycleService } from './chat-lifecycle.service';
 import { ChatMsg } from '@models/chat.model';
 import { CompressedImage } from '@shared/components/image-attachment/image-attachment.component';
 
@@ -18,7 +22,14 @@ describe('ChatRoomFacadeService (Real Chat Functionality)', () => {
   let mockWebSocketService: jasmine.SpyObj<WebSocketService>;
   let mockLoadingService: jasmine.SpyObj<LoadingService>;
   let mockThemeService: jasmine.SpyObj<ThemeService>;
-  let mockNotificationService: jasmine.SpyObj<NotificationService>;
+  let mockMobileChatLayoutService: jasmine.SpyObj<MobileChatLayoutService>;
+  let mockChatMessageService: jasmine.SpyObj<ChatMessageService>;
+  let mockChatScrollService: jasmine.SpyObj<ChatScrollService>;
+  let mockChatTypingService: jasmine.SpyObj<ChatTypingService>;
+  let mockChatUiStateService: jasmine.SpyObj<ChatUiStateService>;
+  let mockChatEventHandlerService: jasmine.SpyObj<ChatEventHandlerService>;
+  let mockChatLifecycleService: jasmine.SpyObj<ChatLifecycleService>;
+  let mockNgZone: jasmine.SpyObj<NgZone>;
 
   const sampleMessages: ChatMsg[] = [
     {
@@ -48,7 +59,7 @@ describe('ChatRoomFacadeService (Real Chat Functionality)', () => {
     }
   ];
 
-  beforeEach(async () => {
+  beforeEach(() => {
     mockChatService = jasmine.createSpyObj('ChatSessionService', [
       'init', 'send', 'editMessage', 'deleteMessage', 'manuallyCheckKeyStatus'
     ], {
@@ -74,31 +85,100 @@ describe('ChatRoomFacadeService (Real Chat Functionality)', () => {
     mockThemeService = jasmine.createSpyObj('ThemeService', ['isDarkTheme'], {
       theme$: new BehaviorSubject<string>('light')
     });
-    mockNotificationService = jasmine.createSpyObj('NotificationService', [
-      'showSuccess', 'showError', 'requestPermission'
+
+    mockMobileChatLayoutService = jasmine.createSpyObj('MobileChatLayoutService', [
+      'initializeLayoutMonitoring', 'cleanup', 'checkScrollToBottom', 'scrollToBottom',
+      'handleTextareaResize', 'updateScrollPosition', 'forceUpdate'
+    ], {
+      isMobile$: new BehaviorSubject<boolean>(false),
+      keyboardVisible$: new BehaviorSubject<boolean>(false),
+      safeAreaBottom$: new BehaviorSubject<number>(0)
+    });
+
+    mockChatMessageService = jasmine.createSpyObj('ChatMessageService', [
+      'processMessages', 'checkForNewMessages', 'canEditMessage', 'isSystemMessage',
+      'markAsRead', 'getDisplayText', 'reset', 'resetNewMessagesCount'
     ]);
+
+    mockChatScrollService = jasmine.createSpyObj('ChatScrollService', [
+      'initScrollHandling', 'cleanup', 'scrollToBottom', 'handleNewMessages',
+      'onScrollButtonClick', 'handleTextareaResize', 'resetScrollState', 'reset'
+    ], {
+      showScrollToBottomButton$: new BehaviorSubject<boolean>(false),
+      isUserAtBottom$: new BehaviorSubject<boolean>(true)
+    });
+
+    mockChatTypingService = jasmine.createSpyObj('ChatTypingService', [
+      'init', 'cleanup', 'reset', 'sendTypingIndicator', 'updateTypingIndicatorPosition',
+      'autoResizeTextarea', 'updateChatWindowHeight'
+    ]);
+
+    mockChatUiStateService = jasmine.createSpyObj('ChatUiStateService', [
+      'reset', 'setEditing', 'clearEditing', 'addEmoji', 'setAttachedImage',
+      'clearAttachedImage', 'setCacheIssue', 'prepareMessageForSending', 'updateNewMessage',
+      'onEmojiSelected', 'getCurrentNewMessage', 'onImageSelected', 'setNewMessage', 
+      'beginEdit', 'cancelEdit'
+    ], {
+      editing$: new BehaviorSubject<ChatMsg | null>(null),
+      newMessage$: new BehaviorSubject<string>(''),
+      attachedImage$: new BehaviorSubject<CompressedImage | null>(null),
+      showCacheInfoBanner$: new BehaviorSubject<boolean>(false)
+    });
+
+    mockChatEventHandlerService = jasmine.createSpyObj('ChatEventHandlerService', [
+      'init', 'cleanup'
+    ]);
+
+    mockChatLifecycleService = jasmine.createSpyObj('ChatLifecycleService', [
+      'init', 'cleanup', 'navigateToSettings', 'regenerateKeys', 'navigateToList'
+    ], {
+      isBlocked$: new BehaviorSubject<boolean>(false),
+      placeholderText$: new BehaviorSubject<string>('Type a message...')
+    });
+
+    mockNgZone = jasmine.createSpyObj('NgZone', ['run', 'runOutsideAngular'], {
+      onUnstable: new BehaviorSubject(false),
+      onMicrotaskEmpty: new BehaviorSubject(false),
+      onStable: new BehaviorSubject(false),
+      onError: new BehaviorSubject(false)
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockNgZone.run.and.callFake((fn: any) => fn());
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockNgZone.runOutsideAngular.and.callFake((fn: any) => fn());
 
     // Configure successful operations
     mockChatService.init.and.returnValue(Promise.resolve());
     mockChatService.send.and.returnValue(Promise.resolve());
     mockChatService.editMessage.and.returnValue(Promise.resolve());
+    mockChatService.deleteMessage.and.returnValue(Promise.resolve());
     mockWebSocketService.isUserOnline.and.returnValue(true);
     mockThemeService.isDarkTheme.and.returnValue(false);
-
-    await TestBed.configureTestingModule({
-      providers: [
-        ChatRoomFacadeService,
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        { provide: ChatSessionService, useValue: mockChatService },
-        { provide: WebSocketService, useValue: mockWebSocketService },
-        { provide: LoadingService, useValue: mockLoadingService },
-        { provide: ThemeService, useValue: mockThemeService },
-        { provide: NotificationService, useValue: mockNotificationService }
-      ]
+    mockChatMessageService.canEditMessage.and.returnValue(true);
+    mockChatTypingService.autoResizeTextarea.and.callFake((element: HTMLTextAreaElement, callback?: () => void) => {
+      if (callback) callback();
+    });
+    // Configure dynamic mock return values
+    mockChatUiStateService.getCurrentNewMessage.and.returnValue('');
+    mockChatUiStateService.prepareMessageForSending.and.returnValue({
+      content: 'Test message',
+      image: null
     });
 
-    service = TestBed.inject(ChatRoomFacadeService);
+    service = new ChatRoomFacadeService(
+      mockChatService,
+      mockWebSocketService,
+      mockLoadingService,
+      mockMobileChatLayoutService,
+      mockThemeService,
+      mockNgZone,
+      mockChatMessageService,
+      mockChatScrollService,
+      mockChatTypingService,
+      mockChatUiStateService,
+      mockChatEventHandlerService,
+      mockChatLifecycleService
+    );
   });
 
   // Run: npm test
@@ -170,6 +250,9 @@ describe('ChatRoomFacadeService (Real Chat Functionality)', () => {
   });
 
   it('handles image attachment and compression workflow', () => {
+    // Configure mock to return filename for this test
+    mockChatUiStateService.getCurrentNewMessage.and.returnValue('chat-image.jpg');
+    
     const mockImage: CompressedImage = {
       file: new File(['test'], 'chat-image.jpg', { type: 'image/jpeg' }),
       preview: 'blob:image-preview-url',
@@ -189,6 +272,9 @@ describe('ChatRoomFacadeService (Real Chat Functionality)', () => {
   });
 
   it('handles emoji insertion in chat messages', () => {
+    // Configure mock to return emoji for this test
+    mockChatUiStateService.getCurrentNewMessage.and.returnValue('😊');
+    
     const emoji = '😊';
     const initialMessage = 'Hello ';
     
@@ -273,6 +359,7 @@ describe('ChatRoomFacadeService (Real Chat Functionality)', () => {
     
     service.delete(messageToDelete);
     
+    expect(window.confirm).toHaveBeenCalledWith('Delete this message for everyone?');
     expect(mockChatService.deleteMessage).toHaveBeenCalledWith(messageToDelete.id!);
   });
 
