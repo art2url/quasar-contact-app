@@ -11,4 +11,8 @@ cd ../landing && npm run typecheck
 echo "🧪 Running frontend tests..."
 cd ../frontend && npm run test:ci
 
+# Run backend tests
+echo "🧪 Running backend tests..."
+cd ../backend && npm run test:ci
+
 echo "✅ Pre-commit checks passed!"
