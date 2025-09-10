@@ -7,4 +7,8 @@ cd frontend && npm run typecheck
 cd ../backend && npm run typecheck
 cd ../landing && npm run typecheck
 
+# Run frontend tests
+echo "🧪 Running frontend tests..."
+cd ../frontend && npm run test:ci
+
 echo "✅ Pre-commit checks passed!"

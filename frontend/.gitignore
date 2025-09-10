@@ -323,8 +323,6 @@ webpack-bundle-analyzer-report.html
 # Prettier
 .prettierignore
 
-# Husky
-.husky/_
 
 # ====================
 # CLOUD & EXTERNAL SERVICES IGNORES
