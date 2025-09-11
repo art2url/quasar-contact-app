@@ -259,6 +259,10 @@ See the following examples in the codebase:
   validation and duplicate prevention, user login with credential verification, password reset
   request handling with enumeration protection, security properties including consistent error
   messages, input sanitization, and concurrent registration handling for authentication endpoints
+- `keys.routes.test.ts` - Public key management API routes tests covering key bundle upload with
+  authentication and validation, public key retrieval with unauthenticated access, key missing
+  marking with rate limiting and audit trails, security edge cases including concurrent requests,
+  JWT integrity validation, and BigInt serialization handling for cryptographic key operations
 
 - More examples will be added as I develop the backend test suite
 
