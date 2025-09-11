@@ -255,6 +255,10 @@ See the following examples in the codebase:
   validation, HTTP method exemptions (GET/HEAD/OPTIONS), development environment handling, token
   validation from multiple header formats, comprehensive error handling with specific error codes,
   timing attack prevention, and response locals token management for CSRF protection
+- `auth.routes.test.ts` - Authentication API routes tests covering user registration with field
+  validation and duplicate prevention, user login with credential verification, password reset
+  request handling with enumeration protection, security properties including consistent error
+  messages, input sanitization, and concurrent registration handling for authentication endpoints
 
 - More examples will be added as I develop the backend test suite
 
