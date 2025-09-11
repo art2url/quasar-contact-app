@@ -247,6 +247,10 @@ See the following examples in the codebase:
   uniqueness, session persistence across requests, password reset token processing with session
   storage, invalid token handling, session lifecycle management, cross-session isolation, concurrent
   request handling, and comprehensive error handling for malformed data and edge cases
+- `auth.middleware.test.ts` - Authentication middleware tests covering JWT token validation from
+  cookies and Authorization headers, token prioritization logic, security validation (expired
+  tokens, wrong secrets, malformed headers), error handling without information leakage, timing
+  consistency for security, and request property preservation during authentication flow
 
 - More examples will be added as I develop the backend test suite
 
