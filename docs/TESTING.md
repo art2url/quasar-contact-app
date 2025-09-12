@@ -263,6 +263,10 @@ See the following examples in the codebase:
   authentication and validation, public key retrieval with unauthenticated access, key missing
   marking with rate limiting and audit trails, security edge cases including concurrent requests,
   JWT integrity validation, and BigInt serialization handling for cryptographic key operations
+- `messages.routes.test.ts` - Encrypted messaging API routes tests covering message sending with
+  authentication and validation, message overview and history retrieval, message editing and
+  deletion with authorization checks, mark-as-read functionality, security edge cases including
+  message injection prevention, concurrent operations, and encrypted content integrity preservation
 
 - More examples will be added as I develop the backend test suite
 
