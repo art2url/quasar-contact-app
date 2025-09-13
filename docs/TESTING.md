@@ -267,6 +267,10 @@ See the following examples in the codebase:
   authentication and validation, message overview and history retrieval, message editing and
   deletion with authorization checks, mark-as-read functionality, security edge cases including
   message injection prevention, concurrent operations, and encrypted content integrity preservation
+- `users.routes.test.ts` - User management API routes tests covering user listing with
+  authentication and field exposure control, avatar update with validation and SQL injection
+  prevention, security headers and CORS handling, input validation edge cases including long
+  strings, special characters, and concurrent request safety for user profile operations
 
 - More examples will be added as I develop the backend test suite
 
