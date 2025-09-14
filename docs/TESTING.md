@@ -271,6 +271,10 @@ See the following examples in the codebase:
   authentication and field exposure control, avatar update with validation and SQL injection
   prevention, security headers and CORS handling, input validation edge cases including long
   strings, special characters, and concurrent request safety for user profile operations
+- `database.service.test.ts` - Database connection service tests covering database connection and
+  disconnection with error handling, health check operations with retry logic, database lifecycle
+  management, configuration validation, integration scenarios, and comprehensive error handling for
+  network timeouts, authentication failures, and edge cases with graceful degradation
 
 - More examples will be added as I develop the backend test suite
 
