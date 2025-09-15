@@ -275,6 +275,10 @@ See the following examples in the codebase:
   disconnection with error handling, health check operations with retry logic, database lifecycle
   management, configuration validation, integration scenarios, and comprehensive error handling for
   network timeouts, authentication failures, and edge cases with graceful degradation
+- `email.service.test.ts` - Email service tests covering password reset email sending with template
+  rendering, password reset confirmation handling, service configuration validation, transporter
+  setup verification, error handling for invalid inputs and service failures, and comprehensive
+  mocking validation for nodemailer and encryption utilities with safe testing practices
 
 - More examples will be added as I develop the backend test suite
 
