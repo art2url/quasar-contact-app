@@ -279,6 +279,9 @@ See the following examples in the codebase:
   rendering, password reset confirmation handling, service configuration validation, transporter
   setup verification, error handling for invalid inputs and service failures, and comprehensive
   mocking validation for nodemailer and encryption utilities with safe testing practices
+- `session.service.test.ts` - Session management service tests covering password reset token
+  processing, session validation with expiration handling, and security properties with session
+  isolation and comprehensive error handling for session operations
 
 - More examples will be added as I develop the backend test suite
 
