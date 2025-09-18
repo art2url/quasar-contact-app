@@ -285,6 +285,8 @@ See the following examples in the codebase:
 - `socket.basic.test.ts` - Socket.io real-time messaging tests covering authentication with JWT
   validation, user presence tracking and status management, and message delivery with comprehensive
   security validation for real-time communication operations
+- `cookie.utils.test.ts` - Cookie utility tests covering secure cookie options, authentication
+  cookie management, and CSRF token generation with comprehensive security validation
 
 - More examples will be added as I develop the backend test suite
 
