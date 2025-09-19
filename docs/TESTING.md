@@ -287,6 +287,8 @@ See the following examples in the codebase:
   security validation for real-time communication operations
 - `cookie.utils.test.ts` - Cookie utility tests covering secure cookie options, authentication
   cookie management, and CSRF token generation with comprehensive security validation
+- `encryption.utils.test.ts` - Encryption utility tests covering password reset token encryption,
+  decryption operations, and format validation with comprehensive security handling
 
 - More examples will be added as I develop the backend test suite
 
