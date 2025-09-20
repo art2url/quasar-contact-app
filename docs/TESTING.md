@@ -289,6 +289,8 @@ See the following examples in the codebase:
   cookie management, and CSRF token generation with comprehensive security validation
 - `encryption.utils.test.ts` - Encryption utility tests covering password reset token encryption,
   decryption operations, and format validation with comprehensive security handling
+- `password-reset.utils.test.ts` - Password reset utility tests covering token processing, session
+  management, and state operations with comprehensive error handling and security validation
 
 - More examples will be added as I develop the backend test suite
 
