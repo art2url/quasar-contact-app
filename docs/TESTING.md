@@ -294,6 +294,8 @@ See the following examples in the codebase:
 - `analytics.routes.test.ts` - Analytics API routes tests covering Google Analytics integration,
   request validation with privacy protection, and configuration error handling with security
   monitoring
+- `rooms.routes.test.ts` - Rooms API routes tests covering DM room creation and listing,
+  authentication validation, and user data integrity with comprehensive security validation
 
 - More examples will be added as I develop the backend test suite
 
