@@ -291,6 +291,9 @@ See the following examples in the codebase:
   decryption operations, and format validation with comprehensive security handling
 - `password-reset.utils.test.ts` - Password reset utility tests covering token processing, session
   management, and state operations with comprehensive error handling and security validation
+- `analytics.routes.test.ts` - Analytics API routes tests covering Google Analytics integration,
+  request validation with privacy protection, and configuration error handling with security
+  monitoring
 
 - More examples will be added as I develop the backend test suite
 
