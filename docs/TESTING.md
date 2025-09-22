@@ -296,6 +296,9 @@ See the following examples in the codebase:
   monitoring
 - `rooms.routes.test.ts` - Rooms API routes tests covering DM room creation and listing,
   authentication validation, and user data integrity with comprehensive security validation
+- `upload.routes.test.ts` - Upload API routes tests covering image upload processing, message
+  sending with file attachments, and file validation with comprehensive security and size limit
+  enforcement
 
 - More examples will be added as I develop the backend test suite
 
