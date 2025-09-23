@@ -299,6 +299,8 @@ See the following examples in the codebase:
 - `upload.routes.test.ts` - Upload API routes tests covering image upload processing, message
   sending with file attachments, and file validation with comprehensive security and size limit
   enforcement
+- `request-logger.test.ts` - Request logger middleware tests covering suspicious request detection,
+  access logging, and attack pattern analysis with comprehensive security monitoring and file operations
 
 - More examples will be added as I develop the backend test suite
 
