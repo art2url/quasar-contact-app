@@ -300,7 +300,12 @@ See the following examples in the codebase:
   sending with file attachments, and file validation with comprehensive security and size limit
   enforcement
 - `request-logger.test.ts` - Request logger middleware tests covering suspicious request detection,
-  access logging, and attack pattern analysis with comprehensive security monitoring and file operations
+  access logging, and attack pattern analysis with comprehensive security monitoring and file
+  operations
+- `security-headers.test.ts` - Security headers middleware tests covering HTTP security header
+  configuration, HSTS policy enforcement, and CSP implementation with comprehensive
+  environment-specific validation (36 tests) Run: npm test --
+  --testPathPattern="security-headers.test.ts"
 
 - More examples will be added as I develop the backend test suite
 
