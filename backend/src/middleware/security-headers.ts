@@ -27,7 +27,7 @@ export const securityHeaders = (
   }
 
   // Content Security Policy for API endpoints
-  if (req.path.startsWith('/api/')) {
+  if (req.path?.startsWith('/api/')) {
     res.setHeader(
       'Content-Security-Policy',
       'default-src \'none\'; frame-ancestors \'none\'',
