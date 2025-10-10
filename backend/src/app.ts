@@ -104,8 +104,18 @@ app.use(
 app.use(httpCors);
 
 // ─── Body Parsing with Limits ─────────────────────────────
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({
+  limit: '5mb',  // Reduced from 10mb for security
+  verify: (req: any, _res, buf) => {
+    // Store raw body for signature verification if needed
+    req.rawBody = buf;
+  },
+}));
+app.use(express.urlencoded({
+  extended: true,
+  limit: '5mb',  // Reduced from 10mb
+  parameterLimit: 50,  // Limit number of parameters
+}));
 
 // ─── Cookie Parser ─────────────────────────────────────────
 app.use(cookieParser(process.env.COOKIE_SECRET || 'fallback-secret-key'));

@@ -1,6 +1,7 @@
-import { Router } from 'express';
-import { prisma } from '../services/database.service';
+import { Response, Router } from 'express';
+import { body, validationResult } from 'express-validator';
 import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
+import { prisma } from '../services/database.service';
 
 const router = Router();
 
@@ -37,11 +38,19 @@ router.get('/', authenticateToken, async (_req, res) => {
  * PUT /api/users/me/avatar
  * Body: { avatarUrl: string }
  */
-router.put('/me/avatar', authenticateToken, async (req: AuthRequest, res) => {
-  const { avatarUrl } = req.body;
-  if (!avatarUrl)
-    return res.status(400).json({ message: 'avatarUrl required' });
+router.put('/me/avatar', [
+  body('avatarUrl')
+    .isURL({ protocols: ['https'] })
+    .isLength({ max: 500 })
+    .matches(/^https:\/\//)
+    .withMessage('Avatar URL must be a valid HTTPS URL under 500 characters'),
+], authenticateToken, async (req: AuthRequest, res: Response) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
 
+  const { avatarUrl } = req.body;
   if (!req.user) return res.sendStatus(401); // safety check
 
   try {
