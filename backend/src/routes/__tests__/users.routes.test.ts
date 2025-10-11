@@ -214,8 +214,8 @@ describe('Users API Routes (Security Tests)', () => {
         .set('Cookie', `auth_token=${validToken}`)
         .send({});
 
-      expect(response.status).toBe(400);
-      expect(response.body.message).toBe('avatarUrl required');
+      expect(response.status).toBe(422);
+      expect(response.body.errors).toBeDefined();
       expect(mockPrisma.user.update).not.toHaveBeenCalled();
     });
 
@@ -225,25 +225,26 @@ describe('Users API Routes (Security Tests)', () => {
         .set('Cookie', `auth_token=${validToken}`)
         .send({ avatarUrl: '' });
 
-      expect(response.status).toBe(400);
-      expect(response.body.message).toBe('avatarUrl required');
+      expect(response.status).toBe(422);
+      expect(response.body.errors).toBeDefined();
     });
 
     it('updates avatar for authenticated user', async () => {
+      const validAvatarUrl = 'https://example.com/new-avatar.jpg';
       mockPrisma.user.update.mockResolvedValueOnce({
         id: validUser.userId,
-        avatarUrl: 'new-avatar.jpg',
+        avatarUrl: validAvatarUrl,
       });
 
       const response = await request(app)
         .put('/api/users/me/avatar')
         .set('Cookie', `auth_token=${validToken}`)
-        .send({ avatarUrl: 'new-avatar.jpg' });
+        .send({ avatarUrl: validAvatarUrl });
 
       expect(response.status).toBe(204);
       expect(mockPrisma.user.update).toHaveBeenCalledWith({
         where: { id: validUser.userId },
-        data: { avatarUrl: 'new-avatar.jpg' },
+        data: { avatarUrl: validAvatarUrl },
       });
     });
 
@@ -254,7 +255,7 @@ describe('Users API Routes (Security Tests)', () => {
       const response = await request(app)
         .put('/api/users/me/avatar')
         .set('Cookie', `auth_token=${validToken}`)
-        .send({ avatarUrl: 'new-avatar.jpg' });
+        .send({ avatarUrl: 'https://example.com/new-avatar.jpg' });
 
       expect(response.status).toBe(500);
       expect(response.body.message).toBe('Server error while updating avatar.');
@@ -267,8 +268,6 @@ describe('Users API Routes (Security Tests)', () => {
       const validUrls = [
         'https://example.com/avatar.jpg',
         'https://cdn.example.com/images/user123.png',
-        '/static/avatars/default.svg',
-        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
       ];
 
       for (const avatarUrl of validUrls) {
@@ -294,21 +293,39 @@ describe('Users API Routes (Security Tests)', () => {
       expect(response.status).toBe(400);
     });
 
+    it('rejects non-HTTPS URLs', async () => {
+      const nonHttpsUrls = [
+        'http://example.com/avatar.jpg',
+        '/static/avatars/default.svg',
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
+        'ftp://example.com/avatar.jpg'
+      ];
+
+      for (const avatarUrl of nonHttpsUrls) {
+        const response = await request(app)
+          .put('/api/users/me/avatar')
+          .set('Cookie', `auth_token=${validToken}`)
+          .send({ avatarUrl });
+
+        expect(response.status).toBe(422);
+        expect(response.body.errors).toBeDefined();
+      }
+    });
+
     it('prevents SQL injection in avatarUrl', async () => {
-      const maliciousUrl = '\'; DROP TABLE users; --';
-      mockPrisma.user.update.mockResolvedValueOnce({});
+      // Use a URL with SQL injection attempt - should be rejected by URL validation
+      const maliciousUrl = "https://example.com/avatar.jpg?id=1'; DROP TABLE users; --";
 
       const response = await request(app)
         .put('/api/users/me/avatar')
         .set('Cookie', `auth_token=${validToken}`)
         .send({ avatarUrl: maliciousUrl });
 
-      // Should not crash and should pass through safely (ORM handles escaping)
-      expect(response.status).toBe(204);
-      expect(mockPrisma.user.update).toHaveBeenCalledWith({
-        where: { id: validUser.userId },
-        data: { avatarUrl: maliciousUrl },
-      });
+      // URL validator should reject malformed URLs with unencoded special characters
+      // This prevents injection attempts before they reach the ORM
+      expect(response.status).toBe(422);
+      expect(response.body.errors).toBeDefined();
+      expect(mockPrisma.user.update).not.toHaveBeenCalled();
     });
   });
 
@@ -363,8 +380,8 @@ describe('Users API Routes (Security Tests)', () => {
   });
 
   describe('Input Validation Edge Cases', () => {
-    it('handles very long avatarUrl strings', async () => {
-      const longUrl = `https://example.com/${  'a'.repeat(10000)  }.jpg`;
+    it('rejects very long avatarUrl strings', async () => {
+      const longUrl = `https://example.com/${'a'.repeat(1000)}.jpg`;
       mockPrisma.user.update.mockResolvedValueOnce({});
 
       const response = await request(app)
@@ -372,7 +389,8 @@ describe('Users API Routes (Security Tests)', () => {
         .set('Cookie', `auth_token=${validToken}`)
         .send({ avatarUrl: longUrl });
 
-      expect(response.status).toBe(204);
+      expect(response.status).toBe(422);
+      expect(response.body.errors).toBeDefined();
     });
 
     it('handles special characters in avatarUrl', async () => {
@@ -393,8 +411,8 @@ describe('Users API Routes (Security Tests)', () => {
         .set('Cookie', `auth_token=${validToken}`)
         .send({ avatarUrl: null });
 
-      expect(response.status).toBe(400);
-      expect(response.body.message).toBe('avatarUrl required');
+      expect(response.status).toBe(422);
+      expect(response.body.errors).toBeDefined();
     });
 
     it('handles additional unexpected fields', async () => {
@@ -403,8 +421,8 @@ describe('Users API Routes (Security Tests)', () => {
       const response = await request(app)
         .put('/api/users/me/avatar')
         .set('Cookie', `auth_token=${validToken}`)
-        .send({ 
-          avatarUrl: 'avatar.jpg',
+        .send({
+          avatarUrl: 'https://example.com/avatar.jpg',
           extraField: 'should-be-ignored',
           maliciousScript: '<script>alert("xss")</script>',
         });
@@ -412,7 +430,7 @@ describe('Users API Routes (Security Tests)', () => {
       expect(response.status).toBe(204);
       expect(mockPrisma.user.update).toHaveBeenCalledWith({
         where: { id: validUser.userId },
-        data: { avatarUrl: 'avatar.jpg' },
+        data: { avatarUrl: 'https://example.com/avatar.jpg' },
       });
     });
   });

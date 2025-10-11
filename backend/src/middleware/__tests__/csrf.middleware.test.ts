@@ -71,15 +71,15 @@ describe('CSRF Middleware (Security Critical)', () => {
       expect(res.status).not.toHaveBeenCalled();
     });
 
-    it('skips CSRF validation in development environment', () => {
+    it('validates CSRF token in all environments (no development bypass)', () => {
       process.env.NODE_ENV = 'development';
       const req = mockRequest('POST');
       const res = mockResponse();
 
       validateCSRF(req, res, mockNext);
 
-      expect(mockNext).toHaveBeenCalledTimes(1);
-      expect(res.status).not.toHaveBeenCalled();
+      expect(mockNext).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(403);
     });
 
     it('validates CSRF token successfully with matching cookie and header', () => {
