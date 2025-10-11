@@ -41,6 +41,14 @@ router.post('/image', authenticateToken, upload.single('image'), async (req: Aut
       });
     }
 
+    // Check file size to prevent DoS attacks
+    if (req.file.size > 5 * 1024 * 1024) { // 5MB limit
+      return res.status(413).json({
+        success: false,
+        message: 'File too large - maximum size is 5MB',
+      });
+    }
+
     // Convert buffer to base64 for consistent handling with frontend
     const base64Image = req.file.buffer.toString('base64');
     

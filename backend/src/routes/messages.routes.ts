@@ -1,6 +1,4 @@
 import { Router } from 'express';
-import jwt from 'jsonwebtoken';
-import env from '../config/env';
 import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
 import { prisma } from '../services/database.service';
 
@@ -176,23 +174,13 @@ router.get(
 );
 
 // GET /api/messages/last/:withUserId
-router.get('/last/:id', async (req, res) => {
-  /* 1️⃣ extract caller's ID from Bearer token */
-  const auth = req.header('authorization') || '';
-  const token = auth.replace(/^Bearer\s+/i, '');
-  if (!token) return res.status(401).json({ message: 'Auth token missing' });
-
-  let me: string;
-  try {
-    const { userId } = jwt.verify(token, env.JWT_SECRET) as {
-      userId: string;
-    };
-    me = userId;
-  } catch {
-    return res.status(401).json({ message: 'Invalid token' });
+router.get('/last/:id', authenticateToken, async (req: AuthRequest, res) => {
+  const me = req.user?.userId;
+  if (!me) {
+    return res.status(401).json({ message: 'Unauthorized' });
   }
 
-  /* 2️⃣ find the last message between me ↔︎ them */
+  /* find the last message between me ↔︎ them */
   const them = req.params.id;
 
   try {

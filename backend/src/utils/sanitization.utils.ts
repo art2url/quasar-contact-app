@@ -177,7 +177,7 @@ export class InputSanitizer {
       /(\.\.\/|\.\.\\|%2e%2e%2f|%2e%2e%5c)/i,
 
       // LDAP injection
-      /(\(\|\()|\(\&\()/,
+      /(\(\|\()|(\(\&\()/,
     ];
 
     return injectionPatterns.some(pattern => pattern.test(input));

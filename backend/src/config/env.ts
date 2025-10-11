@@ -60,7 +60,6 @@ const validateEnv = () => {
 
   if (env.JWT_SECRET.length < 32) {
     console.error('❌ JWT_SECRET must be at least 32 characters (256 bits) for security');
-    console.error('   Current length:', env.JWT_SECRET.length);
     console.error('   Generate a secure secret with: openssl rand -hex 32');
     throw new Error('JWT_SECRET is too short - minimum 32 characters required');
   }
@@ -74,7 +73,6 @@ const validateEnv = () => {
 
   if (env.TOKEN_ENCRYPTION_SECRET.length < 32) {
     console.error('❌ TOKEN_ENCRYPTION_SECRET must be at least 32 characters (256 bits) for security');
-    console.error('   Current length:', env.TOKEN_ENCRYPTION_SECRET.length);
     console.error('   Generate a secure secret with: openssl rand -hex 32');
     throw new Error('TOKEN_ENCRYPTION_SECRET is too short - minimum 32 characters required');
   }

@@ -22,6 +22,7 @@ import authRoutes from './routes/auth.routes';
 import keyRoutes from './routes/keys.routes';
 import messageRoutes from './routes/messages.routes';
 import roomsRoutes from './routes/rooms.routes';
+import uploadRoutes from './routes/upload.routes';
 import userRoutes from './routes/users.routes';
 
 // ─── App Initialization ────────────────────────────────────
@@ -35,7 +36,15 @@ app.use((req, res, next) => {
       return next();
     }
     if (req.header('x-forwarded-proto') !== 'https') {
-      return res.redirect(`https://${req.header('host')}${req.url}`);
+      // Validate host header to prevent open redirect attacks
+      const host = req.header('host');
+      const allowedHosts = ['quasar.contact', 'www.quasar.contact'];
+
+      if (!host || !allowedHosts.includes(host)) {
+        return res.status(400).json({ error: 'Invalid host header' });
+      }
+
+      return res.redirect(`https://${host}${req.url}`);
     }
   }
   next();
@@ -76,11 +85,7 @@ app.get('/.env', honeypot);
 app.get('/health', (_req, res) =>
   res.status(200).json({
     status: 'ok',
-    uptime: process.uptime(),
-    date: new Date().toISOString(),
-    secure: process.env.NODE_ENV === 'production',
-    stage: process.env.NODE_ENV === 'production' ? 'production' : 'beta',
-    security: 'enhanced',
+    timestamp: new Date().toISOString(),
   }),
 );
 
@@ -118,7 +123,11 @@ app.use(express.urlencoded({
 }));
 
 // ─── Cookie Parser ─────────────────────────────────────────
-app.use(cookieParser(process.env.COOKIE_SECRET || 'fallback-secret-key'));
+if (!process.env.COOKIE_SECRET) {
+  console.error('❌ COOKIE_SECRET environment variable is required');
+  throw new Error('COOKIE_SECRET environment variable is required');
+}
+app.use(cookieParser(process.env.COOKIE_SECRET));
 
 // ─── Session Configuration ─────────────────────────────────
 // Note: Using MemoryStore for simplicity since sessions are short-lived (10 min)
@@ -127,8 +136,13 @@ if (process.env.NODE_ENV === 'production') {
   console.warn('[Session] Using MemoryStore in production - consider Redis for multi-instance deployments');
 }
 
+if (!process.env.SESSION_SECRET) {
+  console.error('❌ SESSION_SECRET environment variable is required');
+  throw new Error('SESSION_SECRET environment variable is required');
+}
+
 app.use(session({
-  secret: process.env.SESSION_SECRET || process.env.COOKIE_SECRET || 'fallback-session-secret',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -207,11 +221,7 @@ const apiLimiter = rateLimit({
 app.get('/api/health', (_req, res) =>
   res.status(200).json({
     status: 'ok',
-    uptime: process.uptime(),
-    date: new Date().toISOString(),
-    secure: process.env.NODE_ENV === 'production',
-    stage: process.env.NODE_ENV === 'production' ? 'production' : 'beta',
-    security: 'enhanced',
+    timestamp: new Date().toISOString(),
   }),
 );
 
@@ -221,6 +231,7 @@ app.use('/api/keys', apiLimiter, keyRoutes);
 app.use('/api/messages', apiLimiter, messageRoutes);
 app.use('/api/users', apiLimiter, userRoutes);
 app.use('/api/rooms', apiLimiter, roomsRoutes);
+app.use('/api/upload', apiLimiter, uploadRoutes);
 app.use('/api/analytics', apiLimiter, analyticsRoutes);
 
 // ─── Handle /app redirect ─────────────────────────────────

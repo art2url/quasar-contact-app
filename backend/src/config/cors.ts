@@ -10,10 +10,16 @@ const allowedOrigins = [
 
 // A dynamic origin checker
 const originChecker: CorsOptions['origin'] = (incoming, callback) => {
-  // Allow requests with no origin (like mobile apps, curl, Postman, etc.)
+  // Only allow requests with no origin in development for testing tools
   if (!incoming) {
-    callback(null, true);
-    return;
+    if (env.NODE_ENV === 'development') {
+      callback(null, true);
+      return;
+    } else {
+      // In production, require an origin header
+      callback(new Error('CORS error: origin header required'));
+      return;
+    }
   }
 
   // Check if the origin is in our allowed list

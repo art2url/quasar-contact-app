@@ -35,10 +35,11 @@ class EmailService {
           user: env.SMTP_USER,
           pass: env.SMTP_PASS,
         },
-        // SMTP settings for better compatibility
+        // Secure TLS settings
         tls: {
-          rejectUnauthorized: false,
-          ciphers: 'SSLv3',
+          rejectUnauthorized: true,
+          minVersion: 'TLSv1.2',
+          ciphers: 'HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA',
         },
         // Additional settings for better email delivery
         connectionTimeout: 60000,
