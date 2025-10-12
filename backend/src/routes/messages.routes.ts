@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
 import { prisma } from '../services/database.service';
 
@@ -9,6 +10,18 @@ import { prisma } from '../services/database.service';
 */
 
 const router = Router();
+
+// Rate limiter for mark-read endpoint to prevent database DoS
+const markReadLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 10, // 10 requests per minute
+  message: {
+    error: 'Too many mark-read requests',
+    type: 'rate_limit',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // POST /api/messages/send
 router.post('/send', authenticateToken, async (req: AuthRequest, res) => {
@@ -291,6 +304,7 @@ router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
 // PUT /api/messages/mark-read/:senderId - Mark all messages from a specific sender as read
 router.put(
   '/mark-read/:senderId',
+  markReadLimiter,
   authenticateToken,
   async (req: AuthRequest, res) => {
     const receiverId = req.user!.userId;

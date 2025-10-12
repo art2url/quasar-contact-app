@@ -67,6 +67,11 @@ describe('Upload Routes (Security Critical)', () => {
     // Mock console methods
     jest.spyOn(console, 'error').mockImplementation();
     jest.spyOn(console, 'log').mockImplementation();
+
+    // Mock receiver user exists by default (tests can override if needed)
+    mockPrisma.user.findUnique.mockResolvedValue({
+      id: 'receiver123',
+    });
   });
 
   afterEach(() => {
@@ -140,6 +145,27 @@ describe('Upload Routes (Security Critical)', () => {
       expect(response.body).toEqual({
         success: false,
         message: 'Missing receiverId or encryptedPayload',
+      });
+    });
+
+    it('validates receiverId exists in database', async () => {
+      const token = createValidToken(validUser);
+      const imageBuffer = createTestImageBuffer();
+
+      // Mock receiver does not exist
+      mockPrisma.user.findUnique.mockResolvedValueOnce(null);
+
+      const response = await request(app)
+        .post('/api/upload/image')
+        .set('Authorization', `Bearer ${token}`)
+        .attach('image', imageBuffer, 'test.png')
+        .field('receiverId', 'nonexistent-user')
+        .field('encryptedPayload', 'encrypted-data');
+
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({
+        success: false,
+        message: 'Receiver not found',
       });
     });
 
@@ -244,12 +270,15 @@ describe('Upload Routes (Security Critical)', () => {
         timestamp: new Date(),
       };
       mockPrisma.message.create.mockResolvedValueOnce(mockMessage);
-      
+
       const mockSender = {
         username: 'testuser',
         avatarUrl: 'test-avatar.jpg',
       };
-      mockPrisma.user.findUnique.mockResolvedValueOnce(mockSender);
+      // Mock both receiver validation and sender lookup
+      mockPrisma.user.findUnique
+        .mockResolvedValueOnce({ id: 'receiver123' }) // First call: receiver validation
+        .mockResolvedValueOnce(mockSender); // Second call: sender lookup
       
       // Mock socket emission
       mockEmitToUser.mockReturnValueOnce(true);
@@ -369,7 +398,7 @@ describe('Upload Routes (Security Critical)', () => {
 
     it('handles offline recipient gracefully', async () => {
       const token = createValidToken(validUser);
-      
+
       // Mock successful database operations
       const mockMessage = {
         id: 'msg123',
@@ -379,10 +408,13 @@ describe('Upload Routes (Security Critical)', () => {
         timestamp: new Date(),
       };
       mockPrisma.message.create.mockResolvedValueOnce(mockMessage);
-      mockPrisma.user.findUnique.mockResolvedValueOnce({
-        username: 'testuser',
-        avatarUrl: 'test-avatar.jpg',
-      });
+      // Mock both receiver validation and sender lookup
+      mockPrisma.user.findUnique
+        .mockResolvedValueOnce({ id: 'receiver123' }) // First call: receiver validation
+        .mockResolvedValueOnce({
+          username: 'testuser',
+          avatarUrl: 'test-avatar.jpg',
+        }); // Second call: sender lookup
       
       // Mock socket emission failure (user offline)
       mockEmitToUser.mockReturnValueOnce(false);
@@ -402,7 +434,7 @@ describe('Upload Routes (Security Critical)', () => {
 
     it('handles missing sender information gracefully', async () => {
       const token = createValidToken(validUser);
-      
+
       const mockMessage = {
         id: 'msg123',
         senderId: 'user123',
@@ -411,9 +443,11 @@ describe('Upload Routes (Security Critical)', () => {
         timestamp: new Date(),
       };
       mockPrisma.message.create.mockResolvedValueOnce(mockMessage);
-      
-      // Mock user not found
-      mockPrisma.user.findUnique.mockResolvedValueOnce(null);
+
+      // Mock receiver exists, but sender user not found
+      mockPrisma.user.findUnique
+        .mockResolvedValueOnce({ id: 'receiver123' }) // First call: receiver validation
+        .mockResolvedValueOnce(null); // Second call: sender lookup
       mockEmitToUser.mockReturnValueOnce(true);
 
       const response = await request(app)

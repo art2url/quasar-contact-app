@@ -143,14 +143,14 @@ describe('Auth API Routes (Security Tests)', () => {
         .post('/api/auth/register')
         .send({
           ...validRegistration,
-          password: '12345', // Too short
+          password: '1234567', // Too short (less than 8)
         });
 
       expect(response.status).toBe(422);
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            msg: 'Password must be at least 6 characters long.',
+            msg: 'Password must be at least 8 characters long.',
           }),
         ]),
       );

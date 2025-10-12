@@ -73,8 +73,8 @@ router.post(
     // Require a valid email address.
     body('email').isEmail().withMessage('A valid email is required.'),
     body('password')
-      .isLength({ min: 6 })
-      .withMessage('Password must be at least 6 characters long.'),
+      .isLength({ min: 8 })
+      .withMessage('Password must be at least 8 characters long.'),
     body('turnstileToken')
       .optional()
       .isString()
@@ -187,6 +187,9 @@ router.post(
         return res.status(401).json({ message: 'Invalid credentials.' });
       }
 
+      // JWT expiry: 24h reduces impact of token theft
+      // Trade-off: Users must re-login daily vs longer token validity
+      // Future: Consider implementing refresh tokens for better UX
       const token = jwt.sign(
         {
           userId: user.id,
@@ -194,7 +197,7 @@ router.post(
           avatarUrl: user.avatarUrl,
         },
         env.JWT_SECRET,
-        { expiresIn: '7d' },
+        { expiresIn: '24h' },
       );
 
       // Generate CSRF token for additional security
@@ -388,8 +391,8 @@ router.post(
   [
     body('token').notEmpty().withMessage('Reset token is required.'),
     body('password')
-      .isLength({ min: 6 })
-      .withMessage('Password must be at least 6 characters long.'),
+      .isLength({ min: 8 })
+      .withMessage('Password must be at least 8 characters long.'),
   ],
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
@@ -459,9 +462,17 @@ router.post(
       // Send confirmation e-mail
       await emailService.sendPasswordResetConfirmation(user.email);
 
-      res.status(200).json({
-        message:
-          'Password reset successful. All previous messages have been deleted.',
+      // Regenerate session to prevent session fixation attacks
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error('[Session Regeneration Error]', err);
+          // Still return success as password was changed
+        }
+
+        res.status(200).json({
+          message:
+            'Password reset successful. All previous messages have been deleted.',
+        });
       });
     } catch (error) {
       console.error('[Reset Password Error]', error);

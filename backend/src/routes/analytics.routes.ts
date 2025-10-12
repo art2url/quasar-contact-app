@@ -34,6 +34,49 @@ router.post('/', async (req: Request, res: Response) => {
       });
     }
 
+    // Limit number of events to prevent DoS
+    if (events.length > 10) {
+      return res.status(400).json({
+        error: 'Too many events - maximum 10 per request',
+        type: 'validation_error',
+      });
+    }
+
+    // Validate each event
+    for (const event of events) {
+      if (!event.name || typeof event.name !== 'string') {
+        return res.status(400).json({
+          error: 'Invalid event format - name required',
+          type: 'validation_error',
+        });
+      }
+
+      // Limit event name length
+      if (event.name.length > 50) {
+        return res.status(400).json({
+          error: 'Event name too long - maximum 50 characters',
+          type: 'validation_error',
+        });
+      }
+
+      // Validate event name characters (alphanumeric, underscore, hyphen only)
+      if (!/^[a-zA-Z0-9_-]+$/.test(event.name)) {
+        return res.status(400).json({
+          error: 'Event name contains invalid characters',
+          type: 'validation_error',
+        });
+      }
+
+      // Validate event payload size
+      const eventSize = JSON.stringify(event).length;
+      if (eventSize > 1024) { // 1KB per event
+        return res.status(400).json({
+          error: 'Event payload too large - maximum 1KB per event',
+          type: 'validation_error',
+        });
+      }
+    }
+
     // Log analytics batch (remove in production if needed)
     if (process.env.NODE_ENV !== 'production') {
       // Analytics batch processed
