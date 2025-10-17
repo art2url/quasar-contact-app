@@ -59,3 +59,31 @@ export const setCSRFCookie = (res: Response, token: string): void => {
     }),
   });
 };
+
+// Refresh token cookie functions
+export const setRefreshTokenCookie = (res: Response, token: string): void => {
+  const isDev = process.env.NODE_ENV !== 'production';
+  res.cookie('refresh_token', token, {
+    httpOnly: true, // Cannot be accessed by JavaScript
+    secure: !isDev,
+    sameSite: isDev ? 'lax' : 'strict',
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    path: '/api/auth/refresh', // Only sent to refresh endpoint
+    ...(process.env.NODE_ENV === 'production' && {
+      domain: '.quasar.contact',
+    }),
+  });
+};
+
+export const clearRefreshTokenCookie = (res: Response): void => {
+  const isDev = process.env.NODE_ENV !== 'production';
+  res.clearCookie('refresh_token', {
+    httpOnly: true,
+    secure: !isDev,
+    sameSite: isDev ? 'lax' : 'strict',
+    path: '/api/auth/refresh',
+    ...(process.env.NODE_ENV === 'production' && {
+      domain: '.quasar.contact',
+    }),
+  });
+};

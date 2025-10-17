@@ -17,7 +17,7 @@ export const SECURITY_LIMITS = {
     MAX_LOGIN_ATTEMPTS: 5,            // Max login attempts per IP
     LOGIN_RATE_WINDOW: 15 * 60 * 1000, // 15 minutes
     ACCOUNT_LOCKOUT_DURATION: 30 * 60 * 1000, // 30 minutes
-    JWT_EXPIRY: '24h',                // 24h reduces stolen token risk (consider refresh tokens)
+    JWT_EXPIRY: '24h',                // 24h access token + 30d refresh token (secure + good UX)
     BCRYPT_ROUNDS: 12,                // Industry standard for secure password hashing
   },
 

@@ -15,10 +15,19 @@ import { prisma } from '../services/database.service';
 import emailService from '../services/email.service';
 import {
   clearAuthCookie,
+  clearRefreshTokenCookie,
   generateCSRFToken,
   setAuthCookie,
   setCSRFCookie,
+  setRefreshTokenCookie,
 } from '../utils/cookie.utils';
+import {
+  createRefreshToken,
+  revokeAllUserRefreshTokens,
+  revokeRefreshToken,
+  rotateRefreshToken,
+  validateRefreshToken,
+} from '../utils/refresh-token.utils';
 
 const router = Router();
 
@@ -187,9 +196,8 @@ router.post(
         return res.status(401).json({ message: 'Invalid credentials.' });
       }
 
-      // JWT expiry: 24h reduces impact of token theft
-      // Trade-off: Users must re-login daily vs longer token validity
-      // Future: Consider implementing refresh tokens for better UX
+      // JWT access token: 24h expiry reduces impact of token theft
+      // Refresh tokens (30d) provide seamless re-authentication
       const token = jwt.sign(
         {
           userId: user.id,
@@ -203,9 +211,13 @@ router.post(
       // Generate CSRF token for additional security
       const csrfToken = generateCSRFToken();
 
+      // Create refresh token for token rotation
+      const refreshToken = await createRefreshToken(user.id);
+
       // Set secure cookies
       setAuthCookie(res, token);
       setCSRFCookie(res, csrfToken);
+      setRefreshTokenCookie(res, refreshToken);
 
       res.status(200).json({
         message: 'Login successful.',
@@ -459,6 +471,9 @@ router.post(
       // Password reset successful
       // Deleted all messages for user
 
+      // Revoke all refresh tokens for security (force re-login on all devices)
+      await revokeAllUserRefreshTokens(user.id);
+
       // Send confirmation e-mail
       await emailService.sendPasswordResetConfirmation(user.email);
 
@@ -481,11 +496,82 @@ router.post(
   },
 );
 
+// POST /api/auth/refresh - Refresh access token using refresh token
+router.post('/refresh', async (req: Request, res: Response) => {
+  try {
+    const refreshToken = req.cookies?.refresh_token;
+
+    if (!refreshToken) {
+      return res.status(401).json({ message: 'Refresh token missing.' });
+    }
+
+    // Validate refresh token and get user ID
+    const userId = await validateRefreshToken(refreshToken);
+
+    if (!userId) {
+      clearRefreshTokenCookie(res);
+      return res.status(403).json({ message: 'Invalid or expired refresh token.' });
+    }
+
+    // Get user data
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        avatarUrl: true,
+      },
+    });
+
+    if (!user) {
+      clearRefreshTokenCookie(res);
+      return res.status(403).json({ message: 'User not found.' });
+    }
+
+    // Generate new access token
+    const newAccessToken = jwt.sign(
+      {
+        userId: user.id,
+        username: user.username,
+        avatarUrl: user.avatarUrl,
+      },
+      env.JWT_SECRET,
+      { expiresIn: '24h' },
+    );
+
+    // Rotate refresh token (delete old, create new)
+    const newRefreshToken = await rotateRefreshToken(refreshToken, userId);
+
+    // Set new cookies
+    setAuthCookie(res, newAccessToken);
+    setRefreshTokenCookie(res, newRefreshToken);
+
+    res.status(200).json({
+      message: 'Token refreshed successfully.',
+      user: {
+        id: user.id,
+        username: user.username,
+        avatarUrl: user.avatarUrl,
+      },
+    });
+  } catch (error) {
+    console.error('[Token Refresh Error]', error);
+    res.status(500).json({ message: 'Server error during token refresh.' });
+  }
+});
+
 // POST /api/auth/logout
 router.post('/logout', validateCSRF, async (req: Request, res: Response) => {
   try {
+    // Revoke refresh token if present
+    const refreshToken = req.cookies?.refresh_token;
+    if (refreshToken) {
+      await revokeRefreshToken(refreshToken);
+    }
+
     // Clear authentication cookies
     clearAuthCookie(res);
+    clearRefreshTokenCookie(res);
     res.clearCookie('csrf_token', {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
