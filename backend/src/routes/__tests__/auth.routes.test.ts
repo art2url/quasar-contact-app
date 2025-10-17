@@ -43,9 +43,19 @@ jest.mock('../../middleware/csrf.middleware', () => ({
 
 jest.mock('../../utils/cookie.utils', () => ({
   clearAuthCookie: jest.fn(),
+  clearRefreshTokenCookie: jest.fn(),
   generateCSRFToken: jest.fn(() => 'mock-csrf-token'),
   setAuthCookie: jest.fn(),
   setCSRFCookie: jest.fn(),
+  setRefreshTokenCookie: jest.fn(),
+}));
+
+jest.mock('../../utils/refresh-token.utils', () => ({
+  createRefreshToken: jest.fn(() => Promise.resolve('mock-refresh-token')),
+  validateRefreshToken: jest.fn(),
+  rotateRefreshToken: jest.fn(),
+  revokeRefreshToken: jest.fn(() => Promise.resolve()),
+  revokeAllUserRefreshTokens: jest.fn(() => Promise.resolve()),
 }));
 
 jest.mock('../../config/env', () => ({
@@ -73,7 +83,7 @@ describe('Auth API Routes (Security Tests)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Mock console methods
     jest.spyOn(console, 'error').mockImplementation();
     jest.spyOn(console, 'log').mockImplementation();
@@ -317,7 +327,7 @@ describe('Auth API Routes (Security Tests)', () => {
         passwordHash: hashedPassword,
         avatarUrl: 'avatar.jpg',
       };
-      
+
       mockPrisma.user.findFirst.mockResolvedValueOnce(mockUser);
 
       const response = await request(app)
@@ -343,7 +353,7 @@ describe('Auth API Routes (Security Tests)', () => {
         passwordHash: hashedPassword,
         avatarUrl: 'avatar.jpg',
       };
-      
+
       mockPrisma.user.findFirst.mockResolvedValueOnce(mockUser);
 
       const response = await request(app)
