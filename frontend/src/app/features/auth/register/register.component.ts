@@ -184,7 +184,7 @@ export class RegisterComponent implements OnInit, OnDestroy, AfterViewInit {
     return (
       this.username.length >= 3 &&
       this.isValidEmail(this.email) &&
-      this.password.length >= 6 &&
+      this.password.length >= 8 &&
       this.turnstileToken.length > 0
     );
   }

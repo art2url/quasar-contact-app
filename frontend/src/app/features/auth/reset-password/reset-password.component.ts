@@ -73,7 +73,7 @@ export class ResetPasswordComponent implements OnInit {
   }
 
   isFormValid(): boolean {
-    return this.password.length >= 6 && this.password === this.confirmPassword;
+    return this.password.length >= 8 && this.password === this.confirmPassword;
   }
 
   getPasswordStrength(): 'weak' | 'medium' | 'strong' {

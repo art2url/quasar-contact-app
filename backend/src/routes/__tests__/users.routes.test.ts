@@ -268,6 +268,8 @@ describe('Users API Routes (Security Tests)', () => {
       const validUrls = [
         'https://example.com/avatar.jpg',
         'https://cdn.example.com/images/user123.png',
+        'assets/images/avatars/01.svg',
+        'avatars/user-avatar.png',
       ];
 
       for (const avatarUrl of validUrls) {
@@ -293,15 +295,18 @@ describe('Users API Routes (Security Tests)', () => {
       expect(response.status).toBe(400);
     });
 
-    it('rejects non-HTTPS URLs', async () => {
-      const nonHttpsUrls = [
-        'http://example.com/avatar.jpg',
-        '/static/avatars/default.svg',
-        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
-        'ftp://example.com/avatar.jpg'
+    it('rejects invalid URLs and protocols', async () => {
+      const invalidUrls = [
+        'http://example.com/avatar.jpg', // HTTP not allowed
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==', // data URLs not allowed
+        'ftp://example.com/avatar.jpg', // FTP not allowed
+        'javascript:alert(1)', // JavaScript URLs not allowed
+        '../../../etc/passwd', // Path traversal attempts not allowed
+        'avatar with spaces.jpg', // Spaces not allowed
+        '/absolute/path.jpg', // Absolute paths not allowed (must be relative without leading slash or HTTPS)
       ];
 
-      for (const avatarUrl of nonHttpsUrls) {
+      for (const avatarUrl of invalidUrls) {
         const response = await request(app)
           .put('/api/users/me/avatar')
           .set('Cookie', `auth_token=${validToken}`)

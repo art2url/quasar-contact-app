@@ -40,10 +40,29 @@ router.get('/', authenticateToken, async (_req, res) => {
  */
 router.put('/me/avatar', [
   body('avatarUrl')
-    .isURL({ protocols: ['https'] })
+    .trim()
+    .notEmpty()
+    .withMessage('Avatar URL is required')
     .isLength({ max: 500 })
-    .matches(/^https:\/\//)
-    .withMessage('Avatar URL must be a valid HTTPS URL under 500 characters'),
+    .withMessage('Avatar URL must be under 500 characters')
+    .custom((value) => {
+      // Allow either:
+      // 1. HTTPS URLs for external avatars (e.g., https://example.com/avatar.jpg)
+      // 2. Relative paths for local assets (e.g., assets/images/avatars/01.svg)
+
+      // Check for HTTPS URLs - strict validation
+      const isHttpsUrl = /^https:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(\/[a-zA-Z0-9\-\._~:\/?#\[\]@!$&'()*+,;=%]*)?$/i.test(value);
+
+      // Check for safe relative paths - no path traversal, no absolute paths
+      // Format: word/word/file.ext or word/file.ext or file.ext
+      const isRelativePath = /^[a-zA-Z0-9_\-]+([\/][a-zA-Z0-9_\-]+)*\.(svg|png|jpg|jpeg|gif|webp)$/i.test(value);
+
+      if (!isHttpsUrl && !isRelativePath) {
+        throw new Error('Avatar URL must be either a valid HTTPS URL or a relative path to an image');
+      }
+
+      return true;
+    }),
 ], authenticateToken, async (req: AuthRequest, res: Response) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
