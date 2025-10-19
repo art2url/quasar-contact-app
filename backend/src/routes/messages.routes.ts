@@ -1,5 +1,6 @@
-import { Router } from 'express';
+import { Response, Router } from 'express';
 import rateLimit from 'express-rate-limit';
+import { body, validationResult } from 'express-validator';
 import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
 import { prisma } from '../services/database.service';
 
@@ -220,13 +221,49 @@ router.get('/last/:id', authenticateToken, async (req: AuthRequest, res) => {
 });
 
 // PATCH /api/messages/:id (edit your own message)
-router.patch('/:id', authenticateToken, async (req: AuthRequest, res) => {
-  const { id } = req.params;
-  const { ciphertext, avatarUrl } = req.body;
+router.patch(
+  '/:id',
+  [
+    body('ciphertext')
+      .notEmpty()
+      .withMessage('ciphertext required'),
+    body('avatarUrl')
+      .optional()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage('Avatar URL must be under 500 characters')
+      .custom((value) => {
+        if (!value) return true; // Allow empty
 
-  if (!ciphertext) {
-    return res.status(400).json({ message: 'ciphertext required' });
-  }
+        // Allow HTTPS URLs
+        const isHttpsUrl =
+          /^https:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(\/[a-zA-Z0-9\-\._~:\/?#\[\]@!$&'()*+,;=%]*)?$/i.test(
+            value,
+          );
+
+        // Allow safe relative paths
+        const isRelativePath =
+          /^[a-zA-Z0-9_\-]+([\/][a-zA-Z0-9_\-]+)*\.(svg|png|jpg|jpeg|gif|webp)$/i.test(
+            value,
+          );
+
+        if (!isHttpsUrl && !isRelativePath) {
+          throw new Error(
+            'Avatar URL must be either a valid HTTPS URL or a relative path to an image',
+          );
+        }
+        return true;
+      }),
+  ],
+  authenticateToken,
+  async (req: AuthRequest, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ errors: errors.array() });
+    }
+
+    const { id } = req.params;
+    const { ciphertext, avatarUrl } = req.body;
 
   try {
     /* only the original sender can edit */
