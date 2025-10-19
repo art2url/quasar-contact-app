@@ -1,50 +1,48 @@
 /**
- * Enhanced security limits and configurations
+ * Security limits and configurations
+ *
+ * Centralizes security-related constants to ensure consistency across the application
+ * and make it easier to adjust security settings.
  */
 
 export const SECURITY_LIMITS = {
-  // Password Reset
-  PASSWORD_RESET: {
-    MAX_ATTEMPTS_PER_EMAIL: 3,        // Max attempts per email per window
-    MAX_ATTEMPTS_PER_IP: 5,           // Max attempts per IP per window
-    RATE_LIMIT_WINDOW: 15 * 60 * 1000, // 15 minutes
-    TOKEN_EXPIRY: 10 * 60 * 1000,     // 10 minutes
-    COOLDOWN_AFTER_MAX: 60 * 60 * 1000, // 1 hour cooldown after max attempts
-  },
-
-  // Authentication
-  AUTH: {
-    MAX_LOGIN_ATTEMPTS: 5,            // Max login attempts per IP
-    LOGIN_RATE_WINDOW: 15 * 60 * 1000, // 15 minutes
-    ACCOUNT_LOCKOUT_DURATION: 30 * 60 * 1000, // 30 minutes
-    JWT_EXPIRY: '24h',                // 24h access token + 30d refresh token (secure + good UX)
-    BCRYPT_ROUNDS: 12,                // Industry standard for secure password hashing
-  },
-
   // Input Validation
   INPUT: {
     MAX_USERNAME_LENGTH: 50,
     MIN_USERNAME_LENGTH: 3,
     MAX_PASSWORD_LENGTH: 128,
-    MIN_PASSWORD_LENGTH: 8,           // Increased from 6
+    MIN_PASSWORD_LENGTH: 8,
     MAX_EMAIL_LENGTH: 254,
     MAX_AVATAR_URL_LENGTH: 500,
     MAX_MESSAGE_LENGTH: 10000,
   },
 
-  // Bot Protection
-  BOT_PROTECTION: {
-    SUSPICIOUS_ACTIVITY_THRESHOLD: 5,  // Reduced from 10
-    AUTO_BLACKLIST_THRESHOLD: 3,      // Reduced from 10
-    BLACKLIST_CLEANUP_INTERVAL: 24 * 60 * 60 * 1000, // 24 hours
-    HONEYPOT_DELAY: 10000,            // Increased from 5000ms
+  // Authentication
+  AUTH: {
+    JWT_EXPIRY: '24h',                // Access token expiry (24h with 30d refresh tokens)
+    BCRYPT_ROUNDS: 10,                // Salt rounds for password hashing
   },
 
-  // General Rate Limiting
+  // Password Reset
+  PASSWORD_RESET: {
+    TOKEN_EXPIRY_MS: 10 * 60 * 1000,      // 10 minutes - token validity duration
+    SESSION_MAX_AGE_MS: 10 * 60 * 1000,   // 10 minutes - session cookie max age (matches token expiry)
+    RATE_LIMIT_WINDOW_MS: 5 * 60 * 1000,  // 5 minutes - minimum time between reset requests per user
+  },
+
+  // Bot Protection
+  BOT_PROTECTION: {
+    AUTO_BLACKLIST_THRESHOLD: 10,         // Auto-blacklist IP after this many suspicious attempts
+    HONEYPOT_DELAY_MS: 5000,              // 5 seconds - delay response to waste bot's time
+    SUSPICIOUS_ACTIVITY_CLEANUP_MS: 3600000, // 1 hour - cleanup interval for suspicious activity tracking
+  },
+
+  // Rate Limiting (for bot-blocker.ts)
   RATE_LIMITS: {
-    GENERAL_REQUESTS_PER_MINUTE: 60,  // Reduced from 100
-    API_REQUESTS_PER_MINUTE: 30,      // New limit for API endpoints
-    BURST_LIMIT: 10,                  // Allow burst of 10 requests
+    GENERAL_REQUESTS: 10,                 // General requests allowed
+    GENERAL_WINDOW_SECONDS: 60,           // Per 60 seconds
+    BRUTE_FORCE_REQUESTS: 5,              // Stricter limit for suspicious paths
+    BRUTE_FORCE_WINDOW_SECONDS: 300,      // Per 5 minutes
   },
 } as const;
 

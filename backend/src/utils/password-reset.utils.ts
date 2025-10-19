@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { SECURITY_LIMITS } from '../config/security-limits';
 import { decryptResetToken, isValidEncryptedTokenFormat } from './encryption.utils';
 
 export interface PendingResetSession {
@@ -39,7 +40,7 @@ export function processPasswordResetToken(
     // Store decrypted token securely in session
     req.session.pendingReset = {
       token: rawToken,
-      expires: Date.now() + 600000, // 10 minutes
+      expires: Date.now() + SECURITY_LIMITS.PASSWORD_RESET.TOKEN_EXPIRY_MS, // 10 minutes
       used: false,
       createdAt: Date.now(),
     };

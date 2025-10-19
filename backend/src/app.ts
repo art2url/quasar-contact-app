@@ -5,6 +5,7 @@ import session from 'express-session';
 import helmet from 'helmet';
 import path from 'path';
 import { httpCors } from './config/cors';
+import { SECURITY_LIMITS } from './config/security-limits';
 
 // ─── Security Middleware ────────────────────────────────────
 import { blockBots, honeypot } from './middleware/bot-blocker';
@@ -148,7 +149,7 @@ app.use(session({
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 600000, // 10 minutes for password reset sessions
+    maxAge: SECURITY_LIMITS.PASSWORD_RESET.SESSION_MAX_AGE_MS, // 10 minutes for password reset sessions
     sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
   },
 }));

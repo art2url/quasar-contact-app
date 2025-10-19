@@ -9,6 +9,7 @@ import { body, validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import env from '../config/env';
 import { authLimiter } from '../config/ratelimits';
+import { SECURITY_LIMITS } from '../config/security-limits';
 import { validateCSRF } from '../middleware/csrf.middleware';
 import { validateHoneypot } from '../middleware/honeypot-captcha';
 import { prisma } from '../services/database.service';
@@ -84,6 +85,33 @@ router.post(
     body('password')
       .isLength({ min: 8 })
       .withMessage('Password must be at least 8 characters long.'),
+    body('avatarUrl')
+      .optional()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage('Avatar URL must be under 500 characters')
+      .custom((value) => {
+        if (!value) return true; // Allow empty
+
+        // Allow HTTPS URLs
+        const isHttpsUrl =
+          /^https:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(\/[a-zA-Z0-9\-\._~:\/?#\[\]@!$&'()*+,;=%]*)?$/i.test(
+            value,
+          );
+
+        // Allow safe relative paths
+        const isRelativePath =
+          /^[a-zA-Z0-9_\-]+([\/][a-zA-Z0-9_\-]+)*\.(svg|png|jpg|jpeg|gif|webp)$/i.test(
+            value,
+          );
+
+        if (!isHttpsUrl && !isRelativePath) {
+          throw new Error(
+            'Avatar URL must be either a valid HTTPS URL or a relative path to an image',
+          );
+        }
+        return true;
+      }),
     body('turnstileToken')
       .optional()
       .isString()
@@ -124,7 +152,7 @@ router.post(
       }
 
       // Hash password
-      const salt = await bcrypt.genSalt(10);
+      const salt = await bcrypt.genSalt(SECURITY_LIMITS.AUTH.BCRYPT_ROUNDS);
       const passwordHash = await bcrypt.hash(password, salt);
 
       // Create new user with email included.
@@ -205,7 +233,7 @@ router.post(
           avatarUrl: user.avatarUrl,
         },
         env.JWT_SECRET,
-        { expiresIn: '24h' },
+        { expiresIn: SECURITY_LIMITS.AUTH.JWT_EXPIRY },
       );
 
       // Generate CSRF token for additional security
@@ -282,7 +310,7 @@ router.post(
       const recentReset = await prisma.passwordReset.findFirst({
         where: {
           userId: user.id,
-          createdAt: { gte: new Date(Date.now() - 5 * 60 * 1000) }, // 5 minutes
+          createdAt: { gte: new Date(Date.now() - SECURITY_LIMITS.PASSWORD_RESET.RATE_LIMIT_WINDOW_MS) },
           used: false,
         },
       });
@@ -308,7 +336,7 @@ router.post(
           userId: user.id,
           email: user.email,
           token: hashedToken,
-          expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+          expiresAt: new Date(Date.now() + SECURITY_LIMITS.PASSWORD_RESET.TOKEN_EXPIRY_MS), // 10 minutes
         },
       });
 
@@ -445,7 +473,7 @@ router.post(
       }
 
       // Hash new password
-      const salt = await bcrypt.genSalt(10);
+      const salt = await bcrypt.genSalt(SECURITY_LIMITS.AUTH.BCRYPT_ROUNDS);
       const passwordHash = await bcrypt.hash(password, salt);
 
       // Update user password
@@ -536,7 +564,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
         avatarUrl: user.avatarUrl,
       },
       env.JWT_SECRET,
-      { expiresIn: '24h' },
+      { expiresIn: SECURITY_LIMITS.AUTH.JWT_EXPIRY },
     );
 
     // Rotate refresh token (delete old, create new)
