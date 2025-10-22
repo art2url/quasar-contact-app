@@ -53,6 +53,7 @@ jest.mock('../../utils/cookie.utils', () => ({
 jest.mock('../../utils/refresh-token.utils', () => ({
   createRefreshToken: jest.fn(() => Promise.resolve('mock-refresh-token')),
   validateRefreshToken: jest.fn(),
+  validateAndConsumeRefreshToken: jest.fn(),
   rotateRefreshToken: jest.fn(),
   revokeRefreshToken: jest.fn(() => Promise.resolve()),
   revokeAllUserRefreshTokens: jest.fn(() => Promise.resolve()),

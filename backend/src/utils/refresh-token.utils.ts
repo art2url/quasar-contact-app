@@ -42,6 +42,7 @@ export async function createRefreshToken(userId: string): Promise<string> {
 /**
  * Validate and retrieve user ID from refresh token
  * Returns null if token is invalid or expired
+ * NOTE: This function does NOT consume the token. Use validateAndConsumeRefreshToken for token rotation.
  */
 export async function validateRefreshToken(token: string): Promise<string | null> {
   if (!token) {
@@ -77,8 +78,66 @@ export async function validateRefreshToken(token: string): Promise<string | null
 }
 
 /**
+ * Atomically validate and consume a refresh token
+ * This prevents race conditions where the same token could be used multiple times
+ * Returns userId if valid, null if invalid/expired, throws if already consumed
+ */
+export async function validateAndConsumeRefreshToken(token: string): Promise<string | null> {
+  if (!token) {
+    return null;
+  }
+
+  try {
+    return await prisma.$transaction(async (tx) => {
+      // Find and lock the token
+      const refreshToken = await tx.refreshToken.findUnique({
+        where: { token },
+        select: {
+          userId: true,
+          expiresAt: true,
+        },
+      });
+
+      if (!refreshToken) {
+        return null;
+      }
+
+      // Check if token is expired
+      if (refreshToken.expiresAt < new Date()) {
+        // Clean up expired token
+        await tx.refreshToken.delete({ where: { token } });
+        return null;
+      }
+
+      // Atomically delete token to prevent reuse
+      const deleted = await tx.refreshToken.deleteMany({
+        where: { token },
+      });
+
+      // If token was already deleted by another request, this is a race condition attack
+      if (deleted.count === 0) {
+        throw new Error('REFRESH_TOKEN_ALREADY_USED');
+      }
+
+      return refreshToken.userId;
+    }, {
+      isolationLevel: 'Serializable', // Prevent phantom reads and race conditions
+    });
+  } catch (error) {
+    // Re-throw known errors
+    if (error instanceof Error && error.message === 'REFRESH_TOKEN_ALREADY_USED') {
+      throw error;
+    }
+    // Log and re-throw unexpected errors
+    console.error('[Refresh Token Validation Error]', error);
+    throw error;
+  }
+}
+
+/**
  * Rotate refresh token (delete old, create new)
  * This implements token rotation for enhanced security
+ * @deprecated Use validateAndConsumeRefreshToken instead for atomic token rotation
  */
 export async function rotateRefreshToken(oldToken: string, userId: string): Promise<string> {
   // Delete old token

@@ -26,8 +26,7 @@ import {
   createRefreshToken,
   revokeAllUserRefreshTokens,
   revokeRefreshToken,
-  rotateRefreshToken,
-  validateRefreshToken,
+  validateAndConsumeRefreshToken,
 } from '../utils/refresh-token.utils';
 
 const router = Router();
@@ -533,8 +532,25 @@ router.post('/refresh', async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Refresh token missing.' });
     }
 
-    // Validate refresh token and get user ID
-    const userId = await validateRefreshToken(refreshToken);
+    // Atomically validate and consume refresh token to prevent race conditions
+    let userId: string | null;
+    try {
+      userId = await validateAndConsumeRefreshToken(refreshToken);
+    } catch (error) {
+      // Detect concurrent token use attempts (potential security incident)
+      if (error instanceof Error && error.message === 'REFRESH_TOKEN_ALREADY_USED') {
+        console.warn('[Security] Refresh token reuse attempt detected:', {
+          ip: req.ip,
+          userAgent: req.get('User-Agent'),
+          timestamp: new Date().toISOString(),
+        });
+        clearRefreshTokenCookie(res);
+        return res.status(403).json({
+          message: 'Token already used. Please login again.',
+        });
+      }
+      throw error;
+    }
 
     if (!userId) {
       clearRefreshTokenCookie(res);
@@ -567,8 +583,8 @@ router.post('/refresh', async (req: Request, res: Response) => {
       { expiresIn: SECURITY_LIMITS.AUTH.JWT_EXPIRY },
     );
 
-    // Rotate refresh token (delete old, create new)
-    const newRefreshToken = await rotateRefreshToken(refreshToken, userId);
+    // Create new refresh token (old one was atomically deleted)
+    const newRefreshToken = await createRefreshToken(userId);
 
     // Set new cookies
     setAuthCookie(res, newAccessToken);

@@ -319,7 +319,7 @@ describe('Users API Routes (Security Tests)', () => {
 
     it('prevents SQL injection in avatarUrl', async () => {
       // Use a URL with SQL injection attempt - should be rejected by URL validation
-      const maliciousUrl = "https://example.com/avatar.jpg?id=1'; DROP TABLE users; --";
+      const maliciousUrl = 'https://example.com/avatar.jpg?id=1\'; DROP TABLE users; --';
 
       const response = await request(app)
         .put('/api/users/me/avatar')
