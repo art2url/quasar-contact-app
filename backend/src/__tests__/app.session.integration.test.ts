@@ -44,22 +44,24 @@ describe('App Session Integration Tests', () => {
   beforeEach(() => {
     // Create minimal app with session configuration matching production
     app = express();
-    
+
     // Trust proxy setting (as in production app)
     app.set('trust proxy', 1);
-    
+
     // Session configuration matching production
-    app.use(session({
-      secret: 'test-session-secret-matching-production-config',
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        secure: false, // Set to false for testing (true in production)
-        httpOnly: true,
-        maxAge: 600000, // 10 minutes - matches production
-        sameSite: 'lax', // Matches production for non-https
-      },
-    }));
+    app.use(
+      session({
+        secret: 'test-session-secret-matching-production-config',
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+          secure: false, // Set to false for testing (true in production)
+          httpOnly: true,
+          maxAge: 600000, // 10 minutes - matches production
+          sameSite: 'lax', // Matches production for non-https
+        },
+      }),
+    );
 
     // Add the actual reset password route from app.ts
     app.get('/app/auth/reset-password', (req, res) => {
@@ -126,10 +128,8 @@ describe('App Session Integration Tests', () => {
       mockDecryptResetToken.mockReturnValueOnce('session-token');
 
       // Create session by processing a reset token
-      await agent
-        .get('/app/auth/reset-password')
-        .query({ token: 'valid-token' });
-        
+      await agent.get('/app/auth/reset-password').query({ token: 'valid-token' });
+
       // Now check session persistence across multiple requests
       const response1 = await agent.get('/test/session-state');
       const response2 = await agent.get('/test/session-state');
@@ -165,7 +165,7 @@ describe('App Session Integration Tests', () => {
         .query({ token: encryptedToken });
 
       expect(resetResponse.status).toBe(302);
-      expect(resetResponse.headers.location).toBe('/app/?reset=1');
+      expect(resetResponse.headers.location).toBe('/app/auth/reset-password');
 
       // Verify session contains reset data
       const sessionResponse = await agent.get('/test/session-state');
@@ -224,15 +224,11 @@ describe('App Session Integration Tests', () => {
 
       // Process first token
       mockDecryptResetToken.mockReturnValueOnce('first-token');
-      await agent
-        .get('/app/auth/reset-password')
-        .query({ token: 'first-encrypted' });
+      await agent.get('/app/auth/reset-password').query({ token: 'first-encrypted' });
 
       // Process second token (should overwrite)
       mockDecryptResetToken.mockReturnValueOnce('second-token');
-      await agent
-        .get('/app/auth/reset-password')
-        .query({ token: 'second-encrypted' });
+      await agent.get('/app/auth/reset-password').query({ token: 'second-encrypted' });
 
       // Session should have the second token
       const sessionResponse = await agent.get('/test/session-state');
@@ -252,9 +248,7 @@ describe('App Session Integration Tests', () => {
       mockIsValidEncryptedTokenFormat.mockReturnValueOnce(true);
       mockDecryptResetToken.mockReturnValueOnce('lifecycle-token');
 
-      await agent
-        .get('/app/auth/reset-password')
-        .query({ token: 'valid-token' });
+      await agent.get('/app/auth/reset-password').query({ token: 'valid-token' });
 
       // Should have pending reset
       response = await agent.get('/test/session-state');
@@ -269,15 +263,11 @@ describe('App Session Integration Tests', () => {
 
       // Agent1 processes token
       mockDecryptResetToken.mockReturnValueOnce('agent1-token');
-      await agent1
-        .get('/app/auth/reset-password')
-        .query({ token: 'agent1-encrypted' });
+      await agent1.get('/app/auth/reset-password').query({ token: 'agent1-encrypted' });
 
       // Agent2 processes different token
       mockDecryptResetToken.mockReturnValueOnce('agent2-token');
-      await agent2
-        .get('/app/auth/reset-password')
-        .query({ token: 'agent2-encrypted' });
+      await agent2.get('/app/auth/reset-password').query({ token: 'agent2-encrypted' });
 
       // Both should have independent sessions
       const response1 = await agent1.get('/test/session-state');
@@ -295,9 +285,7 @@ describe('App Session Integration Tests', () => {
       mockDecryptResetToken.mockReturnValue('concurrent-token');
 
       // Process token first
-      await agent
-        .get('/app/auth/reset-password')
-        .query({ token: 'valid-token' });
+      await agent.get('/app/auth/reset-password').query({ token: 'valid-token' });
 
       // Make concurrent session state requests
       const concurrentRequests = Promise.all([
@@ -321,7 +309,7 @@ describe('App Session Integration Tests', () => {
       const agent = request.agent(app);
 
       const response = await agent.get('/test/session-state');
-      
+
       // Cookie should expire in 10 minutes (600000ms)
       expect(response.body.cookie.originalMaxAge).toBe(600000);
     });
@@ -330,7 +318,7 @@ describe('App Session Integration Tests', () => {
       const agent = request.agent(app);
 
       const response = await agent.get('/test/session-state');
-      
+
       // Cookie should be httpOnly to prevent XSS access
       expect(response.body.cookie.httpOnly).toBe(true);
     });
@@ -339,7 +327,7 @@ describe('App Session Integration Tests', () => {
       const agent = request.agent(app);
 
       const response = await agent.get('/test/session-state');
-      
+
       // Should use 'lax' in test environment (would be 'strict' in production)
       expect(response.body.cookie.sameSite).toBe('lax');
     });
@@ -362,7 +350,7 @@ describe('App Session Integration Tests', () => {
 
       // Make a normal request to establish session
       const response = await agent.get('/test/session-state');
-      
+
       expect(response.status).toBe(200);
       expect(response.body.hasPendingReset).toBe(false);
     });
@@ -371,17 +359,13 @@ describe('App Session Integration Tests', () => {
       const agent = request.agent(app);
 
       // Test empty string token
-      let response = await agent
-        .get('/app/auth/reset-password')
-        .query({ token: '' });
+      let response = await agent.get('/app/auth/reset-password').query({ token: '' });
       expect(response.status).toBe(302);
       expect(response.headers.location).toBe('/app/auth/login?error=invalid_link');
 
       // Test whitespace token - should fail format validation
       mockIsValidEncryptedTokenFormat.mockReturnValueOnce(false);
-      response = await agent
-        .get('/app/auth/reset-password')
-        .query({ token: '   ' });
+      response = await agent.get('/app/auth/reset-password').query({ token: '   ' });
       expect(response.status).toBe(302);
       expect(response.headers.location).toBe('/app/auth/login?error=invalid_link');
 

@@ -358,6 +358,13 @@ export class AuthService {
     );
   }
 
+  claimResetToken(): Observable<{ success: boolean; token?: string; message?: string }> {
+    return this.http.post<{ success: boolean; token?: string; message?: string }>(
+      getApiPath('auth/claim-reset-token'),
+      {}
+    );
+  }
+
   resetPassword(token: string, newPassword: string): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(getApiPath('auth/reset-password'), {
       token,

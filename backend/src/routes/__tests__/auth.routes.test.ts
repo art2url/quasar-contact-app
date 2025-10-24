@@ -18,6 +18,12 @@ jest.mock('../../services/database.service', () => ({
       findFirst: jest.fn(),
       update: jest.fn(),
     },
+    message: {
+      deleteMany: jest.fn(),
+    },
+    refreshToken: {
+      deleteMany: jest.fn(),
+    },
   },
 }));
 
@@ -104,9 +110,7 @@ describe('Auth API Routes (Security Tests)', () => {
     };
 
     it('validates required fields', async () => {
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send({});
+      const response = await request(app).post('/api/auth/register').send({});
 
       expect(response.status).toBe(422);
       expect(response.body.errors).toBeDefined();
@@ -173,7 +177,7 @@ describe('Auth API Routes (Security Tests)', () => {
         username: validRegistration.username,
         email: 'different@example.com',
       };
-      
+
       mockPrisma.user.findFirst.mockResolvedValueOnce(existingUser);
 
       const response = await request(app)
@@ -191,7 +195,7 @@ describe('Auth API Routes (Security Tests)', () => {
         username: 'different-user',
         email: validRegistration.email,
       };
-      
+
       mockPrisma.user.findFirst.mockResolvedValueOnce(existingUser);
 
       const response = await request(app)
@@ -216,7 +220,7 @@ describe('Auth API Routes (Security Tests)', () => {
 
       expect(response.status).toBe(201);
       expect(response.body.message).toBe('User registered successfully.');
-      
+
       expect(mockPrisma.user.create).toHaveBeenCalledWith({
         data: {
           username: validRegistration.username,
@@ -279,9 +283,7 @@ describe('Auth API Routes (Security Tests)', () => {
     };
 
     it('validates required fields', async () => {
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({});
+      const response = await request(app).post('/api/auth/login').send({});
 
       expect(response.status).toBe(422);
       expect(response.body.errors).toBeDefined();
@@ -290,9 +292,7 @@ describe('Auth API Routes (Security Tests)', () => {
     it('rejects login with non-existent user', async () => {
       mockPrisma.user.findFirst.mockResolvedValueOnce(null);
 
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send(validLogin);
+      const response = await request(app).post('/api/auth/login').send(validLogin);
 
       expect(response.status).toBe(401);
       expect(response.body.message).toBe('Invalid credentials.');
@@ -306,7 +306,7 @@ describe('Auth API Routes (Security Tests)', () => {
         passwordHash: hashedPassword,
         avatarUrl: 'avatar.jpg',
       };
-      
+
       mockPrisma.user.findFirst.mockResolvedValueOnce(mockUser);
 
       const response = await request(app)
@@ -331,9 +331,7 @@ describe('Auth API Routes (Security Tests)', () => {
 
       mockPrisma.user.findFirst.mockResolvedValueOnce(mockUser);
 
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send(validLogin);
+      const response = await request(app).post('/api/auth/login').send(validLogin);
 
       expect(response.status).toBe(200);
       expect(response.body.message).toBe('Login successful.');
@@ -357,20 +355,15 @@ describe('Auth API Routes (Security Tests)', () => {
 
       mockPrisma.user.findFirst.mockResolvedValueOnce(mockUser);
 
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({
-          username: 'test@example.com', // Using email
-          password: validLogin.password,
-        });
+      const response = await request(app).post('/api/auth/login').send({
+        username: 'test@example.com', // Using email
+        password: validLogin.password,
+      });
 
       expect(response.status).toBe(200);
       expect(mockPrisma.user.findFirst).toHaveBeenCalledWith({
         where: {
-          OR: [
-            { username: 'test@example.com' },
-            { email: 'test@example.com' },
-          ],
+          OR: [{ username: 'test@example.com' }, { email: 'test@example.com' }],
         },
       });
     });
@@ -379,9 +372,7 @@ describe('Auth API Routes (Security Tests)', () => {
       const dbError = new Error('Database query failed');
       mockPrisma.user.findFirst.mockRejectedValueOnce(dbError);
 
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send(validLogin);
+      const response = await request(app).post('/api/auth/login').send(validLogin);
 
       expect(response.status).toBe(500);
       expect(response.body.message).toBe('Server error during login.');
@@ -429,7 +420,7 @@ describe('Auth API Routes (Security Tests)', () => {
         id: 'user-id',
         email: validRequest.email,
       };
-      
+
       const recentReset = {
         id: 'reset-id',
         userId: mockUser.id,
@@ -496,7 +487,7 @@ describe('Auth API Routes (Security Tests)', () => {
       mockPrisma.user.findUnique.mockResolvedValueOnce(mockUser);
       mockPrisma.passwordReset.findFirst.mockResolvedValueOnce(null);
       mockPrisma.passwordReset.create.mockResolvedValueOnce({});
-      
+
       const emailError = new Error('Email sending failed');
       mockEmailService.sendPasswordResetEmail.mockRejectedValueOnce(emailError);
 
@@ -559,12 +550,10 @@ describe('Auth API Routes (Security Tests)', () => {
       mockPrisma.user.findFirst.mockResolvedValueOnce(null);
       mockPrisma.user.create.mockResolvedValueOnce({});
 
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send(maliciousInput);
+      const response = await request(app).post('/api/auth/register').send(maliciousInput);
 
       expect(response.status).toBe(201);
-      
+
       // Verify data was passed through as-is (ORM handles escaping)
       expect(mockPrisma.user.create).toHaveBeenCalledWith({
         data: {
@@ -597,6 +586,127 @@ describe('Auth API Routes (Security Tests)', () => {
       });
 
       expect(mockPrisma.user.create).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('POST /api/auth/reset-password - Password Reset Confirmation', () => {
+    const validRequest = {
+      token: 'valid-reset-token',
+      password: 'NewPassword123!',
+    };
+
+    it('validates password strength (422 for validation error)', async () => {
+      const response = await request(app)
+        .post('/api/auth/reset-password')
+        .send({ token: 'token', password: 'weak' });
+
+      expect(response.status).toBe(422);
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            msg: 'Password must be at least 8 characters long.',
+          }),
+        ]),
+      );
+    });
+
+    it('rejects invalid or expired reset tokens (400)', async () => {
+      mockPrisma.passwordReset.findFirst.mockResolvedValueOnce(null);
+
+      const response = await request(app)
+        .post('/api/auth/reset-password')
+        .send(validRequest);
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain('Invalid or expired reset token');
+    });
+
+    it('prevents reuse of same reset token', async () => {
+      mockPrisma.passwordReset.findFirst.mockResolvedValueOnce(null);
+
+      const response = await request(app)
+        .post('/api/auth/reset-password')
+        .send(validRequest);
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain('Invalid or expired reset token');
+    });
+
+    it('rejects expired reset tokens', async () => {
+      mockPrisma.passwordReset.findFirst.mockResolvedValueOnce(null);
+
+      const response = await request(app)
+        .post('/api/auth/reset-password')
+        .send(validRequest);
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain('Invalid or expired reset token');
+    });
+
+    it('handles database errors during password reset', async () => {
+      const dbError = new Error('Database connection failed');
+      mockPrisma.passwordReset.findFirst.mockRejectedValueOnce(dbError);
+
+      const response = await request(app)
+        .post('/api/auth/reset-password')
+        .send(validRequest);
+
+      expect(response.status).toBe(500);
+      expect(response.body.message).toBe('Server error during password reset.');
+    });
+  });
+
+  describe('GET /api/auth/reset-password/validate - Token Validation', () => {
+    it('validates reset token exists and is not expired', async () => {
+      const mockPasswordReset = {
+        id: 'reset-id',
+        userId: 'user-id',
+        token: 'hashed-token',
+        expiresAt: new Date(Date.now() + 600000), // Valid
+        used: false,
+      };
+
+      mockPrisma.passwordReset.findFirst.mockResolvedValueOnce(mockPasswordReset);
+
+      const response = await request(app).get(
+        '/api/auth/reset-password/validate?token=test-token',
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.body.valid).toBe(true);
+    });
+
+    it('returns invalid for non-existent tokens', async () => {
+      mockPrisma.passwordReset.findFirst.mockResolvedValueOnce(null);
+
+      const response = await request(app).get(
+        '/api/auth/reset-password/validate?token=invalid-token',
+      );
+
+      expect(response.status).toBe(400);
+      expect(response.body.valid).toBe(false);
+    });
+
+    it('returns invalid for expired tokens (not found)', async () => {
+      mockPrisma.passwordReset.findFirst.mockResolvedValueOnce(null);
+
+      const response = await request(app).get(
+        '/api/auth/reset-password/validate?token=expired-token',
+      );
+
+      expect(response.status).toBe(400);
+      expect(response.body.valid).toBe(false);
+    });
+
+    it('returns invalid for already used tokens (not found)', async () => {
+      mockPrisma.passwordReset.findFirst.mockResolvedValueOnce(null);
+
+      const response = await request(app).get(
+        '/api/auth/reset-password/validate?token=used-token',
+      );
+
+      expect(response.status).toBe(400);
+      expect(response.body.valid).toBe(false);
     });
   });
 });

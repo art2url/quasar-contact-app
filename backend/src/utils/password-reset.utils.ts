@@ -45,8 +45,8 @@ export function processPasswordResetToken(
       createdAt: Date.now(),
     };
 
-    // Redirect without token in URL for security
-    res.redirect('/app/?reset=1');
+    // Redirect to reset-password page to enter new credentials
+    res.redirect('/app/auth/reset-password');
     return true;
   } catch (error) {
     console.error('[Password Reset] Token decryption failed:', error);

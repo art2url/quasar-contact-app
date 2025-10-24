@@ -97,7 +97,7 @@ describe('Session Management Service (Security Critical)', () => {
         .query({ token: encryptedToken });
 
       expect(response.status).toBe(302);
-      expect(response.headers.location).toBe('/app/?reset=1');
+      expect(response.headers.location).toBe('/app/auth/reset-password');
       expect(mockIsValidEncryptedTokenFormat).toHaveBeenCalledWith(encryptedToken);
       expect(mockDecryptResetToken).toHaveBeenCalledWith(encryptedToken);
     });
