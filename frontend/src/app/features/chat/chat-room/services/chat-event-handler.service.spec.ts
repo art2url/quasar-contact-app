@@ -110,14 +110,15 @@ describe('ChatEventHandlerService (Business Logic)', () => {
   afterEach(() => {
     // Restore original requestAnimationFrame and remove any spies
     try {
-      const windowSpy = (window as any)['requestAnimationFrame'] as any;
+      const windowAny = window as unknown as Record<string, { restore?: () => void }>;
+      const windowSpy = windowAny['requestAnimationFrame'];
       if (windowSpy && windowSpy.restore) {
         windowSpy.restore();
       }
-    } catch (e) {
+    } catch (_error) {
       // Ignore errors during cleanup
     }
-    (window as any).requestAnimationFrame = originalRequestAnimationFrame;
+    (window as unknown as Record<string, typeof requestAnimationFrame>)['requestAnimationFrame'] = originalRequestAnimationFrame;
   });
 
   // Run: npm test -- --include="**/chat-event-handler.service.spec.ts"
@@ -208,7 +209,8 @@ describe('ChatEventHandlerService (Business Logic)', () => {
     it('updates typing indicator position when partner typing changes', (done) => {
       // Mock requestAnimationFrame to execute callbacks immediately
       // Check if already spied, if so clear it first
-      const rafSpy = (window as any).requestAnimationFrame as any;
+      const windowAny = window as unknown as Record<string, { calls?: { reset: () => void } }>;
+      const rafSpy = windowAny['requestAnimationFrame'];
       if (rafSpy && rafSpy.calls) {
         rafSpy.calls.reset();
       } else {
