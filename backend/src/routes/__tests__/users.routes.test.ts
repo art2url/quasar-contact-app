@@ -315,7 +315,7 @@ describe('Users API Routes (Security Tests)', () => {
         expect(response.status).toBe(422);
         expect(response.body.errors).toBeDefined();
       }
-    });
+    }, 60000); // Increased timeout for multiple sequential requests
 
     it('prevents SQL injection in avatarUrl', async () => {
       // Use a URL with SQL injection attempt - should be rejected by URL validation

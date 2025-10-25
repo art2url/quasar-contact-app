@@ -41,6 +41,7 @@
     "@angular/cli": "^19.2.6",
     "@angular/compiler-cli": "^19.2.5",
     "@ngx-env/builder": "^19.0.4",
+    "@rollup/rollup-darwin-arm64": "^4.52.5",
     "@types/hammerjs": "^2.0.46",
     "@types/jasmine": "~5.1.0",
     "@types/node": "^22.15.18",
