@@ -33,11 +33,6 @@ const io = new Server(server, {
     skipMiddlewares: true,
   },
 
-  // Enhanced error handling
-  allowRequest: (req, callback) => {
-    // Additional request validation can be added here
-    callback(null, true);
-  },
 });
 
 // Enhanced server monitoring and logging

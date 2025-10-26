@@ -1,4 +1,5 @@
-import cors, { CorsOptions } from 'cors';
+import cors from 'cors';
+import { Request } from 'express';
 import env from './env';
 
 // Explicitly set allowed origins for development and production
@@ -9,17 +10,27 @@ const allowedOrigins = [
 ].filter(Boolean); // Remove any undefined/null values
 
 // A dynamic origin checker
-const originChecker: CorsOptions['origin'] = (incoming, callback) => {
-  // Only allow requests with no origin in development for testing tools
+const originChecker = (
+  incoming: string | undefined,
+  callback: (err: Error | null, allow?: boolean) => void,
+  req?: Request,
+): void => {
+  // Allow requests without origin for health checks and static files (proxies, load balancers)
   if (!incoming) {
-    if (env.NODE_ENV === 'development') {
+    // Always allow health checks and root paths (for load balancers and proxies)
+    if (req?.path === '/health' || req?.path === '/' || req?.path === '/api/health') {
       callback(null, true);
       return;
-    } else {
-      // In production, require an origin header
-      callback(new Error('CORS error: origin header required'));
+    }
+
+    // In production, require origin for API endpoints
+    if (env.NODE_ENV === 'production') {
+      callback(new Error('CORS error: origin header required for API requests'));
       return;
     }
+    // Allow requests without origin in development (for testing tools like Postman, curl)
+    callback(null, true);
+    return;
   }
 
   // Check if the origin is in our allowed list
@@ -63,11 +74,8 @@ export const socketCorsOptions = {
   pingTimeout: 60000, // 60 seconds
   pingInterval: 25000, // 25 seconds
   upgradeTimeout: 30000, // 30 seconds
-  // Enhanced error handling
-  allowRequest: (_req: any, callback: any) => {
-    // Additional validation can be added here
-    callback(null, true);
-  },
+  // Note: allowRequest callback removed to prevent CORS bypass
+  // Origin validation is enforced through the cors configuration above
   // Connection state recovery
   connectionStateRecovery: {
     // the backup duration of the sessions and the packets
