@@ -1,5 +1,4 @@
 import cors from 'cors';
-import { Request } from 'express';
 import env from './env';
 
 // Explicitly set allowed origins for development and production
@@ -13,22 +12,9 @@ const allowedOrigins = [
 const originChecker = (
   incoming: string | undefined,
   callback: (err: Error | null, allow?: boolean) => void,
-  req?: Request,
 ): void => {
-  // Allow requests without origin for health checks and static files (proxies, load balancers)
+  // Allow requests without origin (for health checks, proxies, load balancers, static files)
   if (!incoming) {
-    // Always allow health checks and root paths (for load balancers and proxies)
-    if (req?.path === '/health' || req?.path === '/' || req?.path === '/api/health') {
-      callback(null, true);
-      return;
-    }
-
-    // In production, require origin for API endpoints
-    if (env.NODE_ENV === 'production') {
-      callback(new Error('CORS error: origin header required for API requests'));
-      return;
-    }
-    // Allow requests without origin in development (for testing tools like Postman, curl)
     callback(null, true);
     return;
   }
