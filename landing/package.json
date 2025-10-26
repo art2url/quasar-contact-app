@@ -27,10 +27,10 @@
     "typescript": "^5.0.0"
   },
   "optionalDependencies": {
-    "@rollup/rollup-darwin-arm64": "^4.46.2",
-    "@rollup/rollup-linux-x64-musl": "^4.46.2",
+    "@esbuild/darwin-arm64": "^0.25.9",
     "@esbuild/linux-x64": "^0.25.9",
-    "@esbuild/darwin-arm64": "^0.25.9"
+    "@rollup/rollup-darwin-arm64": "^4.46.2",
+    "@rollup/rollup-linux-x64-musl": "^4.46.2"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
