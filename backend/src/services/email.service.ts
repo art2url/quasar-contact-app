@@ -105,9 +105,12 @@ class EmailService {
   ): Promise<void> {
     // Encrypt the token before including in email URL
     const encryptedToken = encryptResetToken(resetToken);
-    
-    // Ensure we use the correct app path
-    const baseUrl = env.CLIENT_ORIGIN || 'http://localhost:3000';
+
+    // Use the frontend origin for password reset links
+    // The component handles the token directly from URL params
+    // In development: frontend is at http://localhost:4200
+    // In production: both backend and frontend are served from same origin
+    const baseUrl = env.CLIENT_ORIGIN || 'http://localhost:4200';
     const resetUrl = `${baseUrl}/app/auth/reset-password?token=${encryptedToken}`;
     const subject = `Password Reset Request - ${env.APP_NAME}`;
 

@@ -271,14 +271,9 @@ app.get('/app/auth/forgot-password', (_req, res) => {
   res.sendFile(path.join(__dirname, '../../dist', 'index.html'));
 });
 
-app.get('/app/auth/reset-password', (req, res) => {
-  const encryptedToken = req.query.token as string;
-  
-  // Import password reset utility
-  const { processPasswordResetToken } = require('./utils/password-reset.utils');
-  
-  // Process the encrypted token and handle session storage
-  processPasswordResetToken(req, res, encryptedToken);
+app.get('/app/auth/reset-password', (_req, res) => {
+  // Serve the frontend app - the component handles the token from URL params
+  res.sendFile(path.join(__dirname, '../../dist', 'index.html'));
 });
 
 // Handle invalid /app routes - serve 404 page

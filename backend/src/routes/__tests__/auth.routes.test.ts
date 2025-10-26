@@ -37,6 +37,7 @@ jest.mock('../../services/email.service', () => ({
 
 jest.mock('../../config/ratelimits', () => ({
   authLimiter: jest.fn((req: any, res: any, next: any) => next()),
+  resetTokenClaimLimiter: jest.fn((req: any, res: any, next: any) => next()),
 }));
 
 jest.mock('../../middleware/honeypot-captcha', () => ({

@@ -9,6 +9,7 @@ import { ChatRoomComponent } from '@features/chat/chat-room/chat-room.component'
 import { SettingsComponent } from '@features/settings/settings.component';
 import { AuthGuard } from '@core/auth/guards/auth.guard';
 import { UnauthGuard } from '@core/auth/guards/unauth.guard';
+import { ResetPasswordGuard } from '@core/auth/guards/reset-password.guard';
 
 export const routes: Routes = [
   /* App root redirect */
@@ -29,7 +30,7 @@ export const routes: Routes = [
   {
     path: 'auth/reset-password',
     component: ResetPasswordComponent,
-    canActivate: [UnauthGuard],
+    canActivate: [ResetPasswordGuard],
   },
 
   /* Protected App routes */
