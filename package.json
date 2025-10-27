@@ -1,6 +1,6 @@
 {
   "name": "quasar-contact-app",
-  "version": "1.0.0",
+  "version": "1.6.0",
   "description": "Combined landing page, Angular chat frontend, and Node.js backend",
   "main": "backend/dist/server.js",
   "scripts": {

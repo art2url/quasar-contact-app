@@ -1,7 +1,7 @@
 {
   "name": "quasar-landing",
   "type": "module",
-  "version": "0.0.1",
+  "version": "1.6.0",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
@@ -20,6 +20,7 @@
     "style": "npm run lint && npm run format:check && npm run style:css && npm run typecheck",
     "style:fix": "npm run lint:fix && npm run format && npm run style:css:fix"
   },
+  "license": "GPL-3.0",
   "dependencies": {
     "@astrojs/check": "^0.3.0",
     "@astrojs/sitemap": "^3.0.0",

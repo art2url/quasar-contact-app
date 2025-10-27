@@ -1,6 +1,6 @@
 {
   "name": "quasar-contact-app-backend",
-  "version": "1.0.0",
+  "version": "1.6.0",
   "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
@@ -20,6 +20,7 @@
   },
   "keywords": [],
   "type": "commonjs",
+  "license": "GPL-3.0",
   "dependencies": {
     "@getbrevo/brevo": "^3.0.1",
     "@prisma/client": "^6.12.0",

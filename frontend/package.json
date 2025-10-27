@@ -1,6 +1,6 @@
 {
   "name": "quasar-contact-app-frontend",
-  "version": "0.0.0",
+  "version": "1.6.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -19,6 +19,7 @@
     "test:ci": "ng test --watch=false --browsers=ChromeHeadless"
   },
   "private": true,
+  "license": "GPL-3.0",
   "dependencies": {
     "@angular/animations": "^19.2.5",
     "@angular/cdk": "^19.2.16",
