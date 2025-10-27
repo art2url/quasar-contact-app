@@ -26,18 +26,40 @@ const upload = multer({
 router.post('/image', authenticateToken, upload.single('image'), async (req: AuthRequest, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'No image file provided', 
+      return res.status(400).json({
+        success: false,
+        message: 'No image file provided',
       });
     }
 
     const { receiverId, encryptedPayload } = req.body;
-    
+
     if (!receiverId || !encryptedPayload) {
       return res.status(400).json({
         success: false,
         message: 'Missing receiverId or encryptedPayload',
+      });
+    }
+
+    // Validate that receiverId exists before processing image
+    const { prisma } = require('../services/database.service');
+    const receiver = await prisma.user.findUnique({
+      where: { id: receiverId },
+      select: { id: true },
+    });
+
+    if (!receiver) {
+      return res.status(404).json({
+        success: false,
+        message: 'Receiver not found',
+      });
+    }
+
+    // Check file size to prevent DoS attacks
+    if (req.file.size > 5 * 1024 * 1024) { // 5MB limit
+      return res.status(413).json({
+        success: false,
+        message: 'File too large - maximum size is 5MB',
       });
     }
 
@@ -66,7 +88,7 @@ router.post('/image', authenticateToken, upload.single('image'), async (req: Aut
 router.post('/message-with-image', authenticateToken, async (req: AuthRequest, res) => {
   try {
     const { receiverId, encryptedPayload, retryAttempt = 0 } = req.body;
-    
+
     if (!receiverId || !encryptedPayload) {
       return res.status(400).json({
         success: false,
@@ -74,8 +96,20 @@ router.post('/message-with-image', authenticateToken, async (req: AuthRequest, r
       });
     }
 
-    // Store the message in database (same as regular message)
+    // Validate receiverId before processing
     const { prisma } = require('../services/database.service');
+
+    const receiver = await prisma.user.findUnique({
+      where: { id: receiverId },
+      select: { id: true },
+    });
+
+    if (!receiver) {
+      return res.status(404).json({
+        success: false,
+        message: 'Receiver not found',
+      });
+    }
     
     const message = await prisma.message.create({
       data: {

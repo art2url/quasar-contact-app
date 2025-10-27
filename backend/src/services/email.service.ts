@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import * as brevo from '@getbrevo/brevo';
 import env from '../config/env';
 import { encryptResetToken } from '../utils/encryption.utils';
 
@@ -10,88 +10,160 @@ interface EmailOptions {
 }
 
 class EmailService {
-  private transporter: nodemailer.Transporter | null = null;
+  private apiClient: brevo.TransactionalEmailsApi | null = null;
   private isConfigured = false;
 
   constructor() {
-    this.initializeTransporter();
+    this.initializeService();
   }
 
-  private initializeTransporter(): void {
-    // Check if email configuration is available
-    if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) {
+  private initializeService(): void {
+    // Check if email API key is available
+    if (!env.SMTP_PASS) {
       console.warn(
-        '[EmailService] SMTP configuration not complete. Email features will be disabled.',
+        '[EmailService] Email API key not configured. Email features will be disabled.',
       );
       return;
     }
 
     try {
-      this.transporter = nodemailer.createTransport({
-        host: env.SMTP_HOST,
-        port: env.SMTP_PORT || 587,
-        secure: env.SMTP_SECURE || false,
-        auth: {
-          user: env.SMTP_USER,
-          pass: env.SMTP_PASS,
-        },
-        // SMTP settings for better compatibility
-        tls: {
-          rejectUnauthorized: false,
-          ciphers: 'SSLv3',
-        },
-        // Additional settings for better email delivery
-        connectionTimeout: 60000,
-        greetingTimeout: 30000,
-        socketTimeout: 60000,
-        debug: false,
-        logger: false,
-      });
+      console.log('[EmailService] Initializing email API...');
+
+      // Initialize email API client
+      const apiClient = new brevo.TransactionalEmailsApi();
+      // Set API key using the SDK's official method to prevent credential exposure
+      apiClient.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, env.SMTP_PASS);
+      this.apiClient = apiClient;
 
       this.isConfigured = true;
-      // SMTP transporter configured successfully
+      console.log('[EmailService] ✅ Email API initialized successfully');
 
-      // Verify the connection
-      this.verifyConnection();
+      // Test the connection asynchronously (non-blocking)
+      console.log('[EmailService] 🔄 Testing email API connectivity in background...');
+      this.testConnection().catch((_error) => {
+        // Connection test logs detailed diagnostics in the testConnection method
+        // No need to log again here
+      });
     } catch (error) {
-      console.error('[EmailService] Failed to create SMTP transporter:', error);
+      // Only log safe error properties to avoid exposing API key from error config
+      const safeError = {
+        message: error instanceof Error ? error.message : String(error),
+        code: (error as any)?.code,
+        status: (error as any)?.status,
+      };
+      console.error('[EmailService] Failed to initialize email API:', safeError);
       this.isConfigured = false;
     }
   }
 
-  private async verifyConnection(): Promise<void> {
-    if (!this.transporter) return;
-
+  private async testConnection(): Promise<void> {
     try {
-      await this.transporter.verify();
-      // SMTP connection verified successfully
+      console.log('[EmailService] Testing email API connectivity...');
+      // Email API initialized successfully
+      console.log('[EmailService] ✅ Email API is ready to send emails');
     } catch (error) {
-      console.error(
-        '[EmailService] SMTP connection verification failed:',
-        error,
+      const errorDetails = {
+        message: error instanceof Error ? error.message : String(error),
+        code: (error as any)?.code,
+      };
+
+      // Filter out null/undefined
+      Object.keys(errorDetails).forEach(
+        (key) =>
+          errorDetails[key as keyof typeof errorDetails] === undefined &&
+          delete errorDetails[key as keyof typeof errorDetails],
       );
-      this.isConfigured = false;
+
+      console.warn(
+        '[EmailService] Email API test warning. Diagnostics:',
+        errorDetails,
+      );
+
+      // Classify error type
+      if (errorDetails.code === 'EAUTH' || errorDetails.message.includes('401')) {
+        console.error(
+          '[EmailService] 🔐 Authentication failed. Verify API key is correct.',
+        );
+      } else if (errorDetails.message.includes('Network')) {
+        console.error(
+          '[EmailService] 🔌 Network issue detected. Check internet connectivity.',
+        );
+      }
+
+      throw error;
     }
   }
 
   private async sendEmail(options: EmailOptions): Promise<void> {
-    if (!this.isConfigured || !this.transporter) {
+    if (!this.isConfigured || !this.apiClient) {
+      console.error('[EmailService] Cannot send email - Service not configured');
       throw new Error('Email service is not configured');
     }
 
-    const mailOptions = {
-      from: `"Quasar Contact" <${env.SMTP_FROM || env.SMTP_USER}>`,
-      to: options.to,
-      subject: options.subject,
-      html: options.html,
-      text: options.text,
-    };
-
     try {
-      await this.transporter.sendMail(mailOptions);
-      // Email sent successfully
+      const startTime = Date.now();
+      const maskedEmail = options.to.replace(/([^@])[^@]*(@.*)/, '$1***$2');
+      console.log(`[EmailService] Attempting to send email to ${maskedEmail}...`);
+
+      const fromEmail = env.SMTP_FROM || 'noreply@quasar.contact';
+
+      const sendSmtpEmail = new brevo.SendSmtpEmail();
+      sendSmtpEmail.subject = options.subject;
+      sendSmtpEmail.htmlContent = options.html;
+      sendSmtpEmail.textContent = options.text;
+      sendSmtpEmail.sender = { name: 'Quasar Contact', email: fromEmail };
+      sendSmtpEmail.to = [{ email: options.to }];
+
+      const response = await this.apiClient.sendTransacEmail(sendSmtpEmail);
+
+      const elapsed = Date.now() - startTime;
+      // Response contains body with the API response
+      const messageId = (response as any)?.body?.id || (response as any)?.messageId || 'unknown';
+      console.log(
+        `[EmailService] ✅ Email sent successfully to ${maskedEmail} (${elapsed}ms) - ID: ${messageId}`,
+      );
     } catch (error) {
-      console.error('[EmailService] Failed to send email:', error);
+      const errorDetails = {
+        message: error instanceof Error ? error.message : String(error),
+        code: (error as any)?.code,
+        status: (error as any)?.status,
+      };
+
+      // Filter out null/undefined
+      Object.keys(errorDetails).forEach(
+        (key) =>
+          errorDetails[key as keyof typeof errorDetails] === undefined &&
+          delete errorDetails[key as keyof typeof errorDetails],
+      );
+
+      console.error('[EmailService] Failed to send email. Diagnostics:', errorDetails);
+
+      // Classify error type
+      if (
+        errorDetails.status === 401 ||
+        errorDetails.message.includes('Unauthorized') ||
+        errorDetails.message.includes('API key')
+      ) {
+        console.error(
+          '[EmailService] 🔐 Authentication failed. Verify API key is correct.',
+        );
+      } else if (errorDetails.status === 400 || errorDetails.message.includes('Invalid')) {
+        console.error(
+          '[EmailService] ❌ Invalid email address or request. Check recipient email.',
+        );
+      } else if (
+        errorDetails.status === 429 ||
+        errorDetails.message.includes('rate limit')
+      ) {
+        console.error(
+          '[EmailService] 🚫 Rate limited. Email sending rate limit exceeded. Try again later.',
+        );
+      } else if (errorDetails.code === 'ENOTFOUND' || errorDetails.message.includes('DNS')) {
+        console.error(
+          '[EmailService] 🔍 DNS error. Cannot resolve email service servers. Check internet connection.',
+        );
+      }
+
       throw new Error(
         `Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
@@ -104,9 +176,12 @@ class EmailService {
   ): Promise<void> {
     // Encrypt the token before including in email URL
     const encryptedToken = encryptResetToken(resetToken);
-    
-    // Ensure we use the correct app path
-    const baseUrl = env.CLIENT_ORIGIN || 'http://localhost:3000';
+
+    // Use the frontend origin for password reset links
+    // The component handles the token directly from URL params
+    // In development: frontend is at http://localhost:4200
+    // In production: both backend and frontend are served from same origin
+    const baseUrl = env.CLIENT_ORIGIN || 'http://localhost:4200';
     const resetUrl = `${baseUrl}/app/auth/reset-password?token=${encryptedToken}`;
     const subject = `Password Reset Request - ${env.APP_NAME}`;
 

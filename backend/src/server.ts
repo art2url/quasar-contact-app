@@ -4,6 +4,7 @@ import { connectDatabase, disconnectDatabase } from './services/database.service
 import app from './app';
 import { setupSocket } from './sockets';
 import env from './config/env';
+import { cleanupExpiredTokens } from './utils/refresh-token.utils';
 
 // Static file serving is now handled in app.ts - remove from here to avoid conflicts
 
@@ -32,11 +33,6 @@ const io = new Server(server, {
     skipMiddlewares: true,
   },
 
-  // Enhanced error handling
-  allowRequest: (req, callback) => {
-    // Additional request validation can be added here
-    callback(null, true);
-  },
 });
 
 // Enhanced server monitoring and logging
@@ -84,6 +80,29 @@ server.listen(env.PORT, () => {
   connectDatabase()
     .then(() => {
       // Database connected successfully
+
+      // Set up periodic cleanup of expired refresh tokens (runs daily)
+      setInterval(async () => {
+        try {
+          const deleted = await cleanupExpiredTokens();
+          if (deleted > 0) {
+            console.log(`🧹 Cleaned up ${deleted} expired refresh token(s)`);
+          }
+        } catch (err) {
+          console.error('❌ Error during token cleanup:', err);
+        }
+      }, 24 * 60 * 60 * 1000); // Run every 24 hours
+
+      // Run initial cleanup on startup
+      cleanupExpiredTokens()
+        .then(deleted => {
+          if (deleted > 0) {
+            console.log(`🧹 Initial cleanup: removed ${deleted} expired refresh token(s)`);
+          }
+        })
+        .catch(err => {
+          console.error('❌ Initial token cleanup failed:', err);
+        });
     })
     .catch(err => {
       console.error('❌ DB connection failed:', err);

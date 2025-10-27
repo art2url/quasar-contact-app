@@ -1,4 +1,4 @@
-import cors, { CorsOptions } from 'cors';
+import cors from 'cors';
 import env from './env';
 
 // Explicitly set allowed origins for development and production
@@ -9,8 +9,11 @@ const allowedOrigins = [
 ].filter(Boolean); // Remove any undefined/null values
 
 // A dynamic origin checker
-const originChecker: CorsOptions['origin'] = (incoming, callback) => {
-  // Allow requests with no origin (like mobile apps, curl, Postman, etc.)
+const originChecker = (
+  incoming: string | undefined,
+  callback: (err: Error | null, allow?: boolean) => void,
+): void => {
+  // Allow requests without origin (for health checks, proxies, load balancers, static files)
   if (!incoming) {
     callback(null, true);
     return;
@@ -57,11 +60,8 @@ export const socketCorsOptions = {
   pingTimeout: 60000, // 60 seconds
   pingInterval: 25000, // 25 seconds
   upgradeTimeout: 30000, // 30 seconds
-  // Enhanced error handling
-  allowRequest: (_req: any, callback: any) => {
-    // Additional validation can be added here
-    callback(null, true);
-  },
+  // Note: allowRequest callback removed to prevent CORS bypass
+  // Origin validation is enforced through the cors configuration above
   // Connection state recovery
   connectionStateRecovery: {
     // the backup duration of the sessions and the packets

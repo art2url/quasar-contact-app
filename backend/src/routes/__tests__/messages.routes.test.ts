@@ -521,8 +521,9 @@ describe('Messages API Routes (Security Critical Tests)', () => {
         .set('Cookie', `auth_token=${validToken}`)
         .send({ avatarUrl: 'avatar.jpg' });
 
-      expect(response.status).toBe(400);
-      expect(response.body.message).toBe('ciphertext required');
+      expect(response.status).toBe(422);
+      expect(response.body.errors).toBeDefined();
+      expect(response.body.errors[0].msg).toBe('ciphertext required');
     });
 
     it('only allows sender to edit their own messages', async () => {

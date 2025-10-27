@@ -40,7 +40,7 @@ describe('ResetPasswordComponent', () => {
 
     // Create spies for services
     mockAuthService = jasmine.createSpyObj('AuthService', [
-      'validateResetToken', 'resetPassword', 'markPostPasswordReset'
+      'validateResetToken', 'resetPassword', 'markPostPasswordReset', 'claimResetToken'
     ]);
     
     mockQueryParamMap = jasmine.createSpyObj('ParamMap', ['get']);
@@ -62,10 +62,11 @@ describe('ResetPasswordComponent', () => {
 
     fixture = TestBed.createComponent(ResetPasswordComponent);
     component = fixture.componentInstance;
-    
+
     // Setup default mock returns
     mockQueryParamMap.get.and.returnValue('valid-token');
     mockAuthService.validateResetToken.and.returnValue(of({ valid: true }));
+    mockAuthService.claimResetToken.and.returnValue(of({ success: true, token: 'claimed-token' }));
     
     // Reset component state
     resetComponentState();
@@ -125,26 +126,37 @@ describe('ResetPasswordComponent', () => {
     // Test valid token scenario
     mockQueryParamMap.get.and.returnValue('valid-token');
     mockAuthService.validateResetToken.and.returnValue(of({ valid: true }));
-    
+
     component.ngOnInit();
-    
+
     expect(mockAuthService.validateResetToken).toHaveBeenCalledWith('valid-token');
     expect(component.tokenError).toBe(false);
-    
-    // Test missing token scenario
+
+    // Test missing token scenario - should claim from session
     mockQueryParamMap.get.and.returnValue(null);
+    mockAuthService.claimResetToken.and.returnValue(of({ success: true, token: 'claimed-token' }));
+    mockAuthService.validateResetToken.and.returnValue(of({ valid: true }));
     resetComponentState();
-    
+
+    component.ngOnInit();
+    expect(mockAuthService.claimResetToken).toHaveBeenCalled();
+    expect(component.tokenError).toBe(false);
+
+    // Test claim failure scenario
+    mockQueryParamMap.get.and.returnValue(null);
+    mockAuthService.claimResetToken.and.returnValue(of({ success: false }));
+    resetComponentState();
+
     component.ngOnInit();
     expect(component.tokenError).toBe(true);
-    
+
     // Test invalid token scenario
     mockQueryParamMap.get.and.returnValue('invalid-token');
     mockAuthService.validateResetToken.and.returnValue(
       throwError(() => ({ status: 401, error: { message: 'Invalid token' } }))
     );
     resetComponentState();
-    
+
     component.ngOnInit();
     expect(component.tokenError).toBe(true);
   });
@@ -220,26 +232,26 @@ describe('ResetPasswordComponent', () => {
     // Test password mismatch
     component.password = 'password123';
     component.confirmPassword = 'different';
-    
+
     component.onSubmit();
     expect(component.error).toBe('Passwords do not match');
     expect(mockAuthService.resetPassword).not.toHaveBeenCalled();
-    
+
     // Test short password
     resetComponentState();
     component.password = '123';
     component.confirmPassword = '123';
-    
+
     component.onSubmit();
     expect(component.error).toBe('Please fix the errors above');
-    
+
     // Test missing token during submit
     resetComponentState();
     component.password = 'password123';
     component.confirmPassword = 'password123';
-    mockQueryParamMap.get.and.returnValue(null);
-    component.ngOnInit();
-    
+    // Don't initialize with a token - just call onSubmit directly
+    // This simulates the case where token is not available
+
     component.onSubmit();
     expect(component.error).toBe('Invalid reset link');
   });
@@ -296,21 +308,23 @@ describe('ResetPasswordComponent', () => {
     // Test initialization with valid token
     mockQueryParamMap.get.and.returnValue('valid-token');
     mockAuthService.validateResetToken.and.returnValue(of({ valid: true }));
-    
+
     component.ngOnInit();
-    
+
     expect(mockQueryParamMap.get).toHaveBeenCalledWith('token');
     expect(mockAuthService.validateResetToken).toHaveBeenCalledWith('valid-token');
     expect(component.tokenError).toBe(false);
-    
-    // Test initialization without token
+
+    // Test initialization without token - should try to claim from session
     resetComponentState();
     mockQueryParamMap.get.and.returnValue(null);
+    mockAuthService.claimResetToken.and.returnValue(of({ success: false }));
     mockAuthService.validateResetToken.calls.reset(); // Reset call count
-    
+
     component.ngOnInit();
-    
+
     expect(component.tokenError).toBe(true);
+    expect(mockAuthService.claimResetToken).toHaveBeenCalled();
     expect(mockAuthService.validateResetToken).not.toHaveBeenCalled();
   });
 

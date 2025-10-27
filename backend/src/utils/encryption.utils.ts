@@ -1,14 +1,29 @@
 import crypto from 'crypto';
 import env from '../config/env';
 
-// Use a key derived from dedicated TOKEN_ENCRYPTION_SECRET for token encryption
-const ENCRYPTION_KEY = crypto.scryptSync(
-  env.TOKEN_ENCRYPTION_SECRET,
-  'reset-token-salt',
-  32,
-);
-
 const ALGORITHM = 'aes-256-cbc';
+
+// Lazy initialization of encryption key to support test environments
+// where env variables may not be set at module load time
+let ENCRYPTION_KEY: Buffer | null = null;
+
+/**
+ * Get the encryption key, deriving it on first use if needed
+ * This allows tests to set environment variables before the key is derived
+ */
+function getEncryptionKey(): Buffer {
+  if (!ENCRYPTION_KEY) {
+    if (!env.TOKEN_ENCRYPTION_SECRET) {
+      throw new Error('TOKEN_ENCRYPTION_SECRET is not set');
+    }
+    ENCRYPTION_KEY = crypto.scryptSync(
+      env.TOKEN_ENCRYPTION_SECRET,
+      'reset-token-salt',
+      32,
+    );
+  }
+  return ENCRYPTION_KEY;
+}
 
 /**
  * Encrypt a password reset token for email transmission
@@ -17,7 +32,7 @@ const ALGORITHM = 'aes-256-cbc';
  */
 export function encryptResetToken(token: string): string {
   const iv = crypto.randomBytes(16); // 16 bytes for CBC
-  const cipher = crypto.createCipheriv(ALGORITHM, ENCRYPTION_KEY, iv);
+  const cipher = crypto.createCipheriv(ALGORITHM, getEncryptionKey(), iv);
   
   let encrypted = cipher.update(token, 'utf8', 'hex');
   encrypted += cipher.final('hex');
@@ -56,7 +71,7 @@ export function decryptResetToken(encryptedToken: string): string {
     }
     
     const iv = Buffer.from(ivHex, 'hex');
-    const decipher = crypto.createDecipheriv(ALGORITHM, ENCRYPTION_KEY, iv);
+    const decipher = crypto.createDecipheriv(ALGORITHM, getEncryptionKey(), iv);
     
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');

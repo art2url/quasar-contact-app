@@ -98,9 +98,30 @@ export const emitToUser = (
   }
 };
 
+// Rate limiting for socket connections
+const socketAuthAttempts = new Map<string, { count: number; lastAttempt: number }>();
+const MAX_AUTH_ATTEMPTS = 5;
+const AUTH_WINDOW = 15 * 60 * 1000; // 15 minutes
+
 export const setupSocket = (io: Server) => {
-  // Enhanced authentication middleware (now using cookies)
+  // Enhanced authentication middleware with rate limiting
   io.use((socket: Socket, next) => {
+    const clientIP = socket.handshake.address || 'unknown';
+
+    // Check rate limiting
+    const now = Date.now();
+    const attempts = socketAuthAttempts.get(clientIP);
+
+    if (attempts && now - attempts.lastAttempt < AUTH_WINDOW) {
+      if (attempts.count >= MAX_AUTH_ATTEMPTS) {
+        console.error(`❌ Socket auth rate limit exceeded for ${clientIP}`);
+        return next(new Error('Too many authentication attempts'));
+      }
+    } else {
+      // Reset counter if window expired
+      socketAuthAttempts.set(clientIP, { count: 0, lastAttempt: now });
+    }
+
     // First try to get token from auth.token (backward compatibility)
     let token = socket.handshake.auth.token as string | undefined;
 
@@ -120,6 +141,10 @@ export const setupSocket = (io: Server) => {
     }
 
     if (!token) {
+      // Increment failed attempts
+      const current = socketAuthAttempts.get(clientIP) || { count: 0, lastAttempt: now };
+      socketAuthAttempts.set(clientIP, { count: current.count + 1, lastAttempt: now });
+
       console.error('❌ Socket auth failed: No token in auth or cookies');
       return next(new Error('Authentication token missing'));
     }
@@ -134,9 +159,16 @@ export const setupSocket = (io: Server) => {
       socket.data.username = username;
       socket.data.avatarUrl = avatarUrl;
 
+      // Reset failed attempts on successful auth
+      socketAuthAttempts.delete(clientIP);
+
       // Socket authenticated successfully
       next();
     } catch (err) {
+      // Increment failed attempts
+      const current = socketAuthAttempts.get(clientIP) || { count: 0, lastAttempt: now };
+      socketAuthAttempts.set(clientIP, { count: current.count + 1, lastAttempt: now });
+
       console.error('❌ Socket auth failed:', err);
       next(new Error('Invalid token'));
     }

@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { SECURITY_LIMITS } from '../config/security-limits';
 import { decryptResetToken, isValidEncryptedTokenFormat } from './encryption.utils';
 
 export interface PendingResetSession {
@@ -10,6 +11,7 @@ export interface PendingResetSession {
 
 /**
  * Process an encrypted password reset token from URL and store in session
+ * Includes session regeneration to prevent session fixation attacks
  * @param req - Express request object
  * @param res - Express response object
  * @param encryptedToken - The encrypted token from URL query parameter
@@ -36,16 +38,38 @@ export function processPasswordResetToken(
     // Decrypt the token
     const rawToken = decryptResetToken(encryptedToken);
 
-    // Store decrypted token securely in session
-    req.session.pendingReset = {
-      token: rawToken,
-      expires: Date.now() + 600000, // 10 minutes
-      used: false,
-      createdAt: Date.now(),
-    };
+    // SECURITY: Regenerate session to prevent session fixation attacks
+    // This ensures that an attacker cannot use a pre-existing session to claim a token
+    if (typeof (req.session as any).regenerate === 'function') {
+      (req.session as any).regenerate((err: Error | null) => {
+        if (err) {
+          console.error('[Password Reset] Session regeneration failed:', err);
+          res.redirect('/app/auth/login?error=session_error');
+          return;
+        }
 
-    // Redirect without token in URL for security
-    res.redirect('/app/?reset=1');
+        // Store decrypted token securely in NEW session (after regeneration)
+        req.session.pendingReset = {
+          token: rawToken,
+          expires: Date.now() + SECURITY_LIMITS.PASSWORD_RESET.TOKEN_EXPIRY_MS, // 10 minutes
+          used: false,
+          createdAt: Date.now(),
+        };
+
+        // Redirect to reset-password page to enter new credentials
+        res.redirect('/app/auth/reset-password');
+      });
+    } else {
+      // In tests or environments without session.regenerate, store directly
+      req.session.pendingReset = {
+        token: rawToken,
+        expires: Date.now() + SECURITY_LIMITS.PASSWORD_RESET.TOKEN_EXPIRY_MS, // 10 minutes
+        used: false,
+        createdAt: Date.now(),
+      };
+      res.redirect('/app/auth/reset-password');
+    }
+
     return true;
   } catch (error) {
     console.error('[Password Reset] Token decryption failed:', error);

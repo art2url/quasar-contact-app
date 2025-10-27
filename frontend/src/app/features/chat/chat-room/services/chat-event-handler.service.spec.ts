@@ -21,7 +21,12 @@ describe('ChatEventHandlerService (Business Logic)', () => {
   let mockChatTypingService: jasmine.SpyObj<ChatTypingService>;
   let mockNgZone: jasmine.SpyObj<NgZone>;
 
+  let originalRequestAnimationFrame: typeof requestAnimationFrame;
+
   beforeEach(() => {
+    // Store original requestAnimationFrame before any mocking
+    originalRequestAnimationFrame = window.requestAnimationFrame;
+
     mockChatSessionService = jasmine.createSpyObj('ChatSessionService', [
       'ensureKeysMissingFlagSet'
     ]);
@@ -32,14 +37,14 @@ describe('ChatEventHandlerService (Business Logic)', () => {
       'markUserMessagesAsRead'
     ]);
     mockChatMessageService = jasmine.createSpyObj('ChatMessageService', [
-      'groupMessagesByDate', 'handleNewMessages', 'resetNewMessagesCount', 
+      'groupMessagesByDate', 'handleNewMessages', 'resetNewMessagesCount',
       'getUnreadFromPartner', 'markAsReported'
     ]);
     mockChatScrollService = jasmine.createSpyObj('ChatScrollService', [
       'handleInitialScroll', 'getCurrentScrollState', 'handleNewMessages', 'handleScrollEvent'
     ]);
     mockChatUiStateService = jasmine.createSpyObj('ChatUiStateService', [
-      'setLoadingMessages', 'checkForCacheIssues', 'getCurrentLoadingState', 
+      'setLoadingMessages', 'checkForCacheIssues', 'getCurrentLoadingState',
       'getCurrentReadStatus', 'setMarkedMessagesAsRead'
     ]);
     mockChatTypingService = jasmine.createSpyObj('ChatTypingService', [
@@ -100,6 +105,20 @@ describe('ChatEventHandlerService (Business Logic)', () => {
       mockChatTypingService,
       mockNgZone
     );
+  });
+
+  afterEach(() => {
+    // Restore original requestAnimationFrame and remove any spies
+    try {
+      const windowAny = window as unknown as Record<string, { restore?: () => void }>;
+      const windowSpy = windowAny['requestAnimationFrame'];
+      if (windowSpy && windowSpy.restore) {
+        windowSpy.restore();
+      }
+    } catch (_error) {
+      // Ignore errors during cleanup
+    }
+    (window as unknown as Record<string, typeof requestAnimationFrame>)['requestAnimationFrame'] = originalRequestAnimationFrame;
   });
 
   // Run: npm test -- --include="**/chat-event-handler.service.spec.ts"
@@ -189,10 +208,17 @@ describe('ChatEventHandlerService (Business Logic)', () => {
   describe('Typing Indicator Handling', () => {
     it('updates typing indicator position when partner typing changes', (done) => {
       // Mock requestAnimationFrame to execute callbacks immediately
-      spyOn(window, 'requestAnimationFrame').and.callFake((callback) => {
-        callback(0);
-        return 0;
-      });
+      // Check if already spied, if so clear it first
+      const windowAny = window as unknown as Record<string, { calls?: { reset: () => void } }>;
+      const rafSpy = windowAny['requestAnimationFrame'];
+      if (rafSpy && rafSpy.calls) {
+        rafSpy.calls.reset();
+      } else {
+        spyOn(window, 'requestAnimationFrame').and.callFake((callback) => {
+          callback(0);
+          return 0;
+        });
+      }
 
       service.initializeEventHandlers('user123', document.createElement('div'));
 
