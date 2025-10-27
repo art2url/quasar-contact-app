@@ -1,7 +1,15 @@
 import * as dotenv from 'dotenv';
+import path from 'path';
 
-// Load test environment variables - SAFELY ONLY FOR TESTING
-dotenv.config({ path: '.env.test' });
+// Load test environment variables FIRST - SAFELY ONLY FOR TESTING
+// This must happen before any other imports that use env variables
+const envPath = path.resolve(__dirname, '../../.env.test');
+dotenv.config({ path: envPath });
+
+// Set NODE_ENV to test if not already set
+if (!process.env.NODE_ENV) {
+  process.env.NODE_ENV = 'test';
+}
 
 // SAFETY CHECK: Ensure we're in test environment
 const ensureTestEnvironment = (): void => {

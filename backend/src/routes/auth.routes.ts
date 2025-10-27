@@ -22,6 +22,7 @@ import {
   setCSRFCookie,
   setRefreshTokenCookie,
 } from '../utils/cookie.utils';
+import { decryptResetToken } from '../utils/encryption.utils';
 import {
   createRefreshToken,
   revokeAllUserRefreshTokens,
@@ -366,8 +367,11 @@ router.get('/reset-password/validate', async (req: Request, res: Response) => {
   }
 
   try {
-    // Hash the token to compare with stored version
-    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    // Decrypt the token (it comes encrypted from the email link)
+    const decryptedToken = decryptResetToken(token);
+
+    // Hash the decrypted token to compare with stored version
+    const hashedToken = crypto.createHash('sha256').update(decryptedToken).digest('hex');
 
     // Find valid reset record
     const resetRecord = await prisma.passwordReset.findFirst({
@@ -446,10 +450,13 @@ router.post(
     const { token, password } = req.body;
 
     try {
-      // Hash the token to compare with stored version
+      // Decrypt the token (it comes encrypted from the email link)
+      const decryptedToken = decryptResetToken(token);
+
+      // Hash the decrypted token to compare with stored version
       const hashedToken = crypto
         .createHash('sha256')
-        .update(token)
+        .update(decryptedToken)
         .digest('hex');
 
       // Find valid reset record

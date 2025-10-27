@@ -74,6 +74,12 @@ jest.mock('axios', () => ({
   post: jest.fn(),
 }));
 
+jest.mock('../../utils/encryption.utils', () => ({
+  decryptResetToken: jest.fn((token: string) => token.replace('encrypted-', '')),
+  encryptResetToken: jest.fn((token: string) => `encrypted-${token}`),
+  isValidEncryptedTokenFormat: jest.fn(() => true),
+}));
+
 // Create test app with all middleware
 const app = express();
 app.use(express.json());
