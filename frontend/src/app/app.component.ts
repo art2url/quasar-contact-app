@@ -283,10 +283,14 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
           // Check if we have a reset session indicator in URL - if so, don't redirect yet
           const urlParams = new URLSearchParams(window.location.search);
           const hasResetToken = urlParams.has('reset');
-          
-          const isAuthPage = this.router.url.includes('/auth/');
+          const hasPasswordResetToken = urlParams.has('token'); // Email reset link token
 
-          if (!isAuthPage && !hasResetToken) {
+          // Use window.location.pathname for more reliable detection during app initialization
+          // (this.router.url may not be set yet when this subscription fires on app startup)
+          const currentPath = window.location.pathname;
+          const isAuthPage = currentPath.includes('/auth/');
+
+          if (!isAuthPage && !hasResetToken && !hasPasswordResetToken) {
             // Redirecting unauthenticated user to login
             this.router.navigate(['/auth/login']);
           }
