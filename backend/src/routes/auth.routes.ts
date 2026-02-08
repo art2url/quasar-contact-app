@@ -8,17 +8,27 @@ import { Router, type Request, type Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import env from '../config/env';
-import { authLimiter } from '../config/ratelimits';
+import { authLimiter, resetTokenClaimLimiter } from '../config/ratelimits';
+import { SECURITY_LIMITS } from '../config/security-limits';
 import { validateCSRF } from '../middleware/csrf.middleware';
 import { validateHoneypot } from '../middleware/honeypot-captcha';
 import { prisma } from '../services/database.service';
 import emailService from '../services/email.service';
 import {
   clearAuthCookie,
+  clearRefreshTokenCookie,
   generateCSRFToken,
   setAuthCookie,
   setCSRFCookie,
+  setRefreshTokenCookie,
 } from '../utils/cookie.utils';
+import { decryptResetToken } from '../utils/encryption.utils';
+import {
+  createRefreshToken,
+  revokeAllUserRefreshTokens,
+  revokeRefreshToken,
+  validateAndConsumeRefreshToken,
+} from '../utils/refresh-token.utils';
 
 const router = Router();
 
@@ -73,8 +83,35 @@ router.post(
     // Require a valid email address.
     body('email').isEmail().withMessage('A valid email is required.'),
     body('password')
-      .isLength({ min: 6 })
-      .withMessage('Password must be at least 6 characters long.'),
+      .isLength({ min: 8 })
+      .withMessage('Password must be at least 8 characters long.'),
+    body('avatarUrl')
+      .optional()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage('Avatar URL must be under 500 characters')
+      .custom((value) => {
+        if (!value) return true; // Allow empty
+
+        // Allow HTTPS URLs
+        const isHttpsUrl =
+          /^https:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(\/[a-zA-Z0-9\-\._~:\/?#\[\]@!$&'()*+,;=%]*)?$/i.test(
+            value,
+          );
+
+        // Allow safe relative paths
+        const isRelativePath =
+          /^[a-zA-Z0-9_\-]+([\/][a-zA-Z0-9_\-]+)*\.(svg|png|jpg|jpeg|gif|webp)$/i.test(
+            value,
+          );
+
+        if (!isHttpsUrl && !isRelativePath) {
+          throw new Error(
+            'Avatar URL must be either a valid HTTPS URL or a relative path to an image',
+          );
+        }
+        return true;
+      }),
     body('turnstileToken')
       .optional()
       .isString()
@@ -115,7 +152,7 @@ router.post(
       }
 
       // Hash password
-      const salt = await bcrypt.genSalt(10);
+      const salt = await bcrypt.genSalt(SECURITY_LIMITS.AUTH.BCRYPT_ROUNDS);
       const passwordHash = await bcrypt.hash(password, salt);
 
       // Create new user with email included.
@@ -187,6 +224,8 @@ router.post(
         return res.status(401).json({ message: 'Invalid credentials.' });
       }
 
+      // JWT access token: 24h expiry reduces impact of token theft
+      // Refresh tokens (30d) provide seamless re-authentication
       const token = jwt.sign(
         {
           userId: user.id,
@@ -194,15 +233,19 @@ router.post(
           avatarUrl: user.avatarUrl,
         },
         env.JWT_SECRET,
-        { expiresIn: '7d' },
+        { expiresIn: SECURITY_LIMITS.AUTH.JWT_EXPIRY },
       );
 
       // Generate CSRF token for additional security
       const csrfToken = generateCSRFToken();
 
+      // Create refresh token for token rotation
+      const refreshToken = await createRefreshToken(user.id);
+
       // Set secure cookies
       setAuthCookie(res, token);
       setCSRFCookie(res, csrfToken);
+      setRefreshTokenCookie(res, refreshToken);
 
       res.status(200).json({
         message: 'Login successful.',
@@ -267,7 +310,7 @@ router.post(
       const recentReset = await prisma.passwordReset.findFirst({
         where: {
           userId: user.id,
-          createdAt: { gte: new Date(Date.now() - 5 * 60 * 1000) }, // 5 minutes
+          createdAt: { gte: new Date(Date.now() - SECURITY_LIMITS.PASSWORD_RESET.RATE_LIMIT_WINDOW_MS) },
           used: false,
         },
       });
@@ -293,7 +336,7 @@ router.post(
           userId: user.id,
           email: user.email,
           token: hashedToken,
-          expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+          expiresAt: new Date(Date.now() + SECURITY_LIMITS.PASSWORD_RESET.TOKEN_EXPIRY_MS), // 10 minutes
         },
       });
 
@@ -324,8 +367,11 @@ router.get('/reset-password/validate', async (req: Request, res: Response) => {
   }
 
   try {
-    // Hash the token to compare with stored version
-    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    // Decrypt the token (it comes encrypted from the email link)
+    const decryptedToken = decryptResetToken(token);
+
+    // Hash the decrypted token to compare with stored version
+    const hashedToken = crypto.createHash('sha256').update(decryptedToken).digest('hex');
 
     // Find valid reset record
     const resetRecord = await prisma.passwordReset.findFirst({
@@ -350,46 +396,50 @@ router.get('/reset-password/validate', async (req: Request, res: Response) => {
 });
 
 // POST /api/auth/claim-reset-token - Secure session-based token retrieval
-router.post('/claim-reset-token', async (req: Request, res: Response) => {
+// Note: No CSRF protection here as this endpoint is accessed by unauthenticated users
+// CSRF protection is validated via session fixation prevention and rate limiting
+router.post('/claim-reset-token', resetTokenClaimLimiter, async (req: Request, res: Response) => {
   try {
     // Import password reset utility
     const { getPendingResetFromSession, markResetTokenAsUsed } = require('../utils/password-reset.utils');
-    
+
     const pendingReset = getPendingResetFromSession(req);
-    
+
     if (!pendingReset) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'No valid reset session found. Session may have expired or already been used.', 
+      return res.status(400).json({
+        success: false,
+        message: 'No valid reset session found. Session may have expired or already been used.',
       });
     }
-    
+
     // Mark as used (one-time use)
     markResetTokenAsUsed(req);
-    
+
     // Return the token securely
-    res.status(200).json({ 
-      success: true, 
-      token: pendingReset.token, 
+    res.status(200).json({
+      success: true,
+      token: pendingReset.token,
     });
-    
+
   } catch (error) {
     console.error('[Claim Reset Token Error]', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error while claiming reset token.', 
+    res.status(500).json({
+      success: false,
+      message: 'Server error while claiming reset token.',
     });
   }
 });
 
 // POST /api/auth/reset-password
+// Note: No CSRF protection here as this endpoint is accessed by unauthenticated users
+// The password reset token is the protection mechanism (secret token from email + session binding)
 router.post(
   '/reset-password',
   [
     body('token').notEmpty().withMessage('Reset token is required.'),
     body('password')
-      .isLength({ min: 6 })
-      .withMessage('Password must be at least 6 characters long.'),
+      .isLength({ min: 8 })
+      .withMessage('Password must be at least 8 characters long.'),
   ],
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
@@ -400,10 +450,13 @@ router.post(
     const { token, password } = req.body;
 
     try {
-      // Hash the token to compare with stored version
+      // Decrypt the token (it comes encrypted from the email link)
+      const decryptedToken = decryptResetToken(token);
+
+      // Hash the decrypted token to compare with stored version
       const hashedToken = crypto
         .createHash('sha256')
-        .update(token)
+        .update(decryptedToken)
         .digest('hex');
 
       // Find valid reset record
@@ -430,7 +483,7 @@ router.post(
       }
 
       // Hash new password
-      const salt = await bcrypt.genSalt(10);
+      const salt = await bcrypt.genSalt(SECURITY_LIMITS.AUTH.BCRYPT_ROUNDS);
       const passwordHash = await bcrypt.hash(password, salt);
 
       // Update user password
@@ -456,12 +509,23 @@ router.post(
       // Password reset successful
       // Deleted all messages for user
 
+      // Revoke all refresh tokens for security (force re-login on all devices)
+      await revokeAllUserRefreshTokens(user.id);
+
       // Send confirmation e-mail
       await emailService.sendPasswordResetConfirmation(user.email);
 
-      res.status(200).json({
-        message:
-          'Password reset successful. All previous messages have been deleted.',
+      // Regenerate session to prevent session fixation attacks
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error('[Session Regeneration Error]', err);
+          // Still return success as password was changed
+        }
+
+        res.status(200).json({
+          message:
+            'Password reset successful. All previous messages have been deleted.',
+        });
       });
     } catch (error) {
       console.error('[Reset Password Error]', error);
@@ -470,11 +534,99 @@ router.post(
   },
 );
 
+// POST /api/auth/refresh - Refresh access token using refresh token
+router.post('/refresh', validateCSRF, async (req: Request, res: Response) => {
+  try {
+    const refreshToken = req.cookies?.refresh_token;
+
+    if (!refreshToken) {
+      return res.status(401).json({ message: 'Refresh token missing.' });
+    }
+
+    // Atomically validate and consume refresh token to prevent race conditions
+    let userId: string | null;
+    try {
+      userId = await validateAndConsumeRefreshToken(refreshToken);
+    } catch (error) {
+      // Detect concurrent token use attempts (potential security incident)
+      if (error instanceof Error && error.message === 'REFRESH_TOKEN_ALREADY_USED') {
+        console.warn('[Security] Refresh token reuse attempt detected:', {
+          ip: req.ip,
+          userAgent: req.get('User-Agent'),
+          timestamp: new Date().toISOString(),
+        });
+        clearRefreshTokenCookie(res);
+        return res.status(403).json({
+          message: 'Token already used. Please login again.',
+        });
+      }
+      throw error;
+    }
+
+    if (!userId) {
+      clearRefreshTokenCookie(res);
+      return res.status(403).json({ message: 'Invalid or expired refresh token.' });
+    }
+
+    // Get user data
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        avatarUrl: true,
+      },
+    });
+
+    if (!user) {
+      clearRefreshTokenCookie(res);
+      return res.status(403).json({ message: 'User not found.' });
+    }
+
+    // Generate new access token
+    const newAccessToken = jwt.sign(
+      {
+        userId: user.id,
+        username: user.username,
+        avatarUrl: user.avatarUrl,
+      },
+      env.JWT_SECRET,
+      { expiresIn: SECURITY_LIMITS.AUTH.JWT_EXPIRY },
+    );
+
+    // Create new refresh token (old one was atomically deleted)
+    const newRefreshToken = await createRefreshToken(userId);
+
+    // Set new cookies
+    setAuthCookie(res, newAccessToken);
+    setRefreshTokenCookie(res, newRefreshToken);
+
+    res.status(200).json({
+      message: 'Token refreshed successfully.',
+      user: {
+        id: user.id,
+        username: user.username,
+        avatarUrl: user.avatarUrl,
+      },
+    });
+  } catch (error) {
+    console.error('[Token Refresh Error]', error);
+    res.status(500).json({ message: 'Server error during token refresh.' });
+  }
+});
+
 // POST /api/auth/logout
 router.post('/logout', validateCSRF, async (req: Request, res: Response) => {
   try {
+    // Revoke refresh token if present
+    const refreshToken = req.cookies?.refresh_token;
+    if (refreshToken) {
+      await revokeRefreshToken(refreshToken);
+    }
+
     // Clear authentication cookies
     clearAuthCookie(res);
+    clearRefreshTokenCookie(res);
     res.clearCookie('csrf_token', {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',

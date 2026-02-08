@@ -315,9 +315,9 @@ document.addEventListener('DOMContentLoaded', function () {
     encryptionTech.classList.add('fade-in-up');
   }
 
-  // Carousel functionality
+  // Carousel functionality - only initialize if screen width >= 599px
   const track = document.getElementById('carousel-track');
-  if (track) {
+  if (track && window.innerWidth >= 599) {
     const slides = track.querySelectorAll('.carousel-slide');
     const dots = document.querySelectorAll('.carousel-dot');
     const prevBtn = document.querySelector('.carousel-btn-prev');

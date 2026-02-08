@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 
 export interface CSRFRequest extends Request {
   csrfToken?: string;
@@ -12,11 +12,6 @@ export const validateCSRF = (
 ) => {
   // Skip CSRF validation for GET, HEAD, OPTIONS requests
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
-    return next();
-  }
-
-  // Skip CSRF validation in development for easier testing
-  if (process.env.NODE_ENV !== 'production') {
     return next();
   }
 

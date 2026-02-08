@@ -2065,6 +2065,8 @@ body.cookies-hidden .footer {
   color: rgba(255, 255, 255, 0.9);
   font-size: 0.7rem;
   font-weight: 500;
+  margin: 0;
+  line-height: 1.2;
 }
 
 .footer-disclaimer {
@@ -2512,6 +2514,10 @@ body.cookies-hidden .footer {
     max-width: 320px;
     font-size: 0.6rem;
   }
+
+  .app-showcase {
+    display: none !important;
+  }
 }
 
 @media (max-width: 480px) {
@@ -2662,4 +2668,76 @@ body.cookies-hidden .footer {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Image loading states */
+.carousel-slide.loading {
+  position: relative;
+}
+
+.carousel-slide.loading::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  z-index: 10;
+}
+
+.carousel-slide.loading img,
+.carousel-slide.loading picture {
+  opacity: 0.3;
+}
+
+.carousel-slide.error::before {
+  content: "⚠️";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+  z-index: 10;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive image optimizations */
+picture img {
+  transition: opacity 0.3s ease;
+}
+
+/* Low bandwidth mode adjustments */
+@media (max-width: 767px) {
+  .carousel-slide {
+    min-height: 200px; /* Prevent layout shift */
+  }
+}
+
+/* Connection-aware optimizations */
+@media (prefers-reduced-data: reduce) {
+  .carousel-slide:not(.active) picture {
+    display: none; /* Don't load non-visible images on data saver */
+  }
+}
+
+/* Slow connection optimizations */
+.slow-connection .carousel-slide:not(.active) picture {
+  display: none; /* Don't load non-visible images on slow connections */
+}
+
+.slow-connection img[loading="lazy"] {
+  background: #0c2524; /* Placeholder background */
 }

@@ -5,13 +5,18 @@ import {
   HttpErrorResponse,
   HttpInterceptorFn,
   HttpEvent,
+  HttpClient,
 } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { catchError, throwError, timer, mergeMap, Observable } from 'rxjs';
 import { CsrfService } from '../../services/csrf.service';
+import { environment } from '@environments/environment';
 
 // Track rate limiting across the application using Record instead of index signature
 const rateLimitedUntil: Record<string, number> = {};
+
+// Track if refresh is in progress to avoid multiple simultaneous refresh attempts
+let isRefreshing = false;
 
 /**
  * Auth interceptor function for standalone components
@@ -97,20 +102,81 @@ function proceedWithRequest(
 
       // Handle auth errors
       if (error.status === 401) {
-        // Unauthorized - cookies may be expired or invalid
-        console.error(
-          '[AuthInterceptor] Received 401 Unauthorized - redirecting to login'
-        );
-        // Clear CSRF token since auth is invalid
-        csrfService.clearToken();
-        // Only redirect if not already on an auth page
-        if (!router.url.includes('/auth/')) {
-          // Navigate to login with /app prefix since we're inside the Angular app
-          router.navigate(['/auth/login']);
-        }
+        // Try to refresh the token before redirecting to login
+        return handleUnauthorizedError(request, next, router, csrfService, error);
       }
 
       return throwError(() => error);
+    })
+  );
+}
+
+/**
+ * Handle 401 Unauthorized errors by attempting token refresh
+ */
+function handleUnauthorizedError(
+  request: HttpRequest<unknown>,
+  next: HttpHandlerFn,
+  router: Router,
+  csrfService: CsrfService,
+  originalError: HttpErrorResponse
+): Observable<HttpEvent<unknown>> {
+  // Don't try to refresh if:
+  // 1. We're already calling the refresh endpoint
+  // 2. We're on an auth endpoint (login, register, etc.)
+  // 3. A refresh is already in progress
+  if (
+    request.url.includes('/api/auth/refresh') ||
+    request.url.includes('/api/auth/login') ||
+    request.url.includes('/api/auth/register') ||
+    isRefreshing
+  ) {
+    console.error('[AuthInterceptor] Cannot refresh token, redirecting to login');
+    csrfService.clearToken();
+    if (!router.url.includes('/auth/')) {
+      router.navigate(['/auth/login']);
+    }
+    return throwError(() => originalError);
+  }
+
+  // Set refreshing flag
+  isRefreshing = true;
+  console.log('[AuthInterceptor] Attempting to refresh access token...');
+
+  const http = inject(HttpClient);
+
+  // Try to refresh the access token
+  return http.post<{ message: string; user: { id: string; username: string; avatarUrl?: string } }>(
+    `${environment.apiUrl}/auth/refresh`,
+    {},
+    { withCredentials: true }
+  ).pipe(
+    mergeMap(() => {
+      // Refresh successful
+      console.log('[AuthInterceptor] Token refresh successful, retrying original request');
+      isRefreshing = false;
+
+      // Update CSRF token if provided in refresh response
+      // Note: The backend doesn't currently return a new CSRF token on refresh,
+      // but we keep the existing one which should still be valid
+
+      // Retry the original request with new access token (now in cookies)
+      return next(request);
+    }),
+    catchError((refreshError: HttpErrorResponse) => {
+      // Refresh failed - token is invalid or expired
+      isRefreshing = false;
+      console.error('[AuthInterceptor] Token refresh failed:', refreshError.status);
+
+      // Clear auth data and redirect to login
+      csrfService.clearToken();
+
+      if (!router.url.includes('/auth/')) {
+        router.navigate(['/auth/login']);
+      }
+
+      // Return the original error, not the refresh error
+      return throwError(() => originalError);
     })
   );
 }

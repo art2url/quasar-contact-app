@@ -11,10 +11,12 @@ COPY backend/package*.json ./backend/
 COPY landing/package*.json ./landing/
 
 # Install dependencies for all parts
-RUN npm install
-RUN cd frontend && npm install
-RUN cd backend && npm install
-RUN cd landing && npm install
+# Upgrade npm to support newer package-lock.json format
+RUN npm install -g npm@latest
+RUN npm install --omit=dev --ignore-scripts
+RUN cd frontend && npm install --ignore-scripts
+RUN cd backend && npm install --ignore-scripts
+RUN cd landing && npm install --include=optional --ignore-scripts
 
 # Copy source code
 COPY . .
@@ -61,7 +63,7 @@ COPY --from=builder /app/frontend/dist/browser ./dist
 COPY --from=builder /app/landing/dist ./public
 
 # Install only production dependencies for backend
-RUN cd backend && npm ci --omit=dev && npm cache clean --force
+RUN cd backend && npm install --omit=dev && npm cache clean --force
 
 # Generate Prisma client and run migrations
 RUN cd backend && npx prisma generate

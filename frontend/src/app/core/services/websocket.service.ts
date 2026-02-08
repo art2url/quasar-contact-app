@@ -13,14 +13,7 @@ import {
   KeyRegeneratedPayload,
 } from 'app/core/models/socket.model';
 
-// Enhanced debugging
-const DEBUG_WS = false;
-
-function logWs(message: string, ...args: unknown[]) {
-  if (DEBUG_WS) {
-    console.error(`[WebSocket Debug] ${message}`, ...args);
-  }
-}
+// WebSocket service with enhanced connection management
 
 @Injectable({
   providedIn: 'root',
@@ -84,14 +77,14 @@ export class WebSocketService {
    */
   connect(): void {
     if (this.connectionState.connected || this.connectionState.connecting) {
-      logWs('Already connected or connecting, skipping');
+      // Already connected or connecting, skipping
       return;
     }
 
     this.connectionState.connecting = true;
     this.connectionState.lastConnectTime = Date.now();
 
-    logWs('Connecting with enhanced configuration...');
+    // Connecting with enhanced configuration
 
     // Clean up any existing socket
     this.cleanupSocket();
@@ -121,12 +114,12 @@ export class WebSocketService {
   private setupEventHandlers(): void {
     if (!this.socket) return;
 
-    logWs('Setting up enhanced event handlers');
+    // Debug logging removed
 
     // Connection events
     this.socket.on('connect', () => {
       this.zone.run(() => {
-        logWs('Connected successfully:', this.socket!.id);
+        // Debug logging removed
         this.clearConnectionTimeout();
         this.onConnectionSuccess();
       });
@@ -134,29 +127,29 @@ export class WebSocketService {
 
     this.socket.on('disconnect', reason => {
       this.zone.run(() => {
-        logWs('Disconnected, reason:', reason);
+        // Debug logging removed
         this.onDisconnection(reason);
       });
     });
 
     this.socket.on('connect_error', err => {
       this.zone.run(() => {
-        logWs('Connection error:', err.message);
+        // Debug logging removed
         this.onConnectionError(err);
       });
     });
 
     // Enhanced reconnection handling
-    this.socket.on('reconnect', attemptNumber => {
+    this.socket.on('reconnect', (_attemptNumber) => {
       this.zone.run(() => {
-        logWs('Reconnected after', attemptNumber, 'attempts');
+        // Debug logging removed
         this.onReconnectionSuccess();
       });
     });
 
-    this.socket.on('reconnect_error', err => {
+    this.socket.on('reconnect_error', (_err) => {
       this.zone.run(() => {
-        logWs('Reconnection error:', err.message);
+        // Debug logging removed
         this.connectionState.consecutiveFailures++;
       });
     });
@@ -167,21 +160,21 @@ export class WebSocketService {
         const latency = Date.now() - this.pingStartTime;
         this.lastPingTime = latency;
         this.updateConnectionQuality(latency);
-        logWs('Ping response received, latency:', latency + 'ms');
+        // Debug logging removed
       });
     });
 
     // Message events
     this.socket.on('receive-message', message => {
       this.zone.run(() => {
-        logWs('Message received:', message.fromUserId);
+        // Debug logging removed
         this.messageHandlers.forEach(handler => handler(message));
       });
     });
 
     this.socket.on('message-sent', ack => {
       this.zone.run(() => {
-        logWs('Message sent ack:', ack.messageId);
+        // Debug logging removed
         this._messageSentSubject.next(ack);
         // Also call registered callbacks
         this.messageSentHandlers.forEach(handler => handler(ack));
@@ -190,21 +183,21 @@ export class WebSocketService {
 
     this.socket.on('typing', data => {
       this.zone.run(() => {
-        logWs('Typing indicator received:', data);
+        // Debug logging removed
         this._typingSubject.next(data);
       });
     });
 
     this.socket.on('message-read', payload => {
       this.zone.run(() => {
-        logWs('Message read receipt:', payload.messageId);
+        // Debug logging removed
         this.messageReadHandlers.forEach(handler => handler(payload));
       });
     });
 
     this.socket.on('key-regenerated', payload => {
       this.zone.run(() => {
-        logWs('Key regenerated notification:', payload.fromUserId);
+        // Debug logging removed
         this._keyRegeneratedSubject.next(payload);
         this.keyRegeneratedHandlers.forEach(handler => handler(payload));
       });
@@ -215,7 +208,7 @@ export class WebSocketService {
     // Enhanced presence events with better logging
     this.socket.on('online-users', data => {
       this.zone.run(() => {
-        logWs('Online users received:', data);
+        // Debug logging removed
         const userList = Array.isArray(data) ? data : data?.userIds || [];
         this.updateOnlineUsers(userList);
       });
@@ -223,28 +216,24 @@ export class WebSocketService {
 
     this.socket.on('user-online', data => {
       this.zone.run(() => {
-        logWs('User came online:', data.userId, data.username || '');
+        // Debug logging removed
         if (!this.onlineUsersList.has(data.userId)) {
           this.onlineUsersList.add(data.userId);
           this.onlineUsers$.next([...this.onlineUsersList]);
           this.userOnline$.next(data.userId);
-          logWs('Updated online users after user came online:', [
-            ...this.onlineUsersList,
-          ]);
+          // Updated online users after user came online
         }
       });
     });
 
     this.socket.on('user-offline', data => {
       this.zone.run(() => {
-        logWs('User went offline:', data.userId);
+        // Debug logging removed
         if (this.onlineUsersList.has(data.userId)) {
           this.onlineUsersList.delete(data.userId);
           this.onlineUsers$.next([...this.onlineUsersList]);
           this.userOffline$.next(data.userId);
-          logWs('Updated online users after user went offline:', [
-            ...this.onlineUsersList,
-          ]);
+          // Updated online users after user went offline
         }
       });
     });
@@ -296,18 +285,13 @@ export class WebSocketService {
   /**
    * Handle connection errors
    */
-  private onConnectionError(error: Error): void {
+  private onConnectionError(_error: Error): void {
     this.connectionState.connected = false;
     this.connectionState.connecting = false;
     this.connectionState.consecutiveFailures++;
     this.isConnected$.next(false);
 
-    logWs(
-      'Connection failed, consecutive failures:',
-      this.connectionState.consecutiveFailures,
-      'Error:',
-      error.message
-    );
+    // Connection failed with error
 
     // Exponential backoff for reconnection
     this.scheduleReconnection();
@@ -319,7 +303,7 @@ export class WebSocketService {
   private onReconnectionSuccess(): void {
     this.connectionState.reconnectAttempts = 0;
     this.connectionState.consecutiveFailures = 0;
-    logWs('Successfully reconnected');
+    // Debug logging removed
   }
 
   /**
@@ -333,7 +317,7 @@ export class WebSocketService {
     // Check if user is authenticated (JWT is now in HttpOnly cookies)
     const userId = localStorage.getItem('userId');
     if (!localStorage.getItem('username') || !userId) {
-      logWs('No auth data available for reconnection');
+      // Debug logging removed
       return;
     }
 
@@ -345,11 +329,7 @@ export class WebSocketService {
       maxDelay
     );
 
-    logWs(
-      `Scheduling reconnection in ${backoffDelay}ms (attempt ${
-        this.connectionState.consecutiveFailures + 1
-      })`
-    );
+    // Scheduling reconnection with backoff
 
     this.reconnectionTimer = timer(backoffDelay).subscribe(() => {
       this.reconnectionTimer = undefined;
@@ -357,13 +337,11 @@ export class WebSocketService {
 
       // Give up after too many attempts
       if (this.connectionState.reconnectAttempts > 10) {
-        logWs('Max reconnection attempts reached, giving up');
+        // Debug logging removed
         return;
       }
 
-      logWs(
-        `Attempting reconnection (attempt ${this.connectionState.reconnectAttempts})`
-      );
+      // Attempting reconnection
       this.connect(); // Uses cookies for auth
     });
   }
@@ -374,7 +352,7 @@ export class WebSocketService {
   private startConnectionTimeout(): void {
     this.connectionTimeout = timer(15000).subscribe(() => {
       if (!this.connectionState.connected) {
-        logWs('Connection timeout, forcing cleanup');
+        // Debug logging removed
         this.onConnectionError(new Error('Connection timeout'));
       }
     }); // 15 second timeout
@@ -425,7 +403,7 @@ export class WebSocketService {
    * Enhanced user presence management with immediate update
    */
   private updateOnlineUsers(userList: string[]): void {
-    logWs('Updating online users list from:', [...this.onlineUsersList], 'to:', userList);
+    // Debug logging removed
 
     // Clear and rebuild the set
     this.onlineUsersList.clear();
@@ -434,7 +412,7 @@ export class WebSocketService {
     // Immediately update the observable
     this.onlineUsers$.next([...this.onlineUsersList]);
 
-    logWs('Updated online users list:', [...this.onlineUsersList]);
+    // Debug logging removed
   }
 
   /**
@@ -461,8 +439,8 @@ export class WebSocketService {
       try {
         this.socket.removeAllListeners();
         this.socket.disconnect();
-      } catch (err) {
-        logWs('Error during socket cleanup:', err);
+      } catch (_err) {
+        // Debug logging removed
       }
       this.socket = null;
     }
@@ -472,7 +450,7 @@ export class WebSocketService {
    * Enhanced disconnect method
    */
   disconnect(): void {
-    logWs('Manual disconnect requested');
+    // Debug logging removed
 
     this.connectionState.lastDisconnectReason = 'manual_disconnect';
 
@@ -497,7 +475,7 @@ export class WebSocketService {
    */
   sendMessage(toUserId: string, ciphertext: string, avatarUrl?: string): void {
     if (!this.socket?.connected) {
-      logWs('Cannot send message - socket not connected');
+      // Debug logging removed
       return;
     }
 
@@ -509,12 +487,12 @@ export class WebSocketService {
    */
   sendTyping(toUserId: string): void {
     if (!toUserId) {
-      logWs('Cannot send typing - missing userId');
+      // Debug logging removed
       return;
     }
 
     if (!this.socket?.connected) {
-      logWs('Cannot send typing - socket not connected');
+      // Debug logging removed
       return;
     }
 
@@ -526,11 +504,11 @@ export class WebSocketService {
    */
   onReceiveMessage(cb: (msg: IncomingSocketMessage) => void): void {
     if (this.messageHandlers.includes(cb)) {
-      logWs('Handler already registered, skipping');
+      // Debug logging removed
       return;
     }
 
-    logWs('Registering message handler');
+    // Debug logging removed
     this.messageHandlers.push(cb);
   }
 
@@ -538,7 +516,7 @@ export class WebSocketService {
     const index = this.messageHandlers.indexOf(cb);
     if (index !== -1) {
       this.messageHandlers.splice(index, 1);
-      logWs('Message handler removed');
+      // Debug logging removed
     }
   }
 
@@ -600,12 +578,12 @@ export class WebSocketService {
   // Key regeneration notification
   notifyKeyRegenerated(toUserId: string): void {
     if (!this.socket?.connected) {
-      logWs('Cannot notify key regeneration - socket not connected');
+      // Debug logging removed
       return;
     }
 
     this.socket.emit('notify-key-regenerated', { toUserId });
-    logWs('Key regeneration notification sent to:', toUserId);
+    // Debug logging removed
   }
 
   // Removed: Partner key recovery notifications now handled via database flag
@@ -646,11 +624,11 @@ export class WebSocketService {
    * Debug method to check online status
    */
   debugOnlineStatus(): void {
-    logWs('=== Online Status Debug ===');
-    logWs('Connected:', this.connectionState.connected);
-    logWs('Online users:', [...this.onlineUsersList]);
-    logWs('Connection quality:', this.connectionQuality);
-    logWs('Last ping:', this.lastPingTime + 'ms');
+    // Debug logging removed
+    // Debug logging removed
+    // Debug logging removed
+    // Debug logging removed
+    // Debug logging removed
   }
 
   /**
@@ -658,7 +636,7 @@ export class WebSocketService {
    */
   refreshOnlineUsers(): void {
     if (this.socket?.connected) {
-      logWs('Requesting fresh online users list');
+      // Debug logging removed
       // The server will automatically send online-users on connection
       // but we can emit a custom event if needed
     }
@@ -682,7 +660,7 @@ export class WebSocketService {
     const userId = localStorage.getItem('userId');
     if (!localStorage.getItem('username') || !userId) return;
 
-    logWs('Manual reconnect requested');
+    // Debug logging removed
     this.forceReconnect();
   }
 
@@ -694,7 +672,7 @@ export class WebSocketService {
     const userId = localStorage.getItem('userId');
     if (!localStorage.getItem('username') || !userId) return;
 
-    logWs('Force reconnection requested');
+    // Debug logging removed
     this.disconnect();
 
     timer(1000).subscribe(() => {

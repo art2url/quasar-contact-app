@@ -4,6 +4,7 @@ import { connectDatabase, disconnectDatabase } from './services/database.service
 import app from './app';
 import { setupSocket } from './sockets';
 import env from './config/env';
+import { cleanupExpiredTokens } from './utils/refresh-token.utils';
 
 // Static file serving is now handled in app.ts - remove from here to avoid conflicts
 
@@ -32,11 +33,6 @@ const io = new Server(server, {
     skipMiddlewares: true,
   },
 
-  // Enhanced error handling
-  allowRequest: (req, callback) => {
-    // Additional request validation can be added here
-    callback(null, true);
-  },
 });
 
 // Enhanced server monitoring and logging
@@ -51,10 +47,14 @@ io.engine.on('connection_error', err => {
 
 // Handle socket connections
 io.on('connection', socket => {
-  console.log(`🔌 New socket connection: ${socket.id}`);
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`🔌 New socket connection: ${socket.id}`);
+  }
 
   socket.on('disconnect', reason => {
-    console.log(`❌ Socket ${socket.id} disconnected: ${reason}`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`❌ Socket ${socket.id} disconnected: ${reason}`);
+    }
   });
 });
 
@@ -66,21 +66,43 @@ export { io };
 
 // Start server immediately, connect to database asynchronously
 server.listen(env.PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${env.PORT}`);
-  console.log(`🏠 Landing: http://localhost:${env.PORT}/`);
-  console.log(`💬 Chat App: http://localhost:${env.PORT}/app`);
-  console.log(`🛠️  API: http://localhost:${env.PORT}/api`);
-  console.log('📡 Socket.IO transports: websocket, polling');
-  console.log(`⏰ Ping interval: ${25000}ms, timeout: ${60000}ms`);
-
   if (process.env.NODE_ENV === 'development') {
+    console.log(`🚀 Server running on http://localhost:${env.PORT}`);
+    console.log(`🏠 Landing: http://localhost:${env.PORT}/`);
+    console.log(`💬 Chat App: http://localhost:${env.PORT}/app`);
+    console.log(`🛠️  API: http://localhost:${env.PORT}/api`);
+    console.log('📡 Socket.IO transports: websocket, polling');
+    console.log(`⏰ Ping interval: ${25000}ms, timeout: ${60000}ms`);
     console.log('🔧 Development mode - enhanced logging enabled');
   }
 
   // Connect to database after server starts
   connectDatabase()
     .then(() => {
-      console.log('✅ Database connected successfully');
+      // Database connected successfully
+
+      // Set up periodic cleanup of expired refresh tokens (runs daily)
+      setInterval(async () => {
+        try {
+          const deleted = await cleanupExpiredTokens();
+          if (deleted > 0) {
+            console.log(`🧹 Cleaned up ${deleted} expired refresh token(s)`);
+          }
+        } catch (err) {
+          console.error('❌ Error during token cleanup:', err);
+        }
+      }, 24 * 60 * 60 * 1000); // Run every 24 hours
+
+      // Run initial cleanup on startup
+      cleanupExpiredTokens()
+        .then(deleted => {
+          if (deleted > 0) {
+            console.log(`🧹 Initial cleanup: removed ${deleted} expired refresh token(s)`);
+          }
+        })
+        .catch(err => {
+          console.error('❌ Initial token cleanup failed:', err);
+        });
     })
     .catch(err => {
       console.error('❌ DB connection failed:', err);
@@ -95,32 +117,44 @@ server.on('error', err => {
 
 // Graceful shutdown handling
 process.on('SIGTERM', () => {
-  console.log('⚠️ SIGTERM received, shutting down gracefully...');
+  if (process.env.NODE_ENV === 'development') {
+    console.log('⚠️ SIGTERM received, shutting down gracefully...');
+  }
 
   server.close(async () => {
-    console.log('✅ HTTP server closed');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ HTTP server closed');
+    }
 
     try {
       await disconnectDatabase();
+      // eslint-disable-next-line no-process-exit
       process.exit(0);
     } catch (err) {
       console.error('❌ Error closing database connection:', err);
+      // eslint-disable-next-line no-process-exit
       process.exit(1);
     }
   });
 });
 
 process.on('SIGINT', () => {
-  console.log('⚠️ SIGINT received, shutting down gracefully...');
+  if (process.env.NODE_ENV === 'development') {
+    console.log('⚠️ SIGINT received, shutting down gracefully...');
+  }
 
   server.close(async () => {
-    console.log('✅ HTTP server closed');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ HTTP server closed');
+    }
 
     try {
       await disconnectDatabase();
+      // eslint-disable-next-line no-process-exit
       process.exit(0);
     } catch (err) {
       console.error('❌ Error closing database connection:', err);
+      // eslint-disable-next-line no-process-exit
       process.exit(1);
     }
   });
@@ -129,10 +163,12 @@ process.on('SIGINT', () => {
 // Handle uncaught exceptions
 process.on('uncaughtException', err => {
   console.error('❌ Uncaught Exception:', err);
+  // eslint-disable-next-line no-process-exit
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  // eslint-disable-next-line no-process-exit
   process.exit(1);
 });

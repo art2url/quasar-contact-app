@@ -72,7 +72,7 @@
             <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
           <mat-hint>
-            <span [class.hint-valid]="password.length >= 6"> At least 6 characters </span>
+            <span [class.hint-valid]="password.length >= 8"> At least 8 characters </span>
           </mat-hint>
           <mat-error *ngIf="!password && formSubmitted"> Password is required </mat-error>
         </mat-form-field>

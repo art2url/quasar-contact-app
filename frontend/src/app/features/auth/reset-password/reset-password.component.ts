@@ -48,15 +48,32 @@ export class ResetPasswordComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Get the token from URL query params
+    // Get the token from URL query params (backward compatibility)
     this.token = this.route.snapshot.queryParamMap.get('token');
 
     if (!this.token) {
-      this.tokenError = true;
+      // Try to claim token from session (new secure flow)
+      this.claimTokenFromSession();
     } else {
       // Optionally validate token on load
       this.validateToken();
     }
+  }
+
+  private claimTokenFromSession(): void {
+    this.authService.claimResetToken().subscribe({
+      next: (response) => {
+        if (response.success && response.token) {
+          this.token = response.token;
+          this.validateToken();
+        } else {
+          this.tokenError = true;
+        }
+      },
+      error: () => {
+        this.tokenError = true;
+      },
+    });
   }
 
   private validateToken(): void {
@@ -73,7 +90,7 @@ export class ResetPasswordComponent implements OnInit {
   }
 
   isFormValid(): boolean {
-    return this.password.length >= 6 && this.password === this.confirmPassword;
+    return this.password.length >= 8 && this.password === this.confirmPassword;
   }
 
   getPasswordStrength(): 'weak' | 'medium' | 'strong' {

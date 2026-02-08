@@ -12,7 +12,7 @@ export const prisma = new PrismaClient({
 export async function connectDatabase() {
   try {
     await prisma.$connect();
-    console.log('✅ Connected to PostgreSQL database');
+    // Database connected successfully
   } catch (error) {
     console.error('❌ Database connection error:', error);
     throw error;
@@ -37,7 +37,7 @@ export async function healthCheck(retries = 3) {
 export async function disconnectDatabase() {
   try {
     await prisma.$disconnect();
-    console.log('✅ Disconnected from PostgreSQL database');
+    // Database disconnected successfully
   } catch (error) {
     console.error('❌ Database disconnection error:', error);
     throw error;

@@ -17,3 +17,12 @@ export const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+/* ── password reset token claim limiter ────────────────── */
+export const resetTokenClaimLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5-min
+  max: 5, // Max 5 claims per 5 minutes
+  message: 'Too many token claim attempts, please wait before trying again.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});

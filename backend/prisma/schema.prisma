@@ -30,6 +30,7 @@ model User {
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
   passwordResets   PasswordReset[]
+  refreshTokens    RefreshToken[] @relation("RefreshTokens")
   roomMemberships  Room[]    @relation("RoomMembers")
   
   @@map("users")
@@ -76,9 +77,25 @@ model PasswordReset {
   expiresAt DateTime
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
-  
+
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   @@map("password_resets")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  lastUsed  DateTime @default(now())
+
+  // Relations
+  user User @relation("RefreshTokens", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
 }

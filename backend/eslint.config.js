@@ -1,6 +1,6 @@
 module.exports = [
   {
-    ignores: ['dist/', 'node_modules/', '*.js'],
+    ignores: ['dist/', 'node_modules/', '*.js', 'src/__tests__/setup.ts'],
   },
   {
     files: ['src/**/*.ts'],
@@ -39,7 +39,7 @@ module.exports = [
       'no-new-func': 'error',
 
       // Best practices
-      eqeqeq: 'error',
+      'eqeqeq': 'error',
       'prefer-const': 'error',
       'no-var': 'error',
       'object-shorthand': 'error',
@@ -47,8 +47,8 @@ module.exports = [
       'prefer-template': 'error',
 
       // Style consistency
-      semi: ['error', 'always'],
-      quotes: ['error', 'single'],
+      'semi': ['error', 'always'],
+      'quotes': ['error', 'single'],
       'comma-dangle': ['error', 'always-multiline'],
       'object-curly-spacing': ['error', 'always'],
       'array-bracket-spacing': ['error', 'never'],

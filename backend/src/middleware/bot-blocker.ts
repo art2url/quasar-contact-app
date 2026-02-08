@@ -1,15 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
+import { SECURITY_LIMITS } from '../config/security-limits';
 
 // ─── Rate Limiter Configuration ────────────────────────────
 const rateLimiter = new RateLimiterMemory({
-  points: 10, // Number of requests
-  duration: 60, // Per 60 seconds
+  points: SECURITY_LIMITS.RATE_LIMITS.GENERAL_REQUESTS,
+  duration: SECURITY_LIMITS.RATE_LIMITS.GENERAL_WINDOW_SECONDS,
 });
 
 const bruteForceRateLimiter = new RateLimiterMemory({
-  points: 5, // Even stricter for suspicious paths
-  duration: 300, // Per 5 minutes
+  points: SECURITY_LIMITS.RATE_LIMITS.BRUTE_FORCE_REQUESTS,
+  duration: SECURITY_LIMITS.RATE_LIMITS.BRUTE_FORCE_WINDOW_SECONDS,
 });
 
 // ─── IP Blacklist (in-memory for now) ─────────────────────
@@ -259,8 +260,8 @@ export const blockBots = async (
       const count = (suspiciousActivity.get(clientIP) || 0) + 1;
       suspiciousActivity.set(clientIP, count);
 
-      // Auto-blacklist after 10 attempts
-      if (count >= 10) {
+      // Auto-blacklist after threshold attempts
+      if (count >= SECURITY_LIMITS.BOT_PROTECTION.AUTO_BLACKLIST_THRESHOLD) {
         blacklistedIPs.add(clientIP);
         console.log(`⛔ AUTO-BLACKLISTED: ${clientIP} after ${count} attempts`);
       }
@@ -327,12 +328,12 @@ export const honeypot = (req: Request, res: Response): void => {
   // Respond slowly to waste bot's time
   setTimeout(() => {
     res.status(404).end();
-  }, 5000);
+  }, SECURITY_LIMITS.BOT_PROTECTION.HONEYPOT_DELAY_MS);
 };
 
 // ─── Clean up old entries periodically ─────────────────────
 setInterval(() => {
-  // Clear suspicious activity older than 1 hour
+  // Clear suspicious activity tracking
   suspiciousActivity.clear();
 
   // Optional: Clear blacklist if it gets too large
@@ -340,4 +341,4 @@ setInterval(() => {
     blacklistedIPs.clear();
     console.log('🧹 Cleared IP blacklist');
   }
-}, 3600000); // Every hour
+}, SECURITY_LIMITS.BOT_PROTECTION.SUSPICIOUS_ACTIVITY_CLEANUP_MS);

@@ -1,7 +1,7 @@
 {
   "name": "quasar-landing",
   "type": "module",
-  "version": "0.0.1",
+  "version": "1.7.0",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
@@ -20,21 +20,29 @@
     "style": "npm run lint && npm run format:check && npm run style:css && npm run typecheck",
     "style:fix": "npm run lint:fix && npm run format && npm run style:css:fix"
   },
+  "license": "GPL-3.0",
   "dependencies": {
-    "astro": "^4.0.0",
     "@astrojs/check": "^0.3.0",
     "@astrojs/sitemap": "^3.0.0",
+    "astro": "^5.13.0",
     "typescript": "^5.0.0"
+  },
+  "optionalDependencies": {
+    "@esbuild/darwin-arm64": "^0.25.9",
+    "@esbuild/linux-x64": "^0.25.9",
+    "@rollup/rollup-darwin-arm64": "^4.46.2",
+    "@rollup/rollup-linux-x64-musl": "^4.46.2"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^8.32.0",
     "@typescript-eslint/parser": "^8.32.0",
+    "astro-eslint-parser": "^1.0.0",
     "eslint": "^9.26.0",
     "eslint-plugin-astro": "^1.0.0",
-    "astro-eslint-parser": "^1.0.0",
     "prettier": "^3.5.3",
     "prettier-plugin-astro": "^0.14.1",
+    "rollup": "^4.46.2",
     "stylelint": "^14.16.1",
     "stylelint-config-standard": "^29.0.0"
   }

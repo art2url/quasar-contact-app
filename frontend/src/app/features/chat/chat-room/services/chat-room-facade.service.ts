@@ -47,7 +47,7 @@ export class ChatRoomFacadeService {
   private isInitialized = false;
   private isUserAtBottom = true;
   private lastMessageCount = 0;
-  private scrollTimeout: NodeJS.Timeout | null = null;
+  private scrollTimeout: ReturnType<typeof setTimeout> | null = null;
   private hasInitiallyScrolled = false;
   private typingStateSubject = new Subject<void>();
   private destroy$ = new Subject<void>();

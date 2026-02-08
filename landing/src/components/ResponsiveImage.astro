@@ -1,0 +1,37 @@
+---
+export interface Props {
+  src: string; // Base image path without /assets/screenshots/ prefix
+  alt: string;
+  loading?: "lazy" | "eager";
+  class?: string;
+}
+
+const { src, alt, loading = "lazy", class: className } = Astro.props;
+
+// Convert x1 naming to x2 for desktop (x1 for mobile, x2 for desktop)
+const desktopSrc = src.replace("x1_", "x2_");
+---
+
+<picture class:list={className}>
+  <!-- Mobile: Serve smaller images for screens < 768px -->
+  <source
+    media="(max-width: 767px)"
+    srcset={`/assets/screenshots/mobile/${src}`}
+    sizes="(max-width: 767px) 100vw, 378px"
+  />
+  <!-- Desktop: Serve full-size images for screens >= 768px -->
+  <source
+    media="(min-width: 768px)"
+    srcset={`/assets/screenshots/desktop/${desktopSrc}`}
+    sizes="(min-width: 768px) 1270px"
+  />
+  <!-- Fallback for older browsers -->
+  <img
+    src={`/assets/screenshots/desktop/${desktopSrc}`}
+    alt={alt}
+    loading={loading}
+    style="width: 100%; height: auto; max-width: 100%;"
+    width="1270"
+    height="720"
+  />
+</picture>

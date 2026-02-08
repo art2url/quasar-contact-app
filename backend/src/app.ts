@@ -5,6 +5,7 @@ import session from 'express-session';
 import helmet from 'helmet';
 import path from 'path';
 import { httpCors } from './config/cors';
+import { SECURITY_LIMITS } from './config/security-limits';
 
 // ─── Security Middleware ────────────────────────────────────
 import { blockBots, honeypot } from './middleware/bot-blocker';
@@ -22,6 +23,7 @@ import authRoutes from './routes/auth.routes';
 import keyRoutes from './routes/keys.routes';
 import messageRoutes from './routes/messages.routes';
 import roomsRoutes from './routes/rooms.routes';
+import uploadRoutes from './routes/upload.routes';
 import userRoutes from './routes/users.routes';
 
 // ─── App Initialization ────────────────────────────────────
@@ -35,7 +37,15 @@ app.use((req, res, next) => {
       return next();
     }
     if (req.header('x-forwarded-proto') !== 'https') {
-      return res.redirect(`https://${req.header('host')}${req.url}`);
+      // Validate host header to prevent open redirect attacks
+      const host = req.header('host');
+      const allowedHosts = ['quasar.contact', 'www.quasar.contact'];
+
+      if (!host || !allowedHosts.includes(host)) {
+        return res.status(400).json({ error: 'Invalid host header' });
+      }
+
+      return res.redirect(`https://${host}${req.url}`);
     }
   }
   next();
@@ -76,11 +86,7 @@ app.get('/.env', honeypot);
 app.get('/health', (_req, res) =>
   res.status(200).json({
     status: 'ok',
-    uptime: process.uptime(),
-    date: new Date().toISOString(),
-    secure: process.env.NODE_ENV === 'production',
-    stage: process.env.NODE_ENV === 'production' ? 'production' : 'beta',
-    security: 'enhanced',
+    timestamp: new Date().toISOString(),
   }),
 );
 
@@ -104,11 +110,25 @@ app.use(
 app.use(httpCors);
 
 // ─── Body Parsing with Limits ─────────────────────────────
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({
+  limit: '5mb',  // Reduced from 10mb for security
+  verify: (req: any, _res, buf) => {
+    // Store raw body for signature verification if needed
+    req.rawBody = buf;
+  },
+}));
+app.use(express.urlencoded({
+  extended: true,
+  limit: '5mb',  // Reduced from 10mb
+  parameterLimit: 50,  // Limit number of parameters
+}));
 
 // ─── Cookie Parser ─────────────────────────────────────────
-app.use(cookieParser(process.env.COOKIE_SECRET || 'fallback-secret-key'));
+if (!process.env.COOKIE_SECRET) {
+  console.error('❌ COOKIE_SECRET environment variable is required');
+  throw new Error('COOKIE_SECRET environment variable is required');
+}
+app.use(cookieParser(process.env.COOKIE_SECRET));
 
 // ─── Session Configuration ─────────────────────────────────
 // Note: Using MemoryStore for simplicity since sessions are short-lived (10 min)
@@ -117,14 +137,19 @@ if (process.env.NODE_ENV === 'production') {
   console.warn('[Session] Using MemoryStore in production - consider Redis for multi-instance deployments');
 }
 
+if (!process.env.SESSION_SECRET) {
+  console.error('❌ SESSION_SECRET environment variable is required');
+  throw new Error('SESSION_SECRET environment variable is required');
+}
+
 app.use(session({
-  secret: process.env.SESSION_SECRET || process.env.COOKIE_SECRET || 'fallback-session-secret',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 600000, // 10 minutes for password reset sessions
+    maxAge: SECURITY_LIMITS.PASSWORD_RESET.SESSION_MAX_AGE_MS, // 10 minutes for password reset sessions
     sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
   },
 }));
@@ -197,11 +222,7 @@ const apiLimiter = rateLimit({
 app.get('/api/health', (_req, res) =>
   res.status(200).json({
     status: 'ok',
-    uptime: process.uptime(),
-    date: new Date().toISOString(),
-    secure: process.env.NODE_ENV === 'production',
-    stage: process.env.NODE_ENV === 'production' ? 'production' : 'beta',
-    security: 'enhanced',
+    timestamp: new Date().toISOString(),
   }),
 );
 
@@ -211,6 +232,7 @@ app.use('/api/keys', apiLimiter, keyRoutes);
 app.use('/api/messages', apiLimiter, messageRoutes);
 app.use('/api/users', apiLimiter, userRoutes);
 app.use('/api/rooms', apiLimiter, roomsRoutes);
+app.use('/api/upload', apiLimiter, uploadRoutes);
 app.use('/api/analytics', apiLimiter, analyticsRoutes);
 
 // ─── Handle /app redirect ─────────────────────────────────
@@ -249,14 +271,9 @@ app.get('/app/auth/forgot-password', (_req, res) => {
   res.sendFile(path.join(__dirname, '../../dist', 'index.html'));
 });
 
-app.get('/app/auth/reset-password', (req, res) => {
-  const encryptedToken = req.query.token as string;
-  
-  // Import password reset utility
-  const { processPasswordResetToken } = require('./utils/password-reset.utils');
-  
-  // Process the encrypted token and handle session storage
-  processPasswordResetToken(req, res, encryptedToken);
+app.get('/app/auth/reset-password', (_req, res) => {
+  // Serve the frontend app - the component handles the token from URL params
+  res.sendFile(path.join(__dirname, '../../dist', 'index.html'));
 });
 
 // Handle invalid /app routes - serve 404 page
