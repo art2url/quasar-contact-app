@@ -1,132 +1,76 @@
-# Quasar Contact - Secure End-to-End Encrypted Chat Application
+# Quasar Contact — Secure End-to-End Encrypted Chat
 
 <p align="center">
   <a href="https://quasar.contact/" target="_blank">
-    <img src="landing/public/assets/images/preview.png" alt="Lead to Quasar Landing" width="100%">
+    <img src="landing/public/assets/images/preview.png" alt="Quasar Contact preview" width="100%">
   </a>
 </p>
 
-## 🔐 Overview
+Quasar Contact is a privacy-focused, real-time messaging application with end-to-end encryption.
+Built with Angular 18, Node.js, and Socket.IO — your conversations remain completely private with
+client-side encryption and zero plaintext logging.
 
-Quasar Contact is a privacy-focused, real-time messaging application that implements military-grade
-end-to-end encryption. Built with Angular 18, Node.js, and Socket.IO, it ensures that your
-conversations remain completely private with zero data logging and client-side encryption.
+> **Beta** — core features are stable, but the crypto implementation hasn't been independently
+> audited yet.
 
-**🚧 Current Status: Beta Stage**
+## Features
 
-## 🚀 **Production-Ready Features**
+### Security & Privacy
 
-### **🔐 Enterprise-Grade Security**
+- **End-to-end encryption** — RSA-OAEP + AES-GCM hybrid encryption via Web Crypto API
+- **Zero-knowledge server** — private keys never leave your browser, stored in AES-GCM encrypted
+  IndexedDB
+- **Client-side key generation** — RSA-OAEP 2048-bit key pairs with SHA-256 fingerprinting
+- **Encrypted local storage** — Vault service with per-user IndexedDB databases
+- **CSRF protection** — double-submit cookie pattern with cryptographically secure tokens
+- **JWT security** — HttpOnly cookies with configurable expiry and refresh token rotation
+- **Advanced rate limiting** — multiple rate limiters with brute-force protection
+- **Bot protection** — Cloudflare Turnstile + multi-layer honeypot + 98+ blocked attack paths
+- **Auto-blacklisting** — dynamic IP blocking for suspicious behavior
+- **Security headers** — Helmet.js, strict CORS, parameterized queries via Prisma
+- **Session management** — secure session handling with automatic cleanup
+- **Key management** — private key fingerprinting, corruption detection, and rotation support
+- **Input validation** — server-side validation and sanitization for all inputs
+- **Password security** — bcrypt hashing, minimum requirements enforced
 
-- **Military-Grade Encryption**: RSA-OAEP + AES-GCM hybrid encryption
-- **Advanced Bot Protection**: 98+ blocked attack vectors with intelligent filtering
-- **Multi-Layer Honeypots**: Form timing validation and suspicious pattern detection
-- **CSRF Protection**: Double-submit cookie pattern with secure tokens
-- **Auto-Blacklisting**: Dynamic IP blocking for malicious behavior
+### Messaging
 
-### **💬 Advanced Messaging**
+- **Real-time delivery** — Socket.IO with automatic reconnection (exponential backoff)
+- **Edit & delete** — live message editing and deletion with WebSocket sync
+- **Typing indicators** and **read receipts**
+- **Message grouping** — automatic grouping by date with headers
+- **Offline queue** — message delivery when users reconnect, with TTL management
+- **Emoji picker** — theme-aware, mobile-optimized
+- **Image attachments** — in-chat image sharing with server-side compression, stored as base64
+- **Smart scrolling** — auto-scroll with "new messages" counter and scroll-to-bottom button
+- **Online/offline presence** — real-time user status tracking
+- **Message states** — visual distinction for encrypted, deleted, and unreadable messages
+- **System message icons** — Material Design icons for consistency
 
-- **Real-Time Editing**: Live message editing and deletion via WebSocket
-- **Rich Media Support**: Emoji picker and secure file attachments
-- **Smart Features**: Message grouping, read receipts, typing indicators
-- **Offline Queue**: Message delivery when users reconnect with TTL management
+### Mobile
 
-### **📱 Mobile-First Experience**
+- **Visual Viewport API** — real-time keyboard detection and layout adjustment
+- **iOS Safari compatible** — proper handling of virtual keyboard, safe areas, and notches
+- **60fps scrolling** — optimized event handling with `requestAnimationFrame`
+- **Orientation-aware** — seamless experience across device rotations
+- **Battery efficient** — debounced resize and typing events, `dvh` units, CSS variable-based layout
+- **Smart keyboard management** — smooth virtual keyboard transitions without layout breaks
 
-- **60fps Performance**: Optimized scrolling and keyboard handling
-- **Dynamic Viewport**: Real-time layout adjustments for virtual keyboards
-- **iOS Safari Compatible**: Visual Viewport API integration
-- **Battery Efficient**: Reduced CPU usage through event optimization
+### UX
 
-### **🏗️ Modern Architecture**
+- **Progressive Web App** — installable on desktop and mobile
+- **Dark/light theme** — system preference detection with manual override and localStorage
+  persistence
+- **User search** — find contacts quickly
+- **Responsive** — mobile-first, works on all screen sizes
+- **Settings page** — avatar picker (stock avatars), private key download as PEM backup, private key
+  import from backup file with fingerprint verification
 
-- **PostgreSQL + Prisma**: ACID compliant with connection pooling
-- **Facade Pattern**: 8 specialized services for chat functionality
-- **Encrypted Storage**: AES-GCM encrypted IndexedDB with Vault service
-- **Health Monitoring**: Container health checks and connection management
+## Architecture
 
-## ✨ Key Features
+### Technology stack
 
-### 🛡️ Security & Privacy
-
-- **End-to-End Encryption**: All messages are encrypted using Web Crypto API (AES-GCM) before
-  leaving your device
-- **Zero Knowledge Architecture**: Server never has access to decryption keys or plaintext messages
-- **Client-Side Key Generation**: RSA-OAEP key pairs generated and stored locally
-- **No Data Logging**: Messages are stored encrypted and can only be decrypted by intended
-  recipients
-- **Encrypted Local Storage**: AES-GCM encrypted IndexedDB storage with Vault service
-- **Key Management**: Private key derivation, fingerprinting, and corruption detection
-- **Hybrid Encryption**: RSA-OAEP + AES-GCM with error throttling and retry logic
-
-### 🛡️ Advanced Security & Protection
-
-#### Bot Protection & Anti-Abuse
-
-- **Intelligent Bot Blocker**: 98+ blocked malicious paths with user agent filtering
-- **Multi-layer Honeypot**: Form timing validation, suspicious pattern detection, trap fields
-- **Auto-Blacklisting**: Automatic IP blocking for suspicious behavior
-- **Request Logging**: Comprehensive logging with daily rotation for security analysis
-
-#### Authentication & Session Security
-
-- **CSRF Protection**: Double-submit cookie pattern with cryptographically secure tokens
-- **Advanced Rate Limiting**: Multiple rate limiters with brute-force protection
-- **JWT Security**: Secure token generation with configurable expiry
-- **Session Management**: Secure session handling with automatic cleanup
-
-#### Server Security
-
-- **Security Headers**: Comprehensive security header middleware (Helmet.js)
-- **CORS Protection**: Strict origin validation and pre-flight handling
-- **Input Validation**: Server-side validation for all inputs with sanitization
-- **SQL Injection Protection**: Prisma ORM with parameterized queries
-
-### 💬 Messaging Features
-
-- **Real-Time Communication**: Instant message delivery via WebSocket connections
-- **Message Status Indicators**: Sent, delivered, and read receipts
-- **Typing Indicators**: See when your conversation partner is typing
-- **Message Editing & Deletion**: Edit or delete sent messages
-- **Online/Offline Status**: Real-time presence tracking
-- **Message Queue**: Offline message delivery when users reconnect
-- **Smart Message Grouping**: Automatic grouping of messages by date with headers
-- **Intelligent Scrolling**: Auto-scroll with "new messages" counter and scroll-to-bottom
-- **Enhanced Read Receipts**: Automatic read receipt handling with improved tracking
-- **Advanced Message Styling**: Visual hierarchy with dimmed metadata and smaller timestamps
-- **System Message Icons**: Material Design icons instead of emojis for better consistency
-- **Enhanced Message States**: Improved styling for encrypted, deleted, and unreadable messages
-- **Emoji Picker**: Rich emoji selection with theme-aware design and mobile optimization
-- **File Attachments**: Secure file sharing with encryption and size limits
-- **Message Editing**: Real-time message editing with WebSocket synchronization
-- **Message Deletion**: Soft deletion with proper cleanup and real-time updates
-
-### 🎯 User Experience
-
-- **Progressive Web App**: Installable on desktop and mobile devices
-- **Responsive Design**: Optimized for all screen sizes with mobile-first approach
-- **Dark Theme**: Modern, eye-friendly interface
-- **Auto-Reconnection**: Seamless connection recovery with exponential backoff
-- **Search Functionality**: Find users and conversations quickly
-
-### 📱 Mobile Optimizations
-
-- **Dynamic Viewport Handling**: Real-time keyboard detection and layout adjustments
-- **Performance Optimized**: 60fps scrolling and typing on mobile devices
-- **Battery Efficient**: Reduced CPU usage through optimized event handling
-- **Smart Keyboard Management**: Smooth virtual keyboard transitions without layout breaks
-- **iOS Safari Compatible**: Visual viewport API integration for modern iOS devices
-- **Safe Area Support**: Proper handling of iPhone safe areas and notches
-- **Orientation Aware**: Seamless experience across device rotations
-- **Enhanced Emoji Picker**: Improved mobile scrolling and positioning
-- **Theme Consistency**: Fixed mobile theme switching for chat backgrounds
-- **Scroll Optimization**: Prevented unwanted scrolling in mobile views
-
-## 🏗️ Architecture
-
-### Technology Stack
-
-#### Landing Pages
+#### Landing pages
 
 - **Framework**: Astro 4.0 (Static Site Generator)
 - **Pages**: Home, About, FAQ, Legal, Author
@@ -157,319 +101,256 @@ conversations remain completely private with zero data logging and client-side e
 
 #### Infrastructure
 
-- **Containerization**: Docker (Multi-stage build)
-- **Deployment**: Railway/Cloud platforms
-- **Build Tools**: TypeScript, Webpack
-- **Package Manager**: npm
+- **Containerization**: Docker (multi-stage build)
+- **Deployment**: Railway / cloud platforms
+- **Build Tools**: TypeScript
+- **Package Manager**: npm workspaces
 - **Code Quality**: ESLint, Prettier, Stylelint, Husky pre-commit hooks
 - **Linting**: Comprehensive linting for Angular, Node.js, and Astro with strict unused variable
   checking
-- **Debug-Free Production Code**: Clean production builds with all debug code removed
 
-### Project Structure
+### Project structure
 
-```
+```text
 quasar-contact-app/
-├── landing/                # Astro static site generator
-│   ├── public/             # Static assets for landing
-│   │   └── assets/
-│   │       └── images/
-│   ├── scripts/            # Build scripts
+├── landing/                # Astro static site (home, about, FAQ, legal, author)
+│   ├── public/             # Static assets
+│   │   └── assets/images/
 │   ├── src/
 │   │   ├── components/     # Astro components
 │   │   ├── layouts/        # Page layouts
 │   │   ├── pages/          # Static pages
-│   │   ├── scripts/        # Client-side scripts
+│   │   ├── scripts/        # Client-side scripts (cookie consent, image optimization)
 │   │   └── styles/         # Global styles
-│   ├── astro.config.mjs
-│   └── package.json
+│   └── astro.config.mjs
 ├── frontend/               # Angular application
+│   └── src/
+│       ├── app/
+│       │   ├── core/
+│       │   │   ├── auth/       # guards (auth, unauth, reset-password), interceptor
+│       │   │   ├── models/
+│       │   │   ├── services/   # auth, crypto, vault, websocket, csrf, chat-session, ...
+│       │   │   └── utils/      # api-paths, avatar, date
+│       │   ├── features/
+│       │   │   ├── auth/       # login, register, forgot-password, reset-password
+│       │   │   ├── chat/
+│       │   │   │   ├── chat-list/
+│       │   │   │   └── chat-room/
+│       │   │   │       └── services/  # facade, message, scroll, typing, ui-state, lifecycle, mobile-layout
+│       │   │   └── settings/
+│       │   └── shared/
+│       │       └── components/ # header, footer, emoji-picker, image-modal, image-attachment, loading-spinner, cache-info-banner
+│       ├── assets/             # images, icons, fonts
+│       └── environments/
+├── backend/
 │   ├── src/
-│   │   ├── app/
-│   │   │   ├── core/       # Core services and models
-│   │   │   ├── features/   # Feature modules (auth, chat)
-│   │   │   │   └── chat/
-│   │   │   │       └── chat-room/
-│   │   │   │           └── services/  # Specialized chat services
-│   │   │   ├── shared/     # Shared components
-│   │   │   └── utils/      # Utility functions
-│   │   ├── assets/         # Images, icons, fonts
-│   │   └── environments/   # Environment configs
-│   └── angular.json
-├── backend/                # Node.js server
-│   ├── src/
-│   │   ├── config/         # Server configuration
-│   │   ├── controllers/    # Route controllers
-│   │   ├── middleware/     # Express middleware
-│   │   ├── routes/         # API routes
-│   │   ├── services/       # Business logic
-│   │   ├── socket/         # Socket.IO handlers
+│   │   ├── config/         # env, CORS, rate limits, security limits
+│   │   ├── middleware/     # auth, CSRF, bot-blocker, bot-trap, honeypot, security-headers, logger
+│   │   ├── routes/         # auth, users, messages, rooms, keys, upload, analytics
+│   │   ├── sockets/        # Socket.IO event handlers
+│   │   ├── services/       # database (Prisma), email (nodemailer)
+│   │   ├── utils/          # encryption, cookie, password-reset, refresh-token, sanitization, security-logger
 │   │   ├── app.ts          # Express app setup
 │   │   └── server.ts       # Server entry point
-│   ├── prisma/             # Prisma ORM configuration
-│   │   ├── schema.prisma   # Database schema
-│   │   └── migrations/     # Database migrations
-│   ├── backup/             # MongoDB backup data
-│   └── package.json
-├── public/                 # Generated static files (from Astro)
-├── dist/                   # Production build output
-├── docs/                   # Documentation
-│   ├── LINTING.md         # Code quality and linting guide
-│   └── COOKIE_STRATEGY.md # Cookie and analytics strategy
+│   └── prisma/
+│       ├── schema.prisma   # Database schema
+│       └── migrations/
+├── docs/
+│   ├── LINTING.md
+│   ├── COOKIE_STRATEGY.md
+│   └── TESTING.md
+├── public/                 # Astro/landing build output (served at /)
+├── dist/                   # Angular frontend build output (served by backend at /app)
 ├── .husky/                 # Git hooks
-├── eslint.config.js        # Root ESLint configuration
-├── .prettierrc.js          # Prettier configuration
-├── .stylelintrc.js         # Stylelint configuration
-├── .lintstagedrc.js        # lint-staged configuration
-├── Dockerfile              # Container configuration
-├── nixpacks.toml           # Nixpacks deployment config
-└── package.json            # Root package file
+├── eslint.config.js
+├── .prettierrc.js
+├── .stylelintrc.js
+├── .lintstagedrc.js
+├── Dockerfile
+├── nixpacks.toml
+├── railway.json
+├── Procfile
+└── package.json
 ```
 
-### Chat Architecture
+### Chat room — facade pattern
 
-The chat system uses a modern facade pattern with specialized services:
+The chat room uses 8 specialized services orchestrated by a facade:
 
-#### Core Chat Services
+| Service                   | Responsibility                                     |
+| ------------------------- | -------------------------------------------------- |
+| `ChatRoomFacadeService`   | Main orchestrator — wires all services together    |
+| `ChatMessageService`      | Message grouping, date headers, state              |
+| `ChatScrollService`       | Auto-scroll, scroll position, "new messages" badge |
+| `ChatTypingService`       | Typing indicators, textarea auto-resize            |
+| `ChatUiStateService`      | Edit mode, attachment state, loading flags         |
+| `ChatEventHandlerService` | Centralized Socket.IO event subscriptions          |
+| `ChatLifecycleService`    | Init and cleanup on component enter/leave          |
+| `MobileChatLayoutService` | Viewport calculations, keyboard offset, safe area  |
 
-- **`ChatRoomFacadeService`**: Main orchestrator for all chat room functionality
-- **`ChatMessageService`**: Message grouping, date headers, and state management
-- **`ChatScrollService`**: Intelligent auto-scrolling and scroll position management
-- **`ChatTypingService`**: Typing indicators and textarea auto-resize functionality
-- **`ChatUiStateService`**: UI state management (editing, attachments, loading states)
-- **`ChatEventHandlerService`**: Centralized event subscriptions and handlers
-- **`ChatLifecycleService`**: Component initialization and cleanup management
-- **`MobileChatLayoutService`**: Dynamic mobile layout calculations and viewport handling
+### Frontend services
 
-#### Core Application Services
+#### Auth & security
 
-**Authentication & Security Services**
+- **`AuthService`** (`auth.service.ts`) — complete authentication lifecycle with HttpOnly JWT
+  cookies, smart key management on login/register, CSRF integration, Cloudflare Turnstile bot
+  protection, honeypot validation
+- **`CryptoService`** (`crypto.service.ts`) — RSA-OAEP + AES-GCM hybrid E2E encryption, 2048-bit key
+  generation, SHA-256 fingerprinting, chunk-based Base64 conversion to prevent stack overflow, error
+  throttling
+- **`VaultService`** (`vault.service.ts`) — AES-GCM encrypted IndexedDB with per-user databases,
+  reactive readiness state, ArrayBuffer serialization, read-only mode support
+- **`CsrfService`** (`csrf.service.ts`) — CSRF token lifecycle, localStorage persistence with
+  in-memory fallback
+- **`HoneypotService`** (`honeypot.service.ts`) — invisible fields, timing validation, CSS-based
+  field hiding, behavioral pattern analysis
+- **`TurnstileService`** (`turnstile.service.ts`) — Cloudflare Turnstile widget with theme support,
+  flexible sizing, width preservation, automatic re-render
 
-- **`AuthService`** (`auth.service.ts`): Complete user authentication lifecycle with HttpOnly JWT
-  cookies, smart key management, CSRF integration, Cloudflare Turnstile bot protection, and honeypot
-  validation
-- **`CryptoService`** (`crypto.service.ts`): RSA-OAEP + AES-GCM hybrid encryption with 2048-bit
-  keys, SHA-256 fingerprinting, chunk-based Base64 conversion, and error throttling
-- **`VaultService`** (`vault.service.ts`): AES-GCM encrypted IndexedDB storage with per-user
-  databases, reactive state management, and ArrayBuffer serialization support
-- **`CsrfService`** (`csrf.service.ts`): CSRF token management with LocalStorage persistence and
-  memory fallback for secure API requests
-- **`HoneypotService`** (`honeypot.service.ts`): Bot detection with invisible form fields, timing
-  validation, CSS hiding, and behavioral pattern analysis
-- **`TurnstileService`** (`turnstile.service.ts`): Cloudflare Turnstile integration with theme
-  support, flexible sizing, width preservation, and automatic widget re-rendering
+#### Real-time & messaging
 
-**Communication & Real-time Services**
+- **`WebSocketService`** (`websocket.service.ts`) — Socket.IO connection, exponential backoff,
+  health monitoring with ping/pong, user presence tracking, NgZone integration for mobile
+  performance
+- **`ChatSessionService`** (`chat-session.service.ts`) — chat orchestration, E2E encryption
+  pipeline, connection monitoring with fallback sync, key status management, message persistence via
+  vault
+- **`MessagesService`** (`messages.service.ts`) — HTTP API for message CRUD with auth validation and
+  error propagation
+- **`UserService`** (`user.service.ts`) — user lookup and key exchange via repository pattern
 
-- **`WebSocketService`** (`websocket.service.ts`): Real-time communication with automatic
-  reconnection, health monitoring, user presence tracking, and mobile performance optimization
-- **`ChatSessionService`** (`chat-session.service.ts`): Complex chat orchestration with end-to-end
-  encryption, connection monitoring, key status management, and message persistence
-- **`MessagesService`** (`messages.service.ts`): HTTP API communication for message operations with
-  authentication validation and error handling
-- **`UserService`** (`user.service.ts`): User management and key exchange operations with repository
-  pattern and authentication checks
+#### State & UI
 
-**State Management & UI Services**
+- **`NotificationService`** (`notification.service.ts`) — real-time notifications with rate
+  limiting, debounced refresh, mobile change detection, NgZone integration
+- **`ThemeService`** (`theme.service.ts`) — dark/light theme, system preference detection,
+  localStorage persistence, mobile meta tag updates, reactive BehaviorSubject
+- **`LoadingService`** (`loading.service.ts`) — global loading state, 15s timeout guard, emergency
+  stop, auth-specific states
+- **`ScrollService`** (`scroll.service.ts`) — cross-browser scroll management with mobile fallback
+  strategies
 
-- **`NotificationService`** (`notification.service.ts`): Real-time notification management with rate
-  limiting, debounced operations, and mobile change detection
-- **`ThemeService`** (`theme.service.ts`): Dark/light theme management with system preference
-  detection, persistence, and reactive state streams
-- **`LoadingService`** (`loading.service.ts`): Global loading state with timeout protection,
-  emergency stops, and authentication-specific states
-- **`ScrollService`** (`scroll.service.ts`): Cross-browser scroll management with mobile
-  compatibility and multiple fallback strategies
+#### Guards & interceptors
 
-**Authentication Guards & Interceptors**
+- **`AuthGuard`** (`auth.guard.ts`) — protects routes for unauthenticated users, redirects to login
+- **`UnauthGuard`** (`unauth.guard.ts`) — prevents authenticated users from accessing auth pages
+- **`ResetPasswordGuard`** (`reset-password.guard.ts`) — validates reset token presence before
+  rendering form
+- **`AuthInterceptor`** (`auth.interceptor.ts`) — attaches CSRF tokens, handles 401/429 responses,
+  rate limit feedback
 
-- **`AuthGuard`** (`auth.guard.ts`): Route guard ensuring users are authenticated before accessing
-  protected routes with redirect functionality
-- **`UnauthGuard`** (`unauth.guard.ts`): Route guard preventing authenticated users from accessing
-  auth pages with smart redirects
-- **`AuthInterceptor`** (`auth.interceptor.ts`): HTTP interceptor handling authentication, CSRF
-  tokens, rate limiting, and comprehensive error responses
+#### Utilities
 
-**Utility Services & Helpers**
-
-- **`ApiPathsUtil`** (`api-paths.util.ts`): Utility functions for constructing environment-specific
-  API and WebSocket paths
-- **`AvatarUtil`** (`avatar.util.ts`): Default avatar generation based on user input hash with
+- **`ApiPathsUtil`** (`api-paths.util.ts`) — constructs environment-specific API and WebSocket paths
+- **`AvatarUtil`** (`avatar.util.ts`) — default avatar generation based on user input hash with
   consistent styling
 
-### Core Services Architecture
+### Backend services
 
-#### Authentication & Security Services
+#### Routes
 
-**AuthService**
+| Route              | Description                                               |
+| ------------------ | --------------------------------------------------------- |
+| `auth.routes`      | Register, login, logout, refresh, password reset flow     |
+| `users.routes`     | Avatar update, user lookup                                |
+| `messages.routes`  | Send, edit, delete, mark-read, paginated history          |
+| `rooms.routes`     | DM room creation and listing                              |
+| `keys.routes`      | RSA public key upload, retrieval, mark-missing            |
+| `upload.routes`    | Image upload with server-side compression (image/\* only) |
+| `analytics.routes` | Privacy-preserving GA4 Measurement Protocol proxy         |
 
-- Complete user authentication lifecycle with HttpOnly JWT cookies
-- Smart key management with automatic generation for new users
-- CSRF token integration and Cloudflare Turnstile bot protection
-- Honeypot form validation with timing analysis
+#### Infrastructure services
 
-**CryptoService**
+- **`DatabaseService`** (`database.service.ts`) — PostgreSQL connection management via Prisma ORM
+  with connection pooling, health checks with retry logic, graceful connection/disconnection,
+  timeout protection
+- **`EmailService`** (`email.service.ts`) — SMTP email delivery for password reset with HTML/text
+  dual format emails, mobile-responsive templates, TLS support, connection verification
 
-- RSA-OAEP + AES-GCM hybrid end-to-end encryption
-- 2048-bit key pair generation with SHA-256 fingerprinting
-- Chunk-based Base64 conversion to prevent stack overflow
-- Error throttling to prevent console spam
+#### Middleware
 
-**VaultService**
+- **`auth.middleware`** — JWT validation, attaches user to request
+- **`csrf.middleware`** — double-submit cookie CSRF validation
+- **`bot-blocker`** — 98+ blocked malicious paths, user-agent filtering, auto-IP-blacklisting
+- **`bot-trap`** — honeypot path traps that log and block crawlers
+- **`honeypot-captcha`** — server-side form timing and field validation
+- **`security-headers`** — Helmet.js with CSP, HSTS, and other headers
+- **`request-logger`** — comprehensive request logging with daily rotation
 
-- AES-GCM encrypted IndexedDB storage with per-user databases
-- Repository pattern with reactive readiness state
-- Proper serialization for ArrayBuffers and complex objects
-- Read-only mode support for security
+#### Backend utilities
 
-**HoneypotService**
+- **`encryption.utils`** — AES-256 encryption/decryption for reset tokens
+- **`password-reset.utils`** — secure token generation, hashing, and expiry logic
+- **`refresh-token.utils`** — refresh token rotation and revocation
+- **`cookie.utils`** — HttpOnly + SameSite cookie management, environment-aware settings
+- **`sanitization.utils`** — input sanitization for all user-supplied data
+- **`security-logger.utils`** — structured security event logging
 
-- Bot detection with invisible form fields and timing validation
-- CSS-based field hiding and form interaction analysis
-- Spam prevention with behavioral pattern detection
+#### Landing page scripts
 
-#### Communication Services
+- **`script.js`** — interactive UI management with beta banner, mobile menu, scroll effects,
+  carousel functionality, touch/swipe support, and intersection observer animations
+- **`cookieConsent.js`** — GDPR-compliant cookie consent management with analytics tracking, batched
+  event sending, and localStorage persistence
+- **`imageOptimization.js`** — client-side responsive image loading and optimization
 
-**WebSocketService**
+### Architecture patterns
 
-- Real-time communication with automatic reconnection (exponential backoff)
-- Health monitoring with ping/pong and connection quality tracking
-- User presence management and cookie-based authentication
-- NgZone optimization for mobile performance
+- **Facade pattern** — `ChatRoomFacadeService` orchestrates complex chat functionality behind a
+  single API
+- **Observer pattern** — RxJS BehaviorSubjects for all reactive state across services
+- **Repository pattern** — clean data access abstraction for users and messages
+- **Singleton services** — Angular `providedIn: 'root'` for consistent service instances
 
-**ChatSessionService**
+### Performance
 
-- Complex chat orchestration with end-to-end encryption
-- Connection monitoring with fallback sync mechanisms
-- Key status management with artificial blocking states
-- Message persistence with vault storage integration
+- **Memory management** — automatic cleanup of RxJS subscriptions and event listeners
+- **Change detection** — strategic NgZone usage to avoid unnecessary Angular cycles
+- **Event throttling** — debounced typing events and scroll listeners
+- **Layout** — CSS variables and `dvh` units for smooth mobile experience
+- **Lazy evaluation** — deferred calculations using `requestAnimationFrame`
+- **Connection pooling** — Prisma connection pooling for database efficiency
+- **Message vault** — local caching of decrypted messages with key status tracking
 
-**MessagesService & UserService**
+## Security implementation
 
-- HTTP API communication with authentication validation
-- Repository pattern for data management and key exchange
-- Error handling with fallback responses and proper error propagation
+### Encryption flow
 
-#### State & UI Management Services
+1. **Key generation** (on user registration)
+   - Generate RSA-OAEP key pair in the browser
+   - Store private key in browser's IndexedDB (wrapped with AES-GCM)
+   - Upload public key to server
 
-**NotificationService**
+2. **Sending messages**
+   - Generate a fresh AES-GCM session key
+   - Encrypt message body with the session key
+   - Encrypt the session key with recipient's RSA public key
+   - Send encrypted message + encrypted session key as opaque blobs
 
-- Real-time notification management with rate limiting
-- Debounced refresh operations and mobile change detection
-- Immediate update streams with NgZone integration
+3. **Receiving messages**
+   - Decrypt the session key using own RSA private key
+   - Decrypt the message body using the decrypted session key
+   - Display plaintext — decryption happens entirely in the browser
 
-**ThemeService**
+The server stores and forwards ciphertext only. It never participates in decryption.
 
-- Dark/light theme management with system preference detection
-- LocalStorage persistence and mobile meta tag updates
-- Reactive theme state with BehaviorSubject streams
+### Security features
 
-**LoadingService**
+- **HTTPS only** — all production traffic must use TLS
+- **JWT authentication** — stateless auth with token expiry and refresh rotation
+- **Rate limiting** — brute-force protection across all sensitive endpoints
+- **CORS** — strict origin validation and pre-flight handling
+- **Helmet.js** — security headers including CSP and HSTS
+- **Input validation** — server-side validation and sanitization for all inputs
+- **SQL injection protection** — Prisma ORM with parameterized queries only
+- **Password requirements** — minimum length enforced, hashed with bcrypt
 
-- Global loading state with timeout protection (15-second limit)
-- Emergency stop functionality and NgZone integration
-- Authentication-specific loading states
-
-#### Performance Features
-
-- **Memory Management**: Automatic cleanup of RxJS subscriptions and event listeners
-- **Change Detection Optimization**: Strategic use of NgZone for performance
-- **Event Throttling**: Debounced typing events and scroll listeners
-- **Layout Optimization**: CSS variables and `dvh` units for smooth mobile experience
-- **Lazy Loading**: Deferred calculations using `requestAnimationFrame`
-
-### Backend Services Architecture
-
-#### Database Service
-
-**Database Service** (`database.service.ts`)
-
-- PostgreSQL connection management via Prisma ORM with connection pooling
-- Health checks with retry logic and configurable timeout settings
-- Graceful connection/disconnection with environment-based configuration
-- Connection limits and timeout protection for production stability
-
-#### Backend Services
-
-**Database & Infrastructure Services**
-
-- **`DatabaseService`** (`database.service.ts`): PostgreSQL connection management via Prisma ORM
-  with connection pooling, health checks with retry logic, graceful connection handling, and timeout
-  protection
-- **`EmailService`** (`email.service.ts`): SMTP email delivery for password reset with HTML/text
-  dual format emails, mobile-responsive templates, TLS support, and connection verification
-
-**Middleware & Security Services**
-
-- **`BotBlockerMiddleware`** (`bot-blocker.middleware.js`): Advanced bot protection with 98+ blocked
-  attack vectors, user agent filtering, auto-blacklisting, and request logging with daily rotation
-- **`HoneypotMiddleware`** (`honeypot.middleware.js`): Server-side honeypot validation with form
-  timing analysis, suspicious pattern detection, and behavioral blocking
-- **`SecurityMiddleware`** (`security.middleware.js`): Comprehensive security headers with Helmet.js
-  integration, CORS protection, input validation, and SQL injection prevention
-- **`RateLimitMiddleware`** (`rate-limit.middleware.js`): Multiple rate limiters with brute-force
-  protection, authentication-specific limiting, and configurable thresholds
-
-**Backend Utility Services**
-
-- **`CookieUtils`** (`cookie.utils.ts`): Cookie management utilities for authentication and CSRF
-  tokens with secure options, HttpOnly settings, and cross-domain support
-
-**Landing Page Services**
-
-- **`LandingPageScript`** (`script.js`): Interactive UI management with beta banner, mobile menu,
-  scroll effects, carousel functionality, touch/swipe support, and intersection observer animations
-- **`CookieConsentManager`** (`cookieConsent.js`): GDPR-compliant cookie consent management with
-  analytics tracking, batched event sending, and local storage persistence
-
-#### Service Design Patterns
-
-**Architecture Patterns Used**
-
-- **Facade Pattern**: ChatRoomFacadeService orchestrates complex chat functionality
-- **Observer Pattern**: Extensive RxJS BehaviorSubjects for reactive state management
-- **Repository Pattern**: Clean data access abstraction for users and messages
-- **Singleton Pattern**: Angular's `providedIn: 'root'` for service instances
-
-**Security Integration**
-
-- **End-to-End Encryption**: Service-level RSA-OAEP + AES-GCM implementation
-- **HttpOnly Cookies**: JWT tokens handled securely at service layer
-- **CSRF Protection**: Token-based validation across all authenticated services
-- **Bot Protection**: Integrated Cloudflare Turnstile and honeypot validation services
-
-**Performance Optimization Strategies**
-
-- **NgZone Integration**: Proper change detection for mobile performance
-- **Debouncing/Throttling**: Rate limiting for expensive service operations
-- **RequestAnimationFrame**: Smooth UI updates without main thread blocking
-- **Connection Pooling**: Database efficiency through Prisma optimization
-- **Caching**: Message vault storage and intelligent key status caching
-
-### Recent Improvements
-
-#### Database Migration (July 2025)
-
-- **Complete migration from MongoDB to PostgreSQL** with Prisma ORM
-- **Data preservation**: All original MongoDB data backed up during migration
-- **Enhanced type safety**: Better TypeScript integration with Prisma
-- **Improved performance**: Connection pooling and optimized queries
-- **ACID compliance**: PostgreSQL transactions for data consistency
-
-#### Performance Enhancements
-
-- **Connection stability**: Improved database connection handling
-- **Angular lifecycle**: Replaced setTimeout with proper Angular lifecycle methods
-- **Memory optimization**: Better RxJS subscription cleanup and garbage collection
-- **Event optimization**: Debounced resize and typing events for smoother experience
-
-## 🚀 Getting Started
+## Getting started
 
 ### Prerequisites
 
-- Node.js 22+ and npm 10+
-- PostgreSQL 14+ (local or cloud instance)
-- Git
+- Node.js 22+ / npm 10+
+- PostgreSQL 14+
 
 ### Installation
 
@@ -486,50 +367,46 @@ The chat system uses a modern facade pattern with specialized services:
    npm run install:all
    ```
 
-3. **Set up PostgreSQL database**
-
-   Install and start PostgreSQL, then create a database:
+3. **Set up PostgreSQL**
 
    ```bash
-   # Create database (adjust for your PostgreSQL setup)
    createdb quasar_chat
    ```
 
-4. **Set up environment variables**
-
-   Create `.env` file in the backend directory:
+4. **Configure backend** — create `backend/.env`:
 
    ```env
-   # Server Configuration
    PORT=3000
    NODE_ENV=development
 
-   # Database (PostgreSQL with connection pooling)
-   DATABASE_PUBLIC_URL=postgresql://username:password@localhost:XXXX/quasar_chat?connection_limit=XX&pool_timeout=XX&connect_timeout=XX
+   DATABASE_PUBLIC_URL=postgresql://user:password@localhost:5432/quasar_chat?connection_limit=10
 
-   # Security
-   JWT_SECRET=your-super-secret-jwt-key
-   JWT_EXPIRES_IN=7d
+   JWT_SECRET=your-jwt-secret
+   TOKEN_ENCRYPTION_SECRET=your-token-encryption-secret
+   SESSION_SECRET=your-session-secret
+   COOKIE_SECRET=your-cookie-secret
 
-   # Client URLs
    CLIENT_ORIGIN=http://localhost:4200
 
-   # Cloudflare Turnstile (bot protection)
-   NG_APP_TURNSTILE_SITE_KEY=your-turnstile-site-key
+   TURNSTILE_SECRET_KEY=your-turnstile-secret
 
-   # Email Service (optional)
-   EMAIL_HOST=smtp.gmail.com
-   EMAIL_PORT=587
-   EMAIL_USER=your-email@gmail.com
-   EMAIL_PASS=your-app-password
-   EMAIL_FROM=noreply@quasar.contact
+   # optional — enables password reset emails
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_SECURE=false
+   SMTP_USER=you@gmail.com
+   SMTP_PASS=your-app-password
+   SMTP_FROM=noreply@quasar.contact
+
+   # optional — enables analytics proxy
+   GA_MEASUREMENT_ID=G-XXXXXXXXXX
+   GA_API_SECRET=your-ga-api-secret
    ```
 
 5. **Set up Cloudflare Turnstile**
-   - Go to [Cloudflare Dashboard](https://dash.cloudflare.com/)
-   - Navigate to "Turnstile"
-   - Create a new site and add your domains (e.g., `localhost`, `your-domain.com`)
-   - Copy the site key to your environment configuration
+
+   Go to [Cloudflare Dashboard](https://dash.cloudflare.com/) → Turnstile → create a new site. Add
+   `localhost` and your production domain. Copy the site key into your env files.
 
 6. **Run database migrations**
 
@@ -539,359 +416,151 @@ The chat system uses a modern facade pattern with specialized services:
    npx prisma generate
    ```
 
-7. **Configure frontend environment**
+7. **Configure frontend** — create `frontend/.env`:
 
-   Create `environment.ts` in frontend/src/environments/:
-
-   ```typescript
-   export const environment = {
-     production: false,
-     apiUrl: 'http://localhost:3000/api',
-     wsUrl: 'http://localhost:3000',
-     turnstileSiteKey: 'your-turnstile-site-key',
-   };
+   ```env
+   NG_APP_API_URL=http://localhost:3000/api
+   NG_APP_WS_URL=http://localhost:3000
+   NG_APP_TURNSTILE_SITE_KEY=your-turnstile-site-key
    ```
 
 ### Development
 
-1. **Start PostgreSQL** (if running locally)
-
-   Ensure PostgreSQL is running on your system.
-
-2. **Run in development mode**
-
-   ```bash
-
-   npm run dev
-   ```
-
-3. **Access the application**
-   - Landing pages: http://localhost:3000 (in production mode)
-   - Landing dev: http://localhost:4321 (in dev mode)
-   - Angular app: http://localhost:4200 (dev) or http://localhost:3000/app (production)
-
-### Production Build
-
-1. **Build for production**
-
-   ```bash
-   npm run build
-   ```
-
-   This will:
-   - Build Astro landing pages
-   - Build Angular application
-   - Copy all assets to public directory
-   - Build backend TypeScript
-
-2. **Start production server**
-
-   ```bash
-   npm start
-   ```
-
-### Docker Deployment
-
-1. **Build Docker image**
-
-   ```bash
-   docker build -t quasar-contact-app .
-   ```
-
-2. **Run container**
-
-   ```bash
-   docker run -p 3000:3000 \
-     -e DATABASE_PUBLIC_URL=your-postgresql-uri \
-     -e JWT_SECRET=your-secret \
-     -e NG_APP_API_URL=https://your-domain.com/api \
-     -e NG_APP_WS_URL=https://your-domain.com \
-     -e NG_APP_TURNSTILE_SITE_KEY=your-turnstile-site-key \
-     quasar-contact-app
-   ```
-
-## 📝 API Functionality Overview
-
-**🔒 Security-First API Design**: This section describes the application's API capabilities without
-exposing implementation details.
-
-### Security Architecture
-
-- **Zero-Trust Model**: Every request authenticated and validated
-- **Multi-Layer Protection**: Bot detection, rate limiting, CSRF protection, input validation
-- **Encrypted Communications**: All sensitive data encrypted in transit and at rest
-- **Abuse Prevention**: Sophisticated anti-abuse and anomaly detection systems
-- **Security Monitoring**: Comprehensive request monitoring and logging
-
-### Developer Access
-
-- **Secure Documentation**: Complete API specifications available through secure developer portal
-- **Authentication Required**: Developer access requires verified authentication
-- **Rate Limited**: All API access subject to rate limiting and monitoring
-- **Security Review**: All integrations subject to security review process
-
-_For complete API documentation including endpoints, request formats, and authentication details,
-please contact the development team or access the secure developer portal._
-
-### Authentication System
-
-**🔐 Secure Authentication Features**
-
-- **User Registration**: Secure account creation with validation and verification
-- **Multi-Factor Login**: Username/email login with optional MFA support
-- **Password Security**: Bcrypt hashing with configurable complexity
-- **Session Management**: JWT tokens with HttpOnly cookies
-- **Account Recovery**: Secure password reset with email verification
-- **Anti-Automation**: Cloudflare Turnstile and honeypot protection against bots
-
-### Key Exchange
-
-**🔒 Security-Critical Functionality**: All cryptographic key operations are protected by:
-
-- Multi-layer authentication validation
-- Rate limiting specific to cryptographic operations
-- Bot detection and honeypot validation
-- Request signing and CSRF protection
-
-#### Available Key Operations
-
-**Public Key Upload**
-
-- Secure upload of RSA public keys for new users
-- Base64 encoded key bundle format
-- Automatic key validation and storage
-
-**Public Key Retrieval**
-
-- Secure retrieval of user public keys for encryption
-- User-specific key access with authentication
-- Key fingerprint validation
-
-**Key Status Management**
-
-- Ability to mark keys as compromised or missing
-- Secure key rotation support
-- Administrative key management functions
-
-_Note: Specific API endpoints and request formats are available in the developer documentation for
-authenticated developers only._
-
-### User Management
-
-**🛡️ User Account Operations**
-
-- **Avatar Management**: Secure avatar URL updates with validation
-- **Password Reset**: Token-based password reset with email verification
-- **Profile Updates**: User profile modification with authentication
-- **Account Security**: Multi-factor authentication support
-
-### Analytics & Monitoring
-
-**📊 Privacy-First Analytics**
-
-- **Proxy Service**: Analytics data processing without direct third-party access
-- **Event Batching**: Efficient event collection and transmission
-- **Privacy Compliance**: GDPR-compliant analytics with user consent
-- **Data Minimization**: Only essential metrics collected
-
-_Note: Specific implementation details available in secure developer documentation._
-
-### Room Management
-
-**💬 Secure Chat Room Operations**
-
-- **DM Room Creation**: Secure direct message room establishment between users
-- **Room Listing**: User-specific room access and management
-- **Participant Management**: Adding/removing participants with proper authorization
-- **Room Security**: End-to-end encrypted room metadata
-
-### Message Operations
-
-**📨 Secure Message Handling**
-
-- **Message Retrieval**: Paginated message history with encryption support
-- **Message Overview**: Unread count and conversation summaries
-- **Message Search**: Encrypted message search capabilities
-- **Message Management**: Edit, delete, and status tracking
-- **Offline Support**: Message queuing for offline users
-
-### Real-Time Communication
-
-**⚡ Secure WebSocket Operations**
-
-- **Message Sending**: Real-time encrypted message transmission
-- **Message Editing**: Live message modification with encryption
-- **Message Deletion**: Secure message removal with cleanup
-- **Typing Indicators**: Real-time typing status updates
-- **Read Receipts**: Message read status tracking
-- **Connection Management**: Health monitoring and auto-reconnection
-- **User Presence**: Online/offline status management
-
-_Note: WebSocket event names and data structures are defined in the secure API specification._
-
-### WebSocket Security Features
-
-**🔐 Encrypted Real-Time Features**
-
-- **Authenticated Connections**: Cookie-based authentication for WebSocket connections
-- **Encrypted Events**: All real-time data transmitted with encryption
-- **Rate Limiting**: WebSocket-specific rate limiting and abuse prevention
-- **Connection Monitoring**: Health checks and automatic reconnection
-- **Session Management**: Secure session handling with timeout protection
-
-_Note: WebSocket implementation details, event names, and data structures are provided through
-secure developer channels only._
-
-## 🔒 Security Implementation
-
-### Encryption Flow
-
-1. **Key Generation** (on user registration)
-   - Generate RSA-OAEP key pair
-   - Store private key in browser's IndexedDB
-   - Upload public key to server
-
-2. **Sending Messages**
-   - Generate AES-GCM session key
-   - Encrypt message with AES-GCM
-   - Encrypt session key with recipient's RSA public key
-   - Send encrypted message + encrypted session key
-
-3. **Receiving Messages**
-   - Decrypt session key with own RSA private key
-   - Decrypt message with decrypted session key
-   - Display plaintext message
-
-### Security Features
-
-- **HTTPS Only**: All production traffic must use TLS
-- **JWT Authentication**: Stateless authentication with token expiry
-- **Rate Limiting**: Protection against brute force attacks
-- **CORS Protection**: Strict origin validation
-- **Helmet.js**: Security headers for XSS and other attacks
-- **Input Validation**: Server-side validation for all inputs
-- **Password Requirements**: Minimum 6 characters, hashed with bcrypt
-
-## 🧪 Testing
-
-Currently, the project doesn't include automated tests. Testing implementation is planned for future
-releases.
-
-## 🛠️ Development Tools & Configuration
-
-### Build Tools & Scripts
-
-The project includes comprehensive build automation with the following key scripts:
-
-#### Root Level Commands
+Start the backend dev server (serves the pre-built Angular app from `dist/`):
 
 ```bash
-npm run install:all    # Install dependencies for all projects
-npm run clean          # Clean all build artifacts and node_modules
-npm run full           # Full production build with asset copying
-npm run copy:landing   # Copy Astro landing pages to public directory
-npm run style:fix      # Fix styling issues across all projects
-npm run dev            # Start all services in development mode
+npm run dev
 ```
 
-#### Frontend Development
+For Angular hot-reload, run in a separate terminal:
 
 ```bash
-cd frontend
-npm run build          # Production build
-npm run dev            # Development server
-npm run typecheck      # TypeScript type checking
-npm run style:css      # CSS linting
-npm run style:css:fix  # Fix CSS linting issues
+cd frontend && npm start
 ```
 
-#### Backend Development
+Access:
+
+- Angular app (hot-reload): <http://localhost:4200>
+- Angular app (via backend): <http://localhost:3000>
+- Landing (dev): run `npm run dev:landing` → <http://localhost:4321>
+- Backend API: <http://localhost:3000/api>
+
+### Production build
 
 ```bash
+npm run build
+```
+
+This builds:
+
+- Astro landing pages
+- Angular application
+- Copies all assets to `public/`
+- Compiles backend TypeScript
+
+```bash
+npm start   # start production server
+```
+
+## Development tools
+
+### Commands
+
+```bash
+# root
+npm run install:all     # install all workspaces
+npm run dev             # start backend dev server (serves pre-built frontend)
+npm run dev:landing     # start Astro landing dev server
+npm run build           # full production build
+npm run start           # start production server
+npm run clean           # wipe build artifacts and node_modules
+npm run full            # clean + full build + start (one-shot deploy)
+npm run copy:landing    # copy Astro output to public/
+npm run style:fix       # run all linters with --fix across workspaces
+
+# backend
 cd backend
-npm run build          # TypeScript compilation
-npm run dev            # Development with nodemon
-npm run start          # Production server
-npm run typecheck      # TypeScript checking
-npm run style:fix      # ESLint and Prettier fixes
-```
+npm run dev             # ts-node-dev with hot reload
+npm run build           # prisma generate + tsc
+npm run typecheck       # tsc --noEmit
+npm test                # jest
+npm run style:fix       # ESLint + Prettier fix
 
-#### Landing Page Development
+# frontend
+cd frontend
+npm start               # ng serve (Angular dev server at localhost:4200)
+npm run build           # ng build
+npm run typecheck       # ng build with type checking
+npm run style:css       # Stylelint check
+npm run style:css:fix   # Stylelint fix
 
-```bash
+# landing
 cd landing
-npm run build          # Static site generation
-npm run dev            # Astro development server
-npm run build:selective # Selective build optimization
-npm run deploy:pages   # Deploy to GitHub Pages
-npm run style:fix      # Style and format fixes
+npm run dev             # astro dev
+npm run build           # astro build
+npm run build:selective # selective build optimization
+npm run deploy:pages    # deploy to GitHub Pages
+npm run style:fix       # Prettier + ESLint fix
 ```
 
-### Code Quality & Linting
+### Code quality & linting
 
-#### ESLint Configuration
+#### ESLint
 
-- **Flat Config**: Modern ESLint 9+ flat configuration
-- **TypeScript Support**: Full TypeScript linting across all projects
-- **Angular Rules**: Angular-specific linting with template checking
-- **Unused Variables**: Strict unused variable detection and removal
-- **Import Sorting**: Automatic import organization
+- **Flat config** — modern ESLint 9+ flat configuration across all three workspaces
+- **TypeScript support** — full TypeScript linting with strict unused variable detection
+- **Angular rules** — Angular-specific linting with template checking
+- **Import sorting** — automatic import organization
 
-#### Pre-commit Hooks
+#### Pre-commit hooks
 
-- **Husky Integration**: Git hooks for code quality enforcement
-- **Lint-staged**: Run linters only on staged files
-- **Automatic Fixes**: Auto-fix linting issues before commit
-- **Type Checking**: Ensure TypeScript compilation success
+- **Husky** — git hooks for code quality enforcement
+- **lint-staged** — runs linters only on staged files
+- **Automatic fixes** — auto-fix ESLint and Prettier issues before commit
+- **Type checking** — TypeScript compilation verified on every commit
 
-#### Style Configuration
+#### Style tools
+
+- **Prettier** — consistent code formatting across all files
+- **Stylelint** — CSS/SCSS quality and property ordering
+- **Angular template linting** — accessibility and template best-practice checks
+
+### Docker & containerization
+
+Multi-stage Docker build:
+
+- Smaller images via separate build and runtime stages
+- Health checks for container monitoring
+- Proper layer caching for faster rebuilds
+- Non-root user for security
+- Build-time environment variable injection
+
+Container health check:
 
 ```bash
-# Prettier configuration for consistent formatting
-# Stylelint for CSS/SCSS quality and property ordering
-# Angular template linting with accessibility checks
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:${PORT:-3000}/health || exit 1
 ```
 
-### Docker & Containerization
+### Deployment configuration
 
-#### Multi-stage Docker Build
+#### Nixpacks (Railway)
 
-```dockerfile
-# Optimized Docker build with:
-# - Multi-stage compilation for smaller images
-# - Health checks for container monitoring
-# - Proper layer caching for faster builds
-# - Non-root user for security
-# - Build-time environment variable injection
-```
+- Custom build process optimized for cloud deployment
+- Secure environment variable management
+- Automatic Prisma migrations on deploy
 
-#### Health Checks
+#### Environment management
 
-```bash
-# Container health monitoring
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \
-  CMD curl -f http://localhost:3000/api/health || exit 1
-```
+- Development, staging, and production configs via environment files
+- Angular environment files injected at build time
+- Server configuration via runtime environment variables
 
-### Deployment Configuration
+## Testing checklist
 
-#### Nixpacks (Railway/Cloud)
+Before submitting a PR, verify:
 
-- **Custom Build Process**: Optimized for cloud deployment
-- **Environment Handling**: Secure environment variable management
-- **Asset Optimization**: Automatic asset compression and serving
-- **Database Migrations**: Automatic Prisma migration on deploy
-
-#### Environment Management
-
-- **Multi-environment Support**: Development, staging, production configs
-- **Build-time Variables**: Angular environment injection during build
-- **Runtime Variables**: Server configuration via environment variables
-- **Security**: Secure handling of secrets and API keys
-
-### Manual Testing Checklist
-
-#### Core Functionality
+### Core functionality
 
 - [ ] User registration and login
 - [ ] Key generation and exchange
@@ -903,50 +572,54 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \
 - [ ] User search functionality
 - [ ] Database migrations (Prisma)
 
-#### Chat Features
+### Chat features
 
 - [ ] Message grouping with date headers
-- [ ] Typing indicators and auto-resize
+- [ ] Typing indicators and textarea auto-resize
 - [ ] Intelligent auto-scrolling
 - [ ] Read receipt tracking
 - [ ] New message notifications
 - [ ] Enhanced message styling and visual hierarchy
 - [ ] System message icons and states
 - [ ] Emoji picker functionality and theme compatibility
-- [ ] File attachment upload and download
+- [ ] Image attachment — upload, display, modal view
 - [ ] Real-time message editing and deletion
 
-#### Mobile Experience
+### Mobile experience
 
-- [ ] Virtual keyboard handling on iOS/Android
-- [ ] Viewport adjustments during keyboard show/hide
-- [ ] Smooth scrolling performance (60fps)
-- [ ] Safe area handling on iPhone
-- [ ] Orientation change handling
+- [ ] Virtual keyboard show/hide — layout adjusts without breaks (iOS + Android)
+- [ ] Safe area on iPhone — input not hidden behind home indicator
+- [ ] Smooth 60fps scrolling on mobile
+- [ ] Orientation change — no layout breakage
 - [ ] Touch interaction responsiveness
-- [ ] Emoji picker mobile functionality
-- [ ] Theme switching consistency
-- [ ] Optimized scroll behavior
+- [ ] Emoji picker mobile scrolling and positioning
+- [ ] Theme switching consistency on mobile
 
-#### Security & Protection
+### Security & protection
 
-- [ ] Bot blocker effectiveness
+- [ ] Bot blocker — suspicious paths return 403/404
 - [ ] Honeypot trap detection
-- [ ] Cloudflare Turnstile widget functionality
-- [ ] Turnstile theme switching and width preservation
-- [ ] Rate limiting functionality
-- [ ] CSRF protection validation
+- [ ] Cloudflare Turnstile — widget renders, theme switches, resets correctly
+- [ ] Rate limiting — too many requests get 429
+- [ ] CSRF token — state-changing requests include token header
 - [ ] Security headers verification
 
-#### Development & Build
+### Build & infra
 
-- [ ] All npm scripts execution
-- [ ] TypeScript compilation
-- [ ] Linting and formatting
-- [ ] Docker build and health checks
-- [ ] Environment variable injection
+- [ ] All npm scripts execute without errors
+- [ ] TypeScript compiles (`npm run typecheck`) in all three workspaces
+- [ ] Linting passes — no ESLint or Stylelint errors
+- [ ] Docker build succeeds and health check passes (`/api/health`)
+- [ ] Environment variable injection works at build time
+- [ ] `npx prisma migrate dev` runs clean on a fresh database
 
-#### API Endpoints
+### Settings
+
+- [ ] Avatar picker — select and save a stock avatar
+- [ ] Private key download — exports as PEM file
+- [ ] Private key import — restores from backup file, shows fingerprint
+
+### API endpoints
 
 - [ ] All authentication endpoints
 - [ ] Room management (DM creation/listing)
@@ -955,103 +628,135 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \
 - [ ] Analytics proxy functionality
 - [ ] User avatar updates
 
-#### Landing Pages & SEO
+### Landing pages & SEO
 
 - [ ] Landing page navigation
 - [ ] SEO meta tags and sitemap
-- [ ] Google Analytics integration
+- [ ] Cookie consent and Google Analytics integration
 
-## 🚦 Deployment
+## Deployment
 
-### Railway Deployment
+### Railway
 
 1. Connect your GitHub repository to Railway
-2. Set environment variables in Railway dashboard
-3. Deploy using the included `nixpacks.toml` configuration
+2. Set environment variables in the Railway dashboard
+3. Deploy using the included `nixpacks.toml` — migrations run automatically on deploy
 
-### Environment Variables for Production
+### Docker
 
-```env
-# Required
-NODE_ENV=production
-DATABASE_PUBLIC_URL=postgresql://user:password@host:XXXX/database?connection_limit=XX
-JWT_SECRET=<generate-strong-secret>
-NG_APP_API_URL=https://your-domain.com/api
-NG_APP_WS_URL=https://your-domain.com
-NG_APP_TURNSTILE_SITE_KEY=<your-turnstile-site-key>
+```bash
+# NG_APP_* vars are baked in at build time — pass them as --build-arg
+docker build -t quasar-contact-app \
+  --build-arg NG_APP_API_URL=https://your-domain.com/api \
+  --build-arg NG_APP_WS_URL=https://your-domain.com \
+  --build-arg NG_APP_TURNSTILE_SITE_KEY=your-turnstile-site-key \
+  .
 
-# Optional
-EMAIL_HOST=smtp.provider.com
-EMAIL_PORT=587
-EMAIL_USER=your-email
-EMAIL_PASS=your-password
-GA_MEASUREMENT_ID=G-XXXXXXXXXX
+docker run -p 3000:3000 \
+  -e NODE_ENV=production \
+  -e DATABASE_PUBLIC_URL=your-postgres-uri \
+  -e JWT_SECRET=your-jwt-secret \
+  -e TOKEN_ENCRYPTION_SECRET=your-token-secret \
+  -e SESSION_SECRET=your-session-secret \
+  -e COOKIE_SECRET=your-cookie-secret \
+  -e CLIENT_ORIGIN=https://your-domain.com \
+  -e TURNSTILE_SECRET_KEY=your-turnstile-secret-key \
+  quasar-contact-app
 ```
 
-## 🤝 Contributing
+### Production environment variables
+
+```env
+NODE_ENV=production
+DATABASE_PUBLIC_URL=postgresql://user:password@host:5432/db?connection_limit=10
+JWT_SECRET=<strong-random-secret>
+TOKEN_ENCRYPTION_SECRET=<strong-random-secret>
+SESSION_SECRET=<strong-random-secret>
+COOKIE_SECRET=<strong-random-secret>
+CLIENT_ORIGIN=https://your-domain.com
+TURNSTILE_SECRET_KEY=<from-cloudflare>
+
+# NG_APP_* variables must be set at docker build time (--build-arg), not at runtime
+# NG_APP_API_URL=https://your-domain.com/api
+# NG_APP_WS_URL=https://your-domain.com
+# NG_APP_TURNSTILE_SITE_KEY=<from-cloudflare>
+
+# optional — SMTP for password reset emails
+SMTP_HOST=smtp.provider.com
+SMTP_PORT=587
+SMTP_SECURE=true
+SMTP_USER=...
+SMTP_PASS=...
+SMTP_FROM=noreply@your-domain.com
+
+# optional — analytics proxy
+GA_MEASUREMENT_ID=G-XXXXXXXXXX
+GA_API_SECRET=...
+```
+
+## Contributing
 
 Contributions are welcome! Please follow these steps:
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m 'feat: add your feature'`
+4. Push to the branch: `git push origin feature/your-feature`
+5. Open a Pull Request with a clear description of what changed and why
 
-### Code Style
+### Code style
 
 - Follow Angular style guide for frontend code
 - Follow Astro best practices for landing pages
 - Use ESLint and Prettier for code formatting
-- Write meaningful commit messages
-- Add comments for complex logic
-- Maintain clean code with no unused variables or debug statements
-- Remove all console.log statements except for legitimate error logging
+- Write meaningful commit messages (`fix: ...`, `feat: ...`, `chore: ...`)
+- No `console.log` in production paths, no unused variables or imports
+- Add comments only when the "why" is non-obvious
 
-### GPL-3.0 License Implications
+### GPL-3.0 implications for contributors
 
-When contributing to this project, please note:
-
-- Your contributions will also be licensed under GPL-3.0
+- Your contributions will be licensed under GPL-3.0
 - Any derivative work must also be open-source under GPL-3.0
 - You must preserve copyright notices and license information
 - If you distribute a modified version, you must clearly mark it as changed
 
-## 📄 License
+## License
 
-This project is licensed under the **GNU General Public License v3.0** - see the LICENSE file for
-details.
+This project is licensed under the **GNU General Public License v3.0** — see the [LICENSE](LICENSE)
+file for details.
 
-### What this means:
+### What this means
 
-- ✅ **Freedom to use** - Use for any purpose, including commercial (with conditions)
-- ✅ **Freedom to study** - Access and study the source code
-- ✅ **Freedom to share** - Copy and distribute the software
-- ✅ **Freedom to improve** - Modify and distribute your modifications
+- Freedom to use — for any purpose, including commercial (with conditions)
+- Freedom to study — access and study the source code
+- Freedom to share — copy and distribute the software
+- Freedom to improve — modify and distribute your modifications
 
-### Important Requirements for Commercial Use:
+### Requirements
 
-- 📋 **Copyleft requirement** - Any distributed modifications must also be GPL-3.0
-- 📋 **Source code disclosure** - Must provide source code when distributing
-- 📋 **Copyright notices** - Must include original copyright and license notices
-- 📋 **Document changes** - Changes must be clearly documented
-- ⚠️ **No proprietary derivatives** - Cannot create closed-source commercial versions
-- ⚠️ **Network use clause** - If you modify and offer as network service, must provide source to
+- Copyleft — any distributed modifications must also be GPL-3.0
+- Source code disclosure — must provide source code when distributing
+- Copyright notices — must include original copyright and license notices
+- Document changes — changes must be clearly documented
+- No proprietary derivatives — cannot create closed-source commercial versions
+- Network use clause — if you modify and offer as a network service, you must provide source to
   users
 
-## 💡 Acknowledgments
+## Credits
 
-- Astro team for the excellent static site generator
-- Angular team for the amazing framework
-- Socket.IO for real-time capabilities
-- Web Crypto API for client-side encryption
-- [Boring Avatars](https://github.com/boringdesigners/boring-avatars) by Boring Designers for avatar
-  design inspiration (MIT License)
+- [Astro](https://astro.build/) — landing pages
+- [Angular](https://angular.dev/) — frontend framework
+- [Socket.IO](https://socket.io/) — real-time transport
+- [Prisma](https://www.prisma.io/) — database ORM
+- [Boring Avatars](https://github.com/boringdesigners/boring-avatars) — avatar design inspiration
+  (MIT)
+- Web Crypto API — browser-side encryption primitives
 - The open-source community
 
-## 📞 Support
+## Support
 
-For issues and feature requests, please use the GitHub Issues page.
+For issues and feature requests, please use the
+[GitHub Issues](https://github.com/art2url/quasar-contact-app/issues) page.
 
 ---
 
