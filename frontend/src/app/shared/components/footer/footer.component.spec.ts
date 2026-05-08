@@ -30,7 +30,7 @@ describe('FooterComponent', () => {
     const currentYear = new Date().getFullYear();
     
     expect(copyright?.textContent?.trim()).toContain(`© ${currentYear} Quasar Contact`);
-    expect(copyright?.textContent?.trim()).toContain('Artem Turlenko');
+    expect(copyright?.textContent?.trim()).toContain('atpro.dev');
   });
 
   it('shows social links', () => {
