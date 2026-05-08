@@ -26,6 +26,7 @@ describe('ForgotPasswordComponent', () => {
     component.turnstileToken = '';
     component.emailSent = false;
     component.resendCooldown = 0;
+    component.serviceUnavailable = false;
   }
 
   beforeEach(async () => {

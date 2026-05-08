@@ -46,6 +46,8 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
   @ViewChild('turnstileElement', { static: false })
   turnstileElement!: ElementRef;
 
+  serviceUnavailable = true;
+
   email = '';
   error = '';
   isLoading = false;
@@ -155,6 +157,8 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy, AfterViewInit
   }
 
   onSubmit(): void {
+    if (this.serviceUnavailable) return;
+
     this.formSubmitted = true;
     this.error = '';
 
