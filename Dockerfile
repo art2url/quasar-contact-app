@@ -11,8 +11,6 @@ COPY backend/package*.json ./backend/
 COPY landing/package*.json ./landing/
 
 # Install dependencies for all parts
-# Upgrade npm to support newer package-lock.json format
-RUN npm install -g npm@latest
 RUN npm install --omit=dev --ignore-scripts
 RUN cd frontend && npm install --ignore-scripts
 RUN cd backend && npm install --ignore-scripts
