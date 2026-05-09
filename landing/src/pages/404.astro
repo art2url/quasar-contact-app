@@ -62,9 +62,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: calc(
-      100vh - var(--beta-banner-height) - var(--header-height) - var(--footer-height)
-    );
     text-align: center;
   }
 
@@ -75,6 +72,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   }
 
   .error-icon {
+    margin-top: 4rem;
     margin-bottom: 4rem;
     display: flex;
     justify-content: center;
@@ -179,7 +177,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     font-weight: 400;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    font-family: 'Courier New', monospace;
+    font-family: "Courier New", monospace;
   }
 
   .help-links {
@@ -196,7 +194,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 100px;
     background: rgba(255, 255, 255, 0.04);
-    transition: color 0.2s, border-color 0.2s, background 0.2s;
+    transition:
+      color 0.2s,
+      border-color 0.2s,
+      background 0.2s;
     font-size: 0.85rem;
     font-weight: 400;
   }
@@ -214,6 +215,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     }
 
     .error-icon {
+      margin-top: 2rem;
       margin-bottom: 3rem;
     }
 
@@ -275,7 +277,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     }
 
     .error-actions {
-      margin-bottom: 4rem;
+      margin-bottom: 1.5rem;
     }
 
     .error-title {
