@@ -8,9 +8,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 >
   <div class="main-content page-content">
     <div class="container inner">
-      <div class="page-header">
-        <h2>Legal Terms & Privacy Policy</h2>
-        <p class="page-subtitle">Your privacy and data protection rights</p>
+      <div class="ip-header">
+<h2 class="ip-title">Legal Terms & Privacy Policy</h2>
+        <p class="ip-sub">Your privacy and data protection rights</p>
       </div>
 
       <div class="legal-content">
@@ -174,7 +174,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           </p>
         </section>
 
-        <section class="legal-section">
+        <section class="legal-section legal-contact-section">
           <h2>Contact Information</h2>
           <p>
             For any questions regarding these terms, privacy policy, or your data protection rights,
@@ -192,7 +192,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
         <div class="legal-footer">
           <p>
-            Last updated: June 21, 2025.This policy will be updated if there are any changes to my
+            Last updated: June 21, 2025. This policy will be updated if there are any changes to my
             data processing practices.
           </p>
         </div>
@@ -200,3 +200,115 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     </div>
   </div>
 </BaseLayout>
+
+<style>
+  /* Legal sections modernization */
+  .legal-content {
+    margin-bottom: 2rem;
+  }
+
+  .legal-section {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 16px;
+    padding: 2rem 2.25rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.25s ease;
+  }
+
+  .legal-section:hover {
+    border-color: rgba(255, 255, 255, 0.11);
+  }
+
+  .legal-contact-section {
+    border-color: rgba(195, 247, 58, 0.18);
+    background: rgba(195, 247, 58, 0.02);
+  }
+
+  .legal-section h2 {
+    color: #c3f73a;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    letter-spacing: -0.01em;
+  }
+
+  .legal-section h3 {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.6rem;
+    letter-spacing: -0.005em;
+  }
+
+  .legal-section .space {
+    margin-bottom: 0.25rem;
+  }
+
+  .legal-section p {
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.72;
+    margin: 0 0 0.5rem;
+    font-weight: 300;
+    font-size: 0.91rem;
+  }
+
+  .legal-section ul {
+    margin: 0.5rem 0 0.75rem 1.25rem;
+    padding: 0;
+  }
+
+  .legal-section li {
+    color: rgba(255, 255, 255, 0.5);
+    padding: 0.2rem 0;
+    font-weight: 300;
+    font-size: 0.91rem;
+    line-height: 1.65;
+  }
+
+  .legal-section li:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .legal-section strong {
+    color: rgba(255, 255, 255, 0.72);
+    font-weight: 500;
+  }
+
+  .contact-info {
+    border: 1px solid rgba(195, 247, 58, 0.2);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    margin: 1rem 0 0;
+    background: rgba(195, 247, 58, 0.04);
+  }
+
+  .contact-info p {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+    font-size: 0.92rem;
+  }
+
+  .legal-footer {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .legal-footer p {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.82rem;
+    margin: 0;
+    font-weight: 300;
+  }
+
+  @media (max-width: 640px) {
+    .legal-section {
+      padding: 1.5rem 1.25rem;
+    }
+  }
+</style>
