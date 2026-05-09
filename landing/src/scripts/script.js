@@ -320,10 +320,40 @@ document.addEventListener('DOMContentLoaded', function () {
   if (track && window.innerWidth >= 599) {
     const slides = track.querySelectorAll('.carousel-slide');
     const dots = document.querySelectorAll('.carousel-dot');
+    const tabs = document.querySelectorAll('.carousel-tab');
     const prevBtn = document.querySelector('.carousel-btn-prev');
     const nextBtn = document.querySelector('.carousel-btn-next');
     const pauseBtn = document.querySelector('.carousel-btn-pause');
     const carouselContainer = document.querySelector('.carousel-container');
+    const slideInfoTitle = document.getElementById('slide-info-title');
+    const slideInfoDesc = document.getElementById('slide-info-desc');
+
+    const slideData = [
+      {
+        title: 'Messaging Features',
+        desc: 'Send encrypted messages in real-time with delivery confirmation and read receipts. Edit or delete messages seamlessly.',
+      },
+      {
+        title: 'Theme Customization',
+        desc: 'Switch between dark and light themes instantly. Full end-to-end encryption is maintained across all visual themes.',
+      },
+      {
+        title: 'Key Recovery',
+        desc: 'Moved to a new device? Quasar detects missing keys and guides you through regeneration. Previous messages are unreadable for security.',
+      },
+      {
+        title: 'Account Security',
+        desc: 'Protect conversations with robust authentication and seamless access controls. Multi-layered protection keeps unauthorized users out.',
+      },
+      {
+        title: 'Password Recovery',
+        desc: 'Lost your password? Regain access to encrypted conversations safely through our streamlined, security-preserving reset process.',
+      },
+      {
+        title: 'Privacy Controls',
+        desc: 'Backup encryption keys as secure .pem files and restore them anytime. Choose from curated avatars to personalize your profile.',
+      },
+    ];
 
     if (prevBtn && nextBtn && pauseBtn && carouselContainer) {
       let currentSlide = 0;
@@ -341,6 +371,17 @@ document.addEventListener('DOMContentLoaded', function () {
         dots.forEach((dot, index) => {
           dot.classList.toggle('active', index === currentSlide);
         });
+
+        // Update tabs
+        tabs.forEach((tab, index) => {
+          tab.classList.toggle('active', index === currentSlide);
+        });
+
+        // Update slide info
+        if (slideInfoTitle && slideInfoDesc && slideData[currentSlide]) {
+          slideInfoTitle.textContent = slideData[currentSlide].title;
+          slideInfoDesc.textContent = slideData[currentSlide].desc;
+        }
       }
 
       function nextSlide() {
@@ -413,6 +454,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
       dots.forEach((dot, index) => {
         dot.addEventListener('click', () => {
+          goToSlide(index);
+          startAutoPlay(); // Restart with fresh timer
+        });
+      });
+
+      tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => {
           goToSlide(index);
           startAutoPlay(); // Restart with fresh timer
         });

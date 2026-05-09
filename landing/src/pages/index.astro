@@ -141,7 +141,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       <section class="lp-feats" aria-labelledby="lp-feats-title">
         <h2 id="lp-feats-title" class="sr-only">Quasar Security Features</h2>
 
-        <article class="lp-feat lp-in" style="--d:0.8s">
+        <a href="#how-it-works" class="lp-feat lp-in" style="--d:0.8s">
           <div class="lp-feat-ic">
             <svg
               width="24"
@@ -164,9 +164,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
             </p>
           </div>
           <span class="lp-feat-ch">OAEP · GCM</span>
-        </article>
+        </a>
 
-        <article class="lp-feat lp-in" style="--d:0.95s">
+        <a href="/faq" class="lp-feat lp-in" style="--d:0.95s">
           <div class="lp-feat-ic">
             <svg
               width="24"
@@ -187,9 +187,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
             </p>
           </div>
           <span class="lp-feat-ch">Socket.IO · JWT</span>
-        </article>
+        </a>
 
-        <article class="lp-feat lp-in" style="--d:1.1s">
+        <a href="/legal" class="lp-feat lp-in" style="--d:1.1s">
           <div class="lp-feat-ic">
             <svg
               width="24"
@@ -214,172 +214,118 @@ import BaseLayout from "../layouts/BaseLayout.astro";
             </p>
           </div>
           <span class="lp-feat-ch">Local Key Vault</span>
-        </article>
+        </a>
       </section>
 
-      <!-- ── APP SHOWCASE (existing carousel — unchanged) ── -->
+      <!-- ── APP SHOWCASE ── -->
       <section class="app-showcase fade-in-up" data-delay="500" aria-labelledby="showcase-title">
-        <h2 id="showcase-title">See It in Action</h2>
-        <p class="showcase-description">
-          Experience the power of private messaging with our intuitive interface designed for
-          privacy-conscious users.
-        </p>
+        <div class="showcase-hd">
+          <h2 id="showcase-title">See It in Action</h2>
+          <p class="showcase-sub">Six screens. One interface. Real encrypted conversations.</p>
+        </div>
 
-        <div class="carousel-container">
-          <div class="carousel-track" id="carousel-track">
-            <div class="carousel-slide">
-              <ResponsiveImage
-                src="slides/1_1270x720x1_notext.png"
-                alt="Chat interface showing encrypted messaging"
-                loading="lazy"
-              />
-              <div class="slide-banner">
-                <h3>Messaging Features & Communication</h3>
-                <p>
-                  Send encrypted messages in real-time with delivery confirmation and read receipts.
-                  Edit or delete messages seamlessly. See typing indicators while maintaining
-                  end-to-end encryption.
-                </p>
-              </div>
+        <div class="bc-frame">
+          <div class="bc-bar">
+            <div class="bc-dots">
+              <span class="bc-dot bc-dot-r"></span>
+              <span class="bc-dot bc-dot-y"></span>
+              <span class="bc-dot bc-dot-g"></span>
             </div>
-            <div class="carousel-slide">
-              <ResponsiveImage
-                src="slides/2_1270x720x1_notext.png"
-                alt="Chat room with multiple participants"
-                loading="lazy"
-              />
-              <div class="slide-banner">
-                <h3>Theme Customization & Visual Comfort</h3>
-                <p>
-                  Adapt Quasar to your preferences with dark and light theme switching. Toggle
-                  between sleek dark mode and clean light theme instantly. Maintain full end-to-end
-                  encryption and security across all visual themes.
-                </p>
-              </div>
+            <div class="bc-url">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              quasar.contact/app
             </div>
-            <div class="carousel-slide">
-              <ResponsiveImage
-                src="slides/3_1270x720x1_notext.png"
-                alt="Settings and privacy controls"
-                loading="lazy"
-              />
-              <div class="slide-banner">
-                <h3>Cross-Device Access & Key Recovery</h3>
-                <p>
-                  Moved to a new device or cleared browser cache? Quasar detects missing encryption
-                  keys and guides you through key regeneration. Note: Previous messages become
-                  unreadable for security when new keys are generated.
-                </p>
-              </div>
-            </div>
-            <div class="carousel-slide">
-              <ResponsiveImage
-                src="slides/4_1270x720x1_notext.png"
-                alt="User authentication and security"
-                loading="lazy"
-              />
-              <div class="slide-banner">
-                <h3>Easy Access & Account Security</h3>
-                <p>
-                  Protect your conversations with robust authentication and seamless access controls.
-                  Multi-layered protection keeps unauthorized users out while ensuring legitimate
-                  access remains effortless.
-                </p>
-              </div>
-            </div>
-            <div class="carousel-slide">
-              <ResponsiveImage
-                src="slides/5_1270x720x1_notext.png"
-                alt="Real-time message delivery"
-                loading="lazy"
-              />
-              <div class="slide-banner">
-                <h3>Password Recovery & Account Access</h3>
-                <p>
-                  Lost your password? Regain access to encrypted conversations safely. Our
-                  streamlined reset process maintains security while ensuring you never lose access.
-                </p>
-              </div>
-            </div>
-            <div class="carousel-slide">
-              <ResponsiveImage
-                src="slides/6_1270x720x1_notext.png"
-                alt="Mobile responsive design"
-                loading="lazy"
-              />
-              <div class="slide-banner">
-                <h3>Privacy Controls & Personalization</h3>
-                <p>
-                  Take control of your privacy with Quasar's settings. Backup your encryption keys
-                  as secure .pem files and restore them anytime. Choose from curated avatars to
-                  personalize your profile.
-                </p>
-              </div>
-            </div>
+            <div class="bc-spacer"></div>
+            <button class="carousel-btn carousel-btn-pause" aria-label="Pause/Play slideshow">
+              <svg class="pause-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="6" y="4" width="4" height="16"></rect>
+                <rect x="14" y="4" width="4" height="16"></rect>
+              </svg>
+              <svg class="play-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                <polygon points="5,3 19,12 5,21"></polygon>
+              </svg>
+            </button>
           </div>
 
-          <button class="carousel-btn carousel-btn-prev" aria-label="Previous screenshot">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path d="M15 18l-6-6 6-6"></path>
-            </svg>
-          </button>
+          <div class="carousel-container">
+            <div class="carousel-info-bar">
+              <div class="slide-info">
+                <h3 class="slide-info-title" id="slide-info-title">Messaging Features</h3>
+                <p class="slide-info-desc" id="slide-info-desc">Send encrypted messages in real-time with delivery confirmation and read receipts. Edit or delete messages seamlessly.</p>
+              </div>
+            </div>
+            <div class="carousel-track" id="carousel-track">
+              <div class="carousel-slide">
+                <ResponsiveImage
+                  src="slides/1_1270x600x1_notext.png"
+                  alt="Chat interface showing encrypted messaging"
+                  loading="lazy"
+                />
+              </div>
+              <div class="carousel-slide">
+                <ResponsiveImage
+                  src="slides/2_1270x600x1_notext.png"
+                  alt="Theme customization dark and light"
+                  loading="lazy"
+                />
+              </div>
+              <div class="carousel-slide">
+                <ResponsiveImage
+                  src="slides/3_1270x600x1_notext.png"
+                  alt="Cross-device key recovery flow"
+                  loading="lazy"
+                />
+              </div>
+              <div class="carousel-slide">
+                <ResponsiveImage
+                  src="slides/4_1270x600x1_notext.png"
+                  alt="Account authentication screen"
+                  loading="lazy"
+                />
+              </div>
+              <div class="carousel-slide">
+                <ResponsiveImage
+                  src="slides/5_1270x600x1_notext.png"
+                  alt="Password recovery flow"
+                  loading="lazy"
+                />
+              </div>
+              <div class="carousel-slide">
+                <ResponsiveImage
+                  src="slides/6_1270x600x1_notext.png"
+                  alt="Privacy controls and settings"
+                  loading="lazy"
+                />
+              </div>
+            </div>
 
-          <button class="carousel-btn carousel-btn-next" aria-label="Next screenshot">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path d="M9 18l6-6-6-6"></path>
-            </svg>
-          </button>
+            <button class="carousel-btn carousel-btn-prev" aria-label="Previous screenshot">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M15 18l-6-6 6-6"></path>
+              </svg>
+            </button>
 
-          <button class="carousel-btn carousel-btn-pause" aria-label="Pause/Play slideshow">
-            <svg
-              class="pause-icon"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <rect x="6" y="4" width="4" height="16"></rect>
-              <rect x="14" y="4" width="4" height="16"></rect>
-            </svg>
-            <svg
-              class="play-icon"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              style="display: none;"
-            >
-              <polygon points="5,3 19,12 5,21"></polygon>
-            </svg>
-          </button>
+            <button class="carousel-btn carousel-btn-next" aria-label="Next screenshot">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6"></path>
+              </svg>
+            </button>
+
+          </div>
         </div>
 
-        <div class="carousel-dots">
-          <button class="carousel-dot active" data-slide="0" aria-label="Go to slide 1"></button>
-          <button class="carousel-dot" data-slide="1" aria-label="Go to slide 2"></button>
-          <button class="carousel-dot" data-slide="2" aria-label="Go to slide 3"></button>
-          <button class="carousel-dot" data-slide="3" aria-label="Go to slide 4"></button>
-          <button class="carousel-dot" data-slide="4" aria-label="Go to slide 5"></button>
-          <button class="carousel-dot" data-slide="5" aria-label="Go to slide 6"></button>
+        <div class="carousel-tabs" id="carousel-tabs">
+          <button class="carousel-tab active" data-slide="0">Messaging</button>
+          <button class="carousel-tab" data-slide="1">Themes</button>
+          <button class="carousel-tab" data-slide="2">Key Recovery</button>
+          <button class="carousel-tab" data-slide="3">Account</button>
+          <button class="carousel-tab" data-slide="4">Password</button>
+          <button class="carousel-tab" data-slide="5">Privacy</button>
         </div>
+
       </section>
 
       <!-- ── ENCRYPTION TECH (existing — add id for scroll anchor) ── -->
@@ -389,19 +335,14 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         data-delay="600"
         aria-labelledby="encryption-title"
       >
-        <h2 id="encryption-title">How Our Encryption Works</h2>
-        <div class="tech-content">
-          <div class="tech-overview">
-            <h3>Hybrid Encryption System</h3>
-            <p>
-              Quasar uses a sophisticated hybrid encryption approach combining RSA-OAEP and AES-GCM
-              to deliver both security and performance. Each message is protected with unique
-              encryption keys.
-            </p>
-          </div>
+        <div class="enc-hd">
+          <h2 id="encryption-title">How Our Encryption Works</h2>
+          <p class="enc-sub">Hybrid RSA-OAEP + AES-GCM pipeline — every message gets a unique key, wrapped in the recipient's public key. The server only ever sees ciphertext.</p>
+        </div>
 
           <div class="tech-steps">
-            <div class="tech-step">
+            <a href="/faq" class="tech-step">
+              <span class="step-num">01</span>
               <svg
                 class="step-icon"
                 width="512"
@@ -497,9 +438,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
                   device.
                 </p>
               </div>
-            </div>
+            </a>
 
-            <div class="tech-step">
+            <a href="/faq" class="tech-step">
+              <span class="step-num">02</span>
               <svg
                 class="step-icon"
                 width="512"
@@ -579,9 +521,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
                   Each message is encrypted with a unique 256-bit AES-GCM key for maximum security.
                 </p>
               </div>
-            </div>
+            </a>
 
-            <div class="tech-step">
+            <a href="/faq" class="tech-step">
+              <span class="step-num">03</span>
               <svg
                 class="step-icon"
                 width="512"
@@ -631,9 +574,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
                   The AES key is encrypted with the recipient's RSA public key using OAEP padding.
                 </p>
               </div>
-            </div>
+            </a>
 
-            <div class="tech-step">
+            <a href="/faq" class="tech-step">
+              <span class="step-num">04</span>
               <svg
                 class="step-icon"
                 width="512"
@@ -686,36 +630,35 @@ import BaseLayout from "../layouts/BaseLayout.astro";
                 <h4>Encrypted Storage</h4>
                 <p>Private keys are stored encrypted in your browser's local IndexedDB vault.</p>
               </div>
-            </div>
+            </a>
           </div>
 
           <div class="tech-specs">
-            <div class="spec-item">
+            <a href="/faq" class="spec-item">
               <strong>RSA-OAEP</strong>
-              <span>2048-bit key length with SHA-256 hashing</span>
-            </div>
-            <div class="spec-item">
+              <span>2048-bit SHA-256</span>
+            </a>
+            <a href="/faq" class="spec-item">
               <strong>AES-GCM</strong>
-              <span>256-bit symmetric encryption with authentication</span>
-            </div>
-            <div class="spec-item">
-              <strong>Unique Message Keys</strong>
-              <span>Each message uses a unique encryption key</span>
-            </div>
-            <div class="spec-item">
+              <span>256-bit authenticated</span>
+            </a>
+            <a href="/faq" class="spec-item">
+              <strong>Unique Keys</strong>
+              <span>Per-message isolation</span>
+            </a>
+            <a href="/faq" class="spec-item">
               <strong>Zero Knowledge</strong>
-              <span>Server never sees your private keys or plaintext</span>
-            </div>
-            <div class="spec-item">
-              <strong>Encrypted Vault Storage</strong>
-              <span>IndexedDB encrypted vault with user-specific AES-256 keys</span>
-            </div>
-            <div class="spec-item">
-              <strong>WebSocket Security</strong>
-              <span>JWT-authenticated real-time connections with event queuing</span>
-            </div>
+              <span>No server plaintext</span>
+            </a>
+            <a href="/faq" class="spec-item">
+              <strong>Key Vault</strong>
+              <span>IndexedDB encrypted</span>
+            </a>
+            <a href="/faq" class="spec-item">
+              <strong>WebSocket</strong>
+              <span>JWT-authenticated</span>
+            </a>
           </div>
-        </div>
       </section>
     </div>
   </div>
@@ -1446,6 +1389,361 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     .lp-pulse,
     .lp-dots span {
       animation: none;
+    }
+  }
+
+  /* ── BADGE (reused on this page) ── */
+  .ip-badge {
+    display: inline-block;
+    padding: 0.28rem 0.85rem;
+    background: rgba(195, 247, 58, 0.08);
+    border: 1px solid rgba(195, 247, 58, 0.25);
+    border-radius: 100px;
+    font-size: 0.68rem;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.16em;
+    color: #c3f73a;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  /* ── LP-FEAT AS LINKS ── */
+  .lp-feat {
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  /* ── ENCRYPTION SECTION ── */
+  :global(.encryption-tech) {
+    border-color: rgba(255, 255, 255, 0.07) !important;
+    background: rgba(255, 255, 255, 0.015) !important;
+  }
+
+  .enc-hd {
+    margin-bottom: 2.5rem;
+    text-align: center;
+  }
+
+  .enc-hd h2 {
+    background: none;
+    -webkit-text-fill-color: rgba(255, 255, 255, 0.93);
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    margin: 0 0 0.65rem;
+    line-height: 1.1;
+    text-align: center;
+  }
+
+  .enc-sub {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.93rem;
+    line-height: 1.68;
+    margin: 0;
+    font-weight: 300;
+  }
+
+  .step-num {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: rgba(195, 247, 58, 0.55);
+    letter-spacing: 0.1em;
+  }
+
+  :global(.tech-steps) {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 0.85rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  :global(.tech-step) {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    background: rgba(255, 255, 255, 0.025) !important;
+    border-color: rgba(255, 255, 255, 0.07) !important;
+    border-radius: 14px !important;
+    transition: border-color 0.25s ease, background 0.25s ease !important;
+    text-decoration: none !important;
+    position: relative !important;
+    cursor: pointer !important;
+    gap: 0.65rem !important;
+  }
+
+  :global(.tech-step:hover) {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(195, 247, 58, 0.25) !important;
+    transform: none !important;
+  }
+
+  :global(.step-icon) {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  :global(.tech-step h4) {
+    color: rgba(255, 255, 255, 0.88) !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.01em !important;
+    font-size: 0.92rem !important;
+  }
+
+  :global(.tech-step p) {
+    font-size: 0.82rem !important;
+    line-height: 1.55 !important;
+    font-weight: 300 !important;
+    color: rgba(255, 255, 255, 0.38) !important;
+  }
+
+  :global(.tech-specs) {
+    gap: 0.6rem !important;
+  }
+
+  :global(.spec-item) {
+    background: rgba(255, 255, 255, 0.025) !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    border-radius: 10px !important;
+    padding: 0.85rem 1rem !important;
+    transition: border-color 0.22s ease, background 0.22s ease !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+  }
+
+  :global(.spec-item:hover) {
+    border-color: rgba(195, 247, 58, 0.2) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+  }
+
+  :global(.spec-item strong) {
+    color: #c3f73a !important;
+    font-family: 'Courier New', monospace !important;
+    font-size: 0.75rem !important;
+    font-weight: 400 !important;
+    letter-spacing: 0.07em !important;
+    text-transform: uppercase !important;
+  }
+
+  :global(.spec-item span) {
+    color: rgba(255, 255, 255, 0.4) !important;
+    font-size: 0.78rem !important;
+    font-weight: 300 !important;
+    line-height: 1.4 !important;
+  }
+
+  /* ── SHOWCASE SECTION ── */
+  :global(.app-showcase) {
+    text-align: left !important;
+  }
+
+  :global(.app-showcase > h2) {
+    display: none !important;
+  }
+
+  .showcase-hd {
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+
+  .showcase-hd h2 {
+    background: none;
+    -webkit-text-fill-color: rgba(255, 255, 255, 0.93);
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    margin: 0 0 0.65rem;
+    line-height: 1.1;
+    text-align: center;
+  }
+
+  .showcase-sub {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.93rem;
+    line-height: 1.68;
+    margin: 0;
+    font-weight: 300;
+  }
+
+  /* browser chrome */
+  .bc-frame {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+  }
+
+  .bc-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.85rem;
+    background: rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    position: relative;
+  }
+
+  .bc-dots {
+    display: flex;
+    gap: 0.38rem;
+    flex-shrink: 0;
+  }
+
+  .bc-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .bc-dot-r { background: #ff5f57; }
+  .bc-dot-y { background: #febc2e; }
+  .bc-dot-g { background: #28c840; }
+
+  .bc-url {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 5px;
+    padding: 0.22rem 0.7rem;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.38);
+    font-family: 'Courier New', monospace;
+    white-space: nowrap;
+  }
+
+  .bc-spacer {
+    flex: 1;
+  }
+
+  .bc-url svg {
+    color: rgba(195, 247, 58, 0.55);
+    flex-shrink: 0;
+  }
+
+  :global(.bc-frame .carousel-container) {
+    border-radius: 0 !important;
+    margin: 0 !important;
+  }
+
+  :global(.bc-frame .carousel-slide img) {
+    border-radius: 0 !important;
+    border: none !important;
+  }
+
+  :global(.bc-bar .carousel-btn-pause) {
+    position: static !important;
+    transform: none !important;
+    flex-shrink: 0;
+    width: 24px !important;
+    height: 24px !important;
+    padding: 0 !important;
+    background: none !important;
+    border: none !important;
+    opacity: 0.4;
+  }
+
+  :global(.bc-bar .carousel-btn-pause:hover) {
+    opacity: 1;
+    background: none !important;
+  }
+
+  /* info bar inside browser frame */
+  .carousel-info-bar {
+    padding: 1rem 1.25rem 0.9rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.015);
+  }
+
+  /* slide info */
+  .slide-info {
+    min-height: unset;
+    padding: 0;
+    border-bottom: none;
+    margin-bottom: 0;
+    flex: 1;
+  }
+
+  .slide-info-title {
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.97rem;
+    font-weight: 600;
+    margin: 0 0 0.4rem;
+    letter-spacing: -0.01em;
+  }
+
+  .slide-info-desc {
+    color: rgba(255, 255, 255, 0.42);
+    font-size: 0.86rem;
+    line-height: 1.65;
+    margin: 0;
+    font-weight: 300;
+  }
+
+  /* feature tabs */
+  .carousel-tabs {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+
+  .carousel-tab {
+    padding: 0.38rem 0.85rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 100px;
+    font-size: 0.76rem;
+    color: rgba(255, 255, 255, 0.42);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    letter-spacing: 0.01em;
+  }
+
+  .carousel-tab:hover {
+    color: rgba(255, 255, 255, 0.72);
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .carousel-tab.active {
+    background: rgba(195, 247, 58, 0.08);
+    border-color: rgba(195, 247, 58, 0.28);
+    color: #c3f73a;
+  }
+
+  :global(.carousel-dots) {
+    display: none !important;
+  }
+
+  /* ── SECTION RESPONSIVE OVERRIDES ── */
+  @media (max-width: 900px) {
+    :global(.tech-steps) {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+  }
+
+  @media (max-width: 540px) {
+    :global(.tech-steps) {
+      grid-template-columns: 1fr !important;
+    }
+
+    .carousel-tabs {
+      gap: 0.25rem;
+    }
+
+    .carousel-tab {
+      font-size: 0.71rem;
+      padding: 0.32rem 0.65rem;
     }
   }
 </style>
