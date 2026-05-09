@@ -338,8 +338,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           <p class="enc-sub">Hybrid RSA-OAEP + AES-GCM pipeline — every message gets a unique key, wrapped in the recipient's public key. The server only ever sees ciphertext.</p>
         </div>
 
+        <div class="enc-body">
           <div class="tech-steps">
-            <a href="/faq" class="tech-step">
+            <div class="tech-step">
               <span class="step-num">01</span>
               <svg
                 class="step-icon"
@@ -436,9 +437,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
                   device.
                 </p>
               </div>
-            </a>
+            </div>
 
-            <a href="/faq" class="tech-step">
+            <div class="tech-step">
               <span class="step-num">02</span>
               <svg
                 class="step-icon"
@@ -519,9 +520,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
                   Each message is encrypted with a unique 256-bit AES-GCM key for maximum security.
                 </p>
               </div>
-            </a>
+            </div>
 
-            <a href="/faq" class="tech-step">
+            <div class="tech-step">
               <span class="step-num">03</span>
               <svg
                 class="step-icon"
@@ -572,9 +573,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
                   The AES key is encrypted with the recipient's RSA public key using OAEP padding.
                 </p>
               </div>
-            </a>
+            </div>
 
-            <a href="/faq" class="tech-step">
+            <div class="tech-step">
               <span class="step-num">04</span>
               <svg
                 class="step-icon"
@@ -628,35 +629,36 @@ import BaseLayout from "../layouts/BaseLayout.astro";
                 <h4>Encrypted Storage</h4>
                 <p>Private keys are stored encrypted in your browser's local IndexedDB vault.</p>
               </div>
-            </a>
+            </div>
           </div>
 
           <div class="tech-specs">
-            <a href="/faq" class="spec-item">
+            <div class="spec-item">
               <strong>RSA-OAEP</strong>
               <span>2048-bit SHA-256</span>
-            </a>
-            <a href="/faq" class="spec-item">
+            </div>
+            <div class="spec-item">
               <strong>AES-GCM</strong>
               <span>256-bit authenticated</span>
-            </a>
-            <a href="/faq" class="spec-item">
+            </div>
+            <div class="spec-item">
               <strong>Unique Keys</strong>
               <span>Per-message isolation</span>
-            </a>
-            <a href="/faq" class="spec-item">
+            </div>
+            <div class="spec-item">
               <strong>Zero Knowledge</strong>
               <span>No server plaintext</span>
-            </a>
-            <a href="/faq" class="spec-item">
+            </div>
+            <div class="spec-item">
               <strong>Key Vault</strong>
               <span>IndexedDB encrypted</span>
-            </a>
-            <a href="/faq" class="spec-item">
+            </div>
+            <div class="spec-item">
               <strong>WebSocket</strong>
               <span>JWT-authenticated</span>
-            </a>
+            </div>
           </div>
+        </div>
       </section>
     </div>
   </div>
@@ -1408,13 +1410,13 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   }
 
   /* ── ENCRYPTION SECTION ── */
-  :global(.encryption-tech) {
+  :global(.enc-body) {
     border-color: rgba(255, 255, 255, 0.07) !important;
     background: rgba(255, 255, 255, 0.015) !important;
   }
 
   .enc-hd {
-    margin-bottom: 2.5rem;
+    margin-bottom: 2rem;
     text-align: center;
   }
 
@@ -1460,17 +1462,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     background: rgba(255, 255, 255, 0.025) !important;
     border-color: rgba(255, 255, 255, 0.07) !important;
     border-radius: 14px !important;
-    transition: border-color 0.25s ease, background 0.25s ease !important;
-    text-decoration: none !important;
     position: relative !important;
-    cursor: pointer !important;
     gap: 0.65rem !important;
-  }
-
-  :global(.tech-step:hover) {
-    background: rgba(255, 255, 255, 0.04) !important;
-    border-color: rgba(195, 247, 58, 0.25) !important;
-    transform: none !important;
   }
 
   :global(.step-icon) {
@@ -1501,13 +1494,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     border: 1px solid rgba(255, 255, 255, 0.07) !important;
     border-radius: 10px !important;
     padding: 0.85rem 1rem !important;
-    transition: border-color 0.22s ease !important;
-    text-decoration: none !important;
-    cursor: pointer !important;
-  }
-
-  :global(.spec-item:hover) {
-    border-color: rgba(195, 247, 58, 0.2) !important;
   }
 
   :global(.spec-item strong) {
