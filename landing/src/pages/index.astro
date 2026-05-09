@@ -124,16 +124,16 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       <!-- ── STATS ── -->
       <div class="lp-stats lp-in" style="--d:0.65s" aria-label="Security specifications">
         <div class="lp-stat">
-          <b>Asymmetric</b><span>Key Exchange</span>
+          <b>2048-bit</b><span>RSA Key Pair</span>
         </div>
         <div class="lp-stat">
-          <b>Symmetric</b><span>Message Cipher</span>
+          <b>AES-256</b><span>Message Cipher</span>
         </div>
         <div class="lp-stat">
-          <b>No Tracking</b><span>Server-Blind</span>
+          <b>Zero</b><span>Data Logged</span>
         </div>
         <div class="lp-stat">
-          <b>Sub-second</b><span>Live Delivery</span>
+          <b>&lt; 1s</b><span>Message Delivery</span>
         </div>
       </div>
 
@@ -252,50 +252,57 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
           <div class="carousel-container">
             <div class="carousel-info-bar">
+              <div class="carousel-tabs" id="carousel-tabs">
+                <button class="carousel-tab active" data-slide="0">Messaging</button>
+                <button class="carousel-tab" data-slide="1">Themes</button>
+                <button class="carousel-tab" data-slide="2">Key Recovery</button>
+                <button class="carousel-tab" data-slide="3">Account</button>
+                <button class="carousel-tab" data-slide="4">Password</button>
+                <button class="carousel-tab" data-slide="5">Privacy</button>
+              </div>
               <div class="slide-info">
-                <h3 class="slide-info-title" id="slide-info-title">Messaging Features</h3>
                 <p class="slide-info-desc" id="slide-info-desc">Send encrypted messages in real-time with delivery confirmation and read receipts. Edit or delete messages seamlessly.</p>
               </div>
             </div>
             <div class="carousel-track" id="carousel-track">
               <div class="carousel-slide">
                 <ResponsiveImage
-                  src="slides/1_1270x600x1_notext.png"
+                  src="slides/1_1270x510x1_notext.png"
                   alt="Chat interface showing encrypted messaging"
                   loading="lazy"
                 />
               </div>
               <div class="carousel-slide">
                 <ResponsiveImage
-                  src="slides/2_1270x600x1_notext.png"
+                  src="slides/2_1270x510x1_notext.png"
                   alt="Theme customization dark and light"
                   loading="lazy"
                 />
               </div>
               <div class="carousel-slide">
                 <ResponsiveImage
-                  src="slides/3_1270x600x1_notext.png"
+                  src="slides/3_1270x510x1_notext.png"
                   alt="Cross-device key recovery flow"
                   loading="lazy"
                 />
               </div>
               <div class="carousel-slide">
                 <ResponsiveImage
-                  src="slides/4_1270x600x1_notext.png"
+                  src="slides/4_1270x510x1_notext.png"
                   alt="Account authentication screen"
                   loading="lazy"
                 />
               </div>
               <div class="carousel-slide">
                 <ResponsiveImage
-                  src="slides/5_1270x600x1_notext.png"
+                  src="slides/5_1270x510x1_notext.png"
                   alt="Password recovery flow"
                   loading="lazy"
                 />
               </div>
               <div class="carousel-slide">
                 <ResponsiveImage
-                  src="slides/6_1270x600x1_notext.png"
+                  src="slides/6_1270x510x1_notext.png"
                   alt="Privacy controls and settings"
                   loading="lazy"
                 />
@@ -315,15 +322,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
             </button>
 
           </div>
-        </div>
-
-        <div class="carousel-tabs" id="carousel-tabs">
-          <button class="carousel-tab active" data-slide="0">Messaging</button>
-          <button class="carousel-tab" data-slide="1">Themes</button>
-          <button class="carousel-tab" data-slide="2">Key Recovery</button>
-          <button class="carousel-tab" data-slide="3">Account</button>
-          <button class="carousel-tab" data-slide="4">Password</button>
-          <button class="carousel-tab" data-slide="5">Privacy</button>
         </div>
 
       </section>
@@ -1148,7 +1146,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   .lp-stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    background: rgba(255, 255, 255, 0.025);
     border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 14px;
     overflow: hidden;
@@ -1167,9 +1164,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
   .lp-stat:last-child {
     border-right: none;
-  }
-  .lp-stat:hover {
-    background: rgba(195, 247, 58, 0.04);
   }
 
   .lp-stat b {
@@ -1503,18 +1497,17 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   }
 
   :global(.spec-item) {
-    background: rgba(255, 255, 255, 0.025) !important;
+    background: none !important;
     border: 1px solid rgba(255, 255, 255, 0.07) !important;
     border-radius: 10px !important;
     padding: 0.85rem 1rem !important;
-    transition: border-color 0.22s ease, background 0.22s ease !important;
+    transition: border-color 0.22s ease !important;
     text-decoration: none !important;
     cursor: pointer !important;
   }
 
   :global(.spec-item:hover) {
     border-color: rgba(195, 247, 58, 0.2) !important;
-    background: rgba(255, 255, 255, 0.04) !important;
   }
 
   :global(.spec-item strong) {
@@ -1657,9 +1650,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
   /* info bar inside browser frame */
   .carousel-info-bar {
-    padding: 1rem 1.25rem 0.9rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-    background: rgba(255, 255, 255, 0.015);
+    padding: 2.5rem 1.25rem 0.9rem;
+    text-align: center;
   }
 
   /* slide info */
@@ -1671,19 +1663,11 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     flex: 1;
   }
 
-  .slide-info-title {
-    color: rgba(255, 255, 255, 0.82);
-    font-size: 0.97rem;
-    font-weight: 600;
-    margin: 0 0 0.4rem;
-    letter-spacing: -0.01em;
-  }
-
   .slide-info-desc {
     color: rgba(255, 255, 255, 0.42);
     font-size: 0.86rem;
     line-height: 1.65;
-    margin: 0;
+    margin: 0 0 1.25rem;
     font-weight: 300;
   }
 
@@ -1693,7 +1677,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     gap: 0.35rem;
     flex-wrap: wrap;
     justify-content: center;
-    margin-top: 1rem;
+    margin-bottom: 1rem;
   }
 
   .carousel-tab {

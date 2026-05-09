@@ -8,30 +8,30 @@ export interface Props {
 
 const { src, alt, loading = "lazy", class: className } = Astro.props;
 
-// Convert x1 naming to x2 for desktop (x1 for mobile, x2 for desktop)
-const desktopSrc = src.replace("x1_", "x2_");
+// Desktop uses x1, mobile uses x2 (HiDPI)
+const mobileSrc = src.replace("x1_", "x2_");
 ---
 
 <picture class:list={className}>
-  <!-- Mobile: Serve smaller images for screens < 768px -->
+  <!-- Mobile: HiDPI (x2) images for screens < 768px -->
   <source
     media="(max-width: 767px)"
-    srcset={`/assets/screenshots/mobile/${src}`}
+    srcset={`/assets/screenshots/mobile/${mobileSrc}`}
     sizes="(max-width: 767px) 100vw, 378px"
   />
-  <!-- Desktop: Serve full-size images for screens >= 768px -->
+  <!-- Desktop: standard (x1) images for screens >= 768px -->
   <source
     media="(min-width: 768px)"
-    srcset={`/assets/screenshots/desktop/${desktopSrc}`}
+    srcset={`/assets/screenshots/desktop/${src}`}
     sizes="(min-width: 768px) 1270px"
   />
   <!-- Fallback for older browsers -->
   <img
-    src={`/assets/screenshots/desktop/${desktopSrc}`}
+    src={`/assets/screenshots/desktop/${src}`}
     alt={alt}
     loading={loading}
     style="width: 100%; height: auto; max-width: 100%;"
     width="1270"
-    height="600"
+    height="510"
   />
 </picture>
