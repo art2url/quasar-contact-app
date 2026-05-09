@@ -215,7 +215,6 @@ body::before {
 /* Navigation Menu */
 .nav-menu {
   display: flex;
-  /* gap: 1.5rem; */
   align-items: center;
   justify-self: center;
 }
@@ -505,7 +504,6 @@ body.beta-closed .page-content {
 
 .about-content .content-section .content-text h2 {
   margin-top: 0;
-  /* margin-bottom: 1rem; */
 }
 
 .about-content .content-section .content-text p {
@@ -513,7 +511,6 @@ body.beta-closed .page-content {
 }
 
 .content-section {
-  /* margin-bottom: 3rem; */
   animation: fadeInUp 0.8s ease-out;
 }
 
@@ -525,7 +522,7 @@ body.beta-closed .page-content {
 }
 
 .author-content .content-section {
-  margin-bottom: 3rem;
+  margin-bottom: 0.75rem;
 }
 
 .content-section h2 {
@@ -597,7 +594,7 @@ body.beta-closed .page-content {
 }
 
 .faq-item {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 14px;
   margin-bottom: 0.75rem;
   overflow: hidden;
@@ -610,9 +607,9 @@ body.beta-closed .page-content {
 }
 
 .faq-question {
-  color: var(--text-light);
-  font-size: 1.1rem;
-  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+  font-weight: 700;
   margin: 0;
   padding: 1.5rem 2rem;
   cursor: pointer;
@@ -621,21 +618,19 @@ body.beta-closed .page-content {
   align-items: center;
   transition: all 0.3s ease;
   user-select: none;
+  letter-spacing: -0.01em;
 }
 
 .faq-question:hover {
   color: var(--accent-green-light);
-  /* background: rgba(255, 255, 255, 0.03); */
 }
 
 .faq-toggle {
-  font-size: 1.5rem;
-  font-weight: 400;
   color: var(--accent-green);
-  transition: all 0.3s ease;
-  min-width: 20px;
-  text-align: center;
-  line-height: 1;
+  transition:
+    transform 0.3s ease,
+    color 0.3s ease;
+  flex-shrink: 0;
 }
 
 .faq-item.open .faq-toggle {
@@ -657,10 +652,11 @@ body.beta-closed .page-content {
 }
 
 .faq-answer p {
-  color: var(--text-muted);
-  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.52);
+  line-height: 1.72;
   margin: 0;
   font-weight: 300;
+  font-size: 0.91rem;
   padding-top: 0.5rem;
 }
 
@@ -866,8 +862,6 @@ body.beta-closed .page-content {
 .author-social-link:hover {
   color: var(--accent-green-light);
   border-color: rgba(195, 247, 58, 0.4);
-  /* background: rgba(195, 247, 58, 0.1); */
-  transform: translateX(5px);
 }
 
 .author-social-link svg {
@@ -972,10 +966,10 @@ body.beta-closed .page-content {
   height: 32px;
   color: var(--accent-green-dark);
   margin-top: -0.35rem;
+}
 
-  .security-contact-content {
-    flex: 1;
-  }
+.security-contact-content {
+  flex: 1;
 }
 
 .security-contact h4 {

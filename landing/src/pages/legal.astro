@@ -7,9 +7,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   description="Privacy Policy and Legal Terms for Quasar Contact secure messaging platform. GDPR compliant data protection information."
 >
   <div class="main-content page-content">
-    <div class="container inner">
+    <div class="container">
       <div class="ip-header">
-<h2 class="ip-title">Legal Terms & Privacy Policy</h2>
+        <h2 class="ip-title">Legal Terms & Privacy Policy</h2>
         <p class="ip-sub">Your privacy and data protection rights</p>
       </div>
 
@@ -89,18 +89,19 @@ import BaseLayout from "../layouts/BaseLayout.astro";
             </p>
           </div>
 
-          <h3>Security Measures</h3>
-          <p>
-            I implement appropriate technical and organizational measures to protect your personal
-            data:
-          </p>
-
-          <ul>
-            <li>End-to-end encryption for all messages</li>
-            <li>Secure authentication mechanisms</li>
-            <li>Regular security updates and monitoring</li>
-            <li>Limited access to personal data on a need-to-know basis</li>
-          </ul>
+          <div class="space">
+            <h3>Security Measures</h3>
+            <p>
+              I implement appropriate technical and organizational measures to protect your personal
+              data:
+            </p>
+            <ul>
+              <li>End-to-end encryption for all messages</li>
+              <li>Secure authentication mechanisms</li>
+              <li>Regular security updates and monitoring</li>
+              <li>Limited access to personal data on a need-to-know basis</li>
+            </ul>
+          </div>
         </section>
 
         <section class="legal-section">
@@ -136,11 +137,13 @@ import BaseLayout from "../layouts/BaseLayout.astro";
               any indirect, incidental, or consequential damages.
             </p>
           </div>
-          <h3>Changes to Terms</h3>
-          <p>
-            I may update these terms from time to time. Users will be notified of significant
-            changes via email or through the application.
-          </p>
+          <div class="space">
+            <h3>Changes to Terms</h3>
+            <p>
+              I may update these terms from time to time. Users will be notified of significant
+              changes via email or through the application.
+            </p>
+          </div>
         </section>
 
         <section class="legal-section">
@@ -163,15 +166,17 @@ import BaseLayout from "../layouts/BaseLayout.astro";
                 <strong>Preference Cookies:</strong> Remember your settings and preferences
               </li>
               <li>
-                <strong>Analytics Cookies:</strong> Help us understand how you use my service (anonymized)
+                <strong>Analytics Cookies:</strong> Help me understand how you use my service (anonymized)
               </li>
             </ul>
           </div>
-          <h3>Managing Cookies</h3>
-          <p>
-            You can control cookies through your browser settings. However, disabling certain
-            cookies may affect the functionality of my service.
-          </p>
+          <div class="space">
+            <h3>Managing Cookies</h3>
+            <p>
+              You can control cookies through your browser settings. However, disabling certain
+              cookies may affect the functionality of my service.
+            </p>
+          </div>
         </section>
 
         <section class="legal-section legal-contact-section">
@@ -210,8 +215,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   .legal-section {
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 16px;
-    padding: 2rem 2.25rem;
+    border-radius: 14px;
+    padding: 1.5rem 1.75rem;
     margin-bottom: 1rem;
     transition: border-color 0.25s ease;
   }
@@ -225,8 +230,12 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     background: rgba(195, 247, 58, 0.02);
   }
 
+  .legal-contact-section:hover {
+    border-color: rgba(195, 247, 58, 0.28);
+  }
+
   .legal-section h2 {
-    color: #c3f73a;
+    color: var(--accent-green);
     font-size: 1.3rem;
     font-weight: 700;
     margin-bottom: 1.5rem;
@@ -236,19 +245,27 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   }
 
   .legal-section h3 {
-    color: rgba(255, 255, 255, 0.85);
-    font-size: 0.95rem;
-    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1rem;
+    font-weight: 700;
     margin: 1.5rem 0 0.6rem;
-    letter-spacing: -0.005em;
+    letter-spacing: -0.01em;
   }
 
   .legal-section .space {
-    margin-bottom: 0.25rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .legal-section .space:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
   }
 
   .legal-section p {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.52);
     line-height: 1.72;
     margin: 0 0 0.5rem;
     font-weight: 300;
@@ -261,7 +278,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   }
 
   .legal-section li {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.52);
     padding: 0.2rem 0;
     font-weight: 300;
     font-size: 0.91rem;
@@ -306,7 +323,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     font-weight: 300;
   }
 
-  @media (max-width: 640px) {
+  @media (max-width: 768px) {
     .legal-section {
       padding: 1.5rem 1.25rem;
     }
