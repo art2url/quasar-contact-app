@@ -46,11 +46,6 @@ const defaultStructuredData = {
     name: "Artem Turlenko",
     url: "https://github.com/art2url",
   },
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "4.5",
-    reviewCount: "25",
-  },
   featureList: [
     "End-to-end encryption",
     "Real-time messaging",
@@ -71,7 +66,6 @@ const finalStructuredData = structuredData || defaultStructuredData;
 
     <!-- Primary Meta Tags -->
     <title>{title}</title>
-    <meta name="title" content={title} />
     <meta name="description" content={description} />
     <meta name="keywords" content={keywords} />
     <meta name="author" content="Artem Turlenko" />
@@ -195,9 +189,9 @@ const finalStructuredData = structuredData || defaultStructuredData;
         left: 0;
         right: 0;
         z-index: 1000;
-        background: rgba(12, 37, 36, 0.95);
-        backdrop-filter: blur(10px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        background: transparent;
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         transition: all 0.3s ease;
       }
 

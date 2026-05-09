@@ -3,7 +3,7 @@
 ---
 
 <!-- Prevent banner flicker with improved inline script -->
-<script>
+<script is:inline>
   (function () {
     const consentData = localStorage.getItem('cookieConsent');
     let hasValidConsent = false;

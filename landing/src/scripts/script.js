@@ -378,8 +378,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         // Update slide info
-        if (slideInfoTitle && slideInfoDesc && slideData[currentSlide]) {
-          slideInfoTitle.textContent = slideData[currentSlide].title;
+        if (slideInfoDesc && slideData[currentSlide]) {
+          if (slideInfoTitle) slideInfoTitle.textContent = slideData[currentSlide].title;
           slideInfoDesc.textContent = slideData[currentSlide].desc;
         }
       }

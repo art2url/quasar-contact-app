@@ -9,16 +9,16 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   <div class="main-content page-content">
     <div class="container">
       <div class="ip-header">
-        <h2 class="ip-title">Frequently Asked Questions</h2>
+        <h1 class="ip-title">Frequently Asked Questions</h1>
         <p class="ip-sub">Everything you need to know about Quasar Contact</p>
       </div>
 
       <div class="faq-container">
         <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
+          <button class="faq-question" onclick="toggleFaq(this)" type="button">
             <span>What is Quasar Contact?</span>
             <svg class="faq-toggle" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-          </div>
+          </button>
           <div class="faq-answer">
             <p>
               Quasar Contact is a secure, end-to-end encrypted messaging platform that prioritizes
@@ -29,10 +29,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         </div>
 
         <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
+          <button class="faq-question" onclick="toggleFaq(this)" type="button">
             <span>How does the encryption work?</span>
             <svg class="faq-toggle" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-          </div>
+          </button>
           <div class="faq-answer">
             <p>
               I use client-side encryption with the Web Crypto API, implementing RSA-OAEP with
@@ -45,10 +45,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         </div>
 
         <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
+          <button class="faq-question" onclick="toggleFaq(this)" type="button">
             <span>What data do you collect?</span>
             <svg class="faq-toggle" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-          </div>
+          </button>
           <div class="faq-answer">
             <p>
               I collect minimal data - only your email address for user identification and
@@ -61,10 +61,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         </div>
 
         <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
+          <button class="faq-question" onclick="toggleFaq(this)" type="button">
             <span>Is Quasar Contact free to use?</span>
             <svg class="faq-toggle" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-          </div>
+          </button>
           <div class="faq-answer">
             <p>
               Yes, Quasar Contact is currently free to use during the beta stage. I'm focused on
@@ -74,10 +74,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         </div>
 
         <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
+          <button class="faq-question" onclick="toggleFaq(this)" type="button">
             <span>Can you read my messages?</span>
             <svg class="faq-toggle" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-          </div>
+          </button>
           <div class="faq-answer">
             <p>
               No, I cannot read your messages. My zero-knowledge architecture ensures that all
@@ -88,10 +88,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         </div>
 
         <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
+          <button class="faq-question" onclick="toggleFaq(this)" type="button">
             <span>Is the source code available?</span>
             <svg class="faq-toggle" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-          </div>
+          </button>
           <div class="faq-answer">
             <p>
               Yes! Quasar Contact is completely open source and available on GitHub at
@@ -110,10 +110,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         </div>
 
         <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
+          <button class="faq-question" onclick="toggleFaq(this)" type="button">
             <span>How do I delete my account?</span>
             <svg class="faq-toggle" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-          </div>
+          </button>
           <div class="faq-answer">
             <p>
               To delete your account, please email me at <a
@@ -128,10 +128,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         </div>
 
         <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
+          <button class="faq-question" onclick="toggleFaq(this)" type="button">
             <span>What happens if I lose my device?</span>
             <svg class="faq-toggle" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-          </div>
+          </button>
           <div class="faq-answer">
             <p>
               Your encryption keys are stored locally on your device. If you lose your device or
@@ -144,10 +144,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         </div>
 
         <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
+          <button class="faq-question" onclick="toggleFaq(this)" type="button">
             <span>How can I report a security issue?</span>
             <svg class="faq-toggle" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-          </div>
+          </button>
           <div class="faq-answer">
             <p>
               If you discover a security vulnerability, please contact me immediately at
@@ -158,10 +158,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         </div>
 
         <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
+          <button class="faq-question" onclick="toggleFaq(this)" type="button">
             <span>Can I send images and files?</span>
             <svg class="faq-toggle" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-          </div>
+          </button>
           <div class="faq-answer">
             <p>
               Yes! You can send images that are automatically compressed and encrypted before
@@ -172,10 +172,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         </div>
 
         <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
+          <button class="faq-question" onclick="toggleFaq(this)" type="button">
             <span>Does Quasar Contact support emojis?</span>
             <svg class="faq-toggle" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-          </div>
+          </button>
           <div class="faq-answer">
             <p>
               Absolutely! Quasar Contact includes a built-in emoji picker with a wide selection of
@@ -186,10 +186,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         </div>
 
         <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
+          <button class="faq-question" onclick="toggleFaq(this)" type="button">
             <span>Can I edit or delete messages?</span>
             <svg class="faq-toggle" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-          </div>
+          </button>
           <div class="faq-answer">
             <p>
               Yes! You can edit or delete your own messages after sending them. When you edit a
@@ -201,10 +201,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         </div>
 
         <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
+          <button class="faq-question" onclick="toggleFaq(this)" type="button">
             <span>How do you protect against spam and bots?</span>
             <svg class="faq-toggle" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-          </div>
+          </button>
           <div class="faq-answer">
             <p>
               I use Cloudflare Turnstile and advanced honeypot techniques to protect against
@@ -215,10 +215,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         </div>
 
         <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
+          <button class="faq-question" onclick="toggleFaq(this)" type="button">
             <span>Will there be mobile apps?</span>
             <svg class="faq-toggle" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-          </div>
+          </button>
           <div class="faq-answer">
             <p>
               While Quasar Contact already works great on mobile browsers and can be installed as a
@@ -229,10 +229,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         </div>
 
         <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
+          <button class="faq-question" onclick="toggleFaq(this)" type="button">
             <span>Do you comply with GDPR?</span>
             <svg class="faq-toggle" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-          </div>
+          </button>
           <div class="faq-answer">
             <p>
               Yes, I am fully GDPR compliant. I collect minimal data (only email addresses) and
@@ -246,11 +246,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     </div>
   </div>
 
-  <script>
-    function toggleFaq(element: HTMLElement) {
-      element.parentElement?.classList.toggle('open');
+  <script is:inline>
+    function toggleFaq(element) {
+      element.parentElement.classList.toggle('open');
     }
-
-    window.toggleFaq = toggleFaq;
   </script>
 </BaseLayout>
