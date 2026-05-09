@@ -97,33 +97,25 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     font-weight: 400;
     line-height: 1;
     z-index: 10;
-    transform: translateX(-50%) !important;
-    opacity: 1 !important;
-    background: none !important;
-    -webkit-background-clip: unset !important;
-    -webkit-text-fill-color: var(--text-light) !important;
-    background-clip: unset !important;
+    transform: translateX(-50%);
+    color: rgba(255, 255, 255, 0.93);
   }
 
   .error-title {
     font-size: 2.5rem;
-    font-weight: 700;
+    font-weight: 800;
     margin-bottom: 1.5rem;
-    line-height: 1.2;
-    background: linear-gradient(45deg, var(--text-light), var(--accent-green-light));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    opacity: 1 !important;
-    transform: none !important;
+    line-height: 1.1;
+    color: rgba(255, 255, 255, 0.93);
+    letter-spacing: -0.025em;
   }
 
   .error-description {
-    font-size: 1.2rem;
-    color: var(--text-muted);
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.45);
     margin-bottom: 2rem;
-    line-height: 1.6;
-    max-width: 800px;
+    line-height: 1.65;
+    max-width: 600px;
     margin-left: auto;
     margin-right: auto;
   }
@@ -181,10 +173,13 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   }
 
   .help-section h3 {
-    color: var(--text-light);
-    margin-bottom: 2rem;
-    font-size: 1.3rem;
-    font-weight: 600;
+    color: rgba(255, 255, 255, 0.45);
+    margin-bottom: 1.25rem;
+    font-size: 0.85rem;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-family: 'Courier New', monospace;
   }
 
   .help-links {
@@ -195,19 +190,21 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   }
 
   .help-links a {
-    color: var(--accent-green);
+    color: rgba(255, 255, 255, 0.52);
     text-decoration: none;
-    padding: 0.5rem 1rem;
-    border: 1px solid var(--accent-green);
-    border-radius: 25px;
-    transition: all 0.3s ease;
-    font-weight: 500;
+    padding: 0.38rem 0.85rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 100px;
+    background: rgba(255, 255, 255, 0.04);
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+    font-size: 0.85rem;
+    font-weight: 400;
   }
 
   .help-links a:hover {
-    background: var(--accent-green);
-    color: var(--primary-dark);
-    transform: translateY(-1px);
+    color: rgba(255, 255, 255, 0.82);
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.07);
   }
 
   /* Mobile Responsive */
