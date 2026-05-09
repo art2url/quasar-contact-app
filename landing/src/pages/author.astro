@@ -8,9 +8,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 >
   <div class="main-content page-content">
     <div class="container inner">
-      <div class="page-header">
-        <h2>About the Author</h2>
-        <p class="page-subtitle">Meet the creator behind Quasar Contact</p>
+      <div class="ip-header">
+<h2 class="ip-title">About the Author</h2>
+        <p class="ip-sub">Meet the creator behind Quasar Contact</p>
       </div>
 
       <div class="author-content">
@@ -84,6 +84,19 @@ import BaseLayout from "../layouts/BaseLayout.astro";
                   </path>
                 </svg>
                 LinkedIn
+              </a>
+              <a
+                href="https://atpro.dev"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="author-social-link"
+                aria-label="Personal Website"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+                atpro.dev
               </a>
             </div>
           </div>
@@ -205,6 +218,13 @@ import BaseLayout from "../layouts/BaseLayout.astro";
               </svg>
               GitHub Profile
             </a>
+            <a href="https://atpro.dev" target="_blank" rel="noopener noreferrer" class="contact-link">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+              atpro.dev
+            </a>
           </div>
 
           <div class="security-contact">
@@ -245,3 +265,339 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     </div>
   </div>
 </BaseLayout>
+
+<style>
+  /* Author intro card */
+  .author-intro {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 1rem;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 1.75rem 2rem;
+    position: relative;
+  }
+
+  .author-avatar {
+    flex-shrink: 0;
+  }
+
+  .author-photo {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(195, 247, 58, 0.3);
+  }
+
+  .avatar-placeholder {
+    width: 100px;
+    height: 100px;
+    background: rgba(195, 247, 58, 0.05);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #68b684;
+    border: 2px solid rgba(195, 247, 58, 0.2);
+  }
+
+  .author-info {
+    flex: 1;
+  }
+
+  .author-info h2 {
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 0.2rem;
+    letter-spacing: -0.02em;
+  }
+
+  .author-title-full {
+    color: #c3f73a;
+    font-size: 0.85rem;
+    font-weight: 400;
+    margin: 0 0 0.65rem;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.02em;
+  }
+
+  .author-title-short {
+    display: none;
+  }
+
+  .author-location {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.85rem;
+    margin: 0;
+    font-weight: 300;
+  }
+
+  .author-location svg {
+    color: #68b684;
+    flex-shrink: 0;
+  }
+
+  .author-social {
+    display: flex;
+    flex-direction: row;
+    gap: 0.65rem;
+    position: absolute;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .author-social-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.72);
+    text-decoration: none;
+    padding: 0.55rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+    font-size: 0.85rem;
+    font-weight: 400;
+    white-space: nowrap;
+  }
+
+  .author-social-link:hover {
+    color: #c3f73a;
+    border-color: rgba(195, 247, 58, 0.3);
+    background: rgba(195, 247, 58, 0.05);
+  }
+
+  /* Content sections */
+  .author-content .content-section {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 14px;
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 0.75rem;
+    animation: none;
+  }
+
+  .author-content .content-section h3 {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+    letter-spacing: -0.01em;
+  }
+
+  .author-content .content-section p {
+    color: rgba(255, 255, 255, 0.52);
+    line-height: 1.72;
+    font-size: 0.91rem;
+    font-weight: 300;
+    margin: 0 0 0.4rem;
+  }
+
+  .author-content .content-section ul {
+    color: rgba(255, 255, 255, 0.52);
+    line-height: 1.65;
+    margin-left: 1.25rem;
+    font-size: 0.91rem;
+    font-weight: 300;
+  }
+
+  .author-content .content-section li {
+    padding: 0.15rem 0;
+  }
+
+  .author-content .content-section strong {
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+  }
+
+  /* Skills grid */
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 0.75rem;
+  }
+
+  .skill-category {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+  }
+
+  .skill-category h4 {
+    color: #c3f73a;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 0 0 0.65rem;
+  }
+
+  .skill-category ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .skill-category li {
+    color: rgba(255, 255, 255, 0.52);
+    font-size: 0.85rem;
+    padding: 0.18rem 0;
+    font-weight: 300;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .skill-category li::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #68b684;
+    flex-shrink: 0;
+  }
+
+  /* Contact section */
+  .contact-section {
+    background: rgba(195, 247, 58, 0.02);
+    border: 1px solid rgba(195, 247, 58, 0.15);
+    border-radius: 16px;
+    padding: 1.75rem 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .contact-section h3 {
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem;
+  }
+
+  .contact-section > p {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.91rem;
+    font-weight: 300;
+    line-height: 1.65;
+    margin: 0 0 1.25rem;
+  }
+
+  .contact-links {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+
+  .contact-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.72);
+    text-decoration: none;
+    padding: 0.6rem 1.1rem;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    font-size: 0.88rem;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+  }
+
+  .contact-link:hover {
+    color: #c3f73a;
+    border-color: rgba(195, 247, 58, 0.3);
+    background: rgba(195, 247, 58, 0.05);
+  }
+
+  .security-contact {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
+    padding: 1.1rem 1.5rem;
+  }
+
+  .security-contact svg {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+  }
+
+  .security-contact-content h4 {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0 0 0.2rem;
+  }
+
+  .security-contact-content p {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.83rem;
+    font-weight: 300;
+    margin: 0 0 0.3rem;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .author-intro {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 1.25rem;
+      padding-bottom: 1.75rem;
+    }
+
+    .author-location {
+      justify-content: center;
+    }
+
+    .author-social {
+      position: static;
+      transform: none;
+      justify-content: center;
+    }
+
+    .skills-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .author-title-full {
+      display: none;
+    }
+
+    .author-title-short {
+      display: block;
+      color: #c3f73a;
+      font-size: 0.85rem;
+      font-weight: 400;
+      margin: 0 0 0.65rem;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 0.02em;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .contact-links {
+      flex-direction: column;
+    }
+
+    .author-social {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+  }
+</style>
