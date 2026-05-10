@@ -644,6 +644,11 @@ body.beta-closed .page-content {
   flex-shrink: 0;
 }
 
+.faq-item.open {
+  background: rgba(195, 247, 58, 0.04);
+  border-color: rgba(195, 247, 58, 0.2);
+}
+
 .faq-item.open .faq-toggle {
   transform: rotate(180deg);
 }

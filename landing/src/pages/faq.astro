@@ -247,8 +247,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   </div>
 
   <script is:inline>
-    function toggleFaq(element) {
+    window.toggleFaq = function (element) {
       element.parentElement.classList.toggle('open');
-    }
+    };
   </script>
 </BaseLayout>
