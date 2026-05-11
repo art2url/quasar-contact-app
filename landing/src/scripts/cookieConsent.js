@@ -21,7 +21,18 @@ class CookieConsentManager {
       if (event.target === modal) this.closeCookieModal();
     });
 
+    // Re-apply banner visibility after each ViewTransitions page swap
+    document.addEventListener('astro:page-load', () => this.reinitializeBanner());
+
     this.exposeGlobalFunctions();
+  }
+
+  reinitializeBanner() {
+    if (this.consentExists) {
+      this.hideCookieBannerPermanently();
+    } else {
+      this.showCookieBannerAnimated();
+    }
   }
 
   initializeApp() {
